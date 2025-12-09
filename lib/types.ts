@@ -1,3 +1,5 @@
+import type { TokenSymbol } from "./constants"
+
 export interface TaskSlot {
   claimed: boolean
   submitted: boolean
@@ -17,4 +19,6 @@ export interface Task {
   creator: string
   createdAt: Date
   mySlot: TaskSlot | null
+  token?: TokenSymbol
+  tokenAddress?: string
 }
