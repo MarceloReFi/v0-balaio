@@ -12,10 +12,15 @@ export const CONTRACT_ABI = [
   "function getTask(string _taskId) external view returns (tuple(string taskId, address creator, address approver, address token, uint256 rewardPerSlot, uint256 totalSlots, uint256 claimedSlots, bool active, uint256 createdAt))",
   "function getTaskSlot(string _taskId, address _claimant) external view returns (tuple(address claimant, uint256 reward, bool claimed, bool submitted, bool approved, bool withdrawn))",
   "function getAvailableSlots(string _taskId) external view returns (uint256)",
-  "function approve(address spender, uint256 amount) external returns (bool)",
 ]
 
 export const ERC20_ABI = [
   "function approve(address spender, uint256 amount) external returns (bool)",
   "function balanceOf(address account) external view returns (uint256)",
+  "function allowance(address owner, address spender) external view returns (uint256)",
 ]
+
+export const CUSTOM_ERRORS: Record<string, string> = {
+  "0xf2e16b03": "Task ID already exists or insufficient allowance",
+  "0x": "Unknown contract error",
+}

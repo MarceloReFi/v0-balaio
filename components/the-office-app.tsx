@@ -3,7 +3,15 @@
 import { useState, useEffect, useCallback } from "react"
 import { ethers } from "ethers"
 import { Home, Clipboard, User, LogOut, ArrowLeft } from "lucide-react"
-import { CONTRACT_ADDRESS, CUSD_ADDRESS, CONTRACT_ABI, ERC20_ABI, CELO_CHAIN_ID, CELO_RPC } from "@/lib/constants"
+import {
+  CONTRACT_ADDRESS,
+  CUSD_ADDRESS,
+  CONTRACT_ABI,
+  ERC20_ABI,
+  CELO_CHAIN_ID,
+  CELO_RPC,
+  CUSTOM_ERRORS,
+} from "@/lib/constants"
 import type { Task } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
@@ -164,6 +172,40 @@ export default function TheOfficeApp() {
     }
   }
 
+  const parseContractError = (error: unknown): string => {
+    const err = error as { data?: string; message?: string; reason?: string }
+
+    // Check for custom error data
+    if (err.data && CUSTOM_ERRORS[err.data]) {
+      return CUSTOM_ERRORS[err.data]
+    }
+
+    // Check for reason string
+    if (err.reason) {
+      return err.reason
+    }
+
+    // Check message for common patterns
+    const message = err.message || String(error)
+
+    if (message.includes("insufficient funds")) {
+      return "Insufficient cUSD balance"
+    }
+    if (message.includes("user rejected")) {
+      return "Transaction rejected by user"
+    }
+    if (message.includes("execution reverted")) {
+      // Extract data from the error if present
+      const dataMatch = message.match(/data="(0x[a-fA-F0-9]+)"/)
+      if (dataMatch && CUSTOM_ERRORS[dataMatch[1]]) {
+        return CUSTOM_ERRORS[dataMatch[1]]
+      }
+      return "Contract execution failed - task ID may already exist or check your cUSD balance"
+    }
+
+    return message.slice(0, 100)
+  }
+
   const getTask = useCallback(
     async (id: string): Promise<Task | null> => {
       if (!contract || !account) return null
@@ -263,15 +305,47 @@ export default function TheOfficeApp() {
 
     try {
       setLoading(true)
-      toast("Approving cUSD...")
 
       const rewardWei = ethers.parseUnits(rewardPerSlot, 18)
       const totalDeposit = rewardWei * BigInt(totalSlots)
 
-      const approveTx = await cUSDContract.approve(CONTRACT_ADDRESS, totalDeposit)
-      await approveTx.wait()
+      toast("Checking cUSD balance...")
+      const balance = await cUSDContract.balanceOf(account)
 
-      toast("Creating task...")
+      if (balance < totalDeposit) {
+        const needed = ethers.formatUnits(totalDeposit, 18)
+        const have = ethers.formatUnits(balance, 18)
+        toast(`Insufficient cUSD. Need ${needed}, have ${have}`)
+        setLoading(false)
+        return
+      }
+
+      toast("Checking task ID availability...")
+      try {
+        const existingTask = await contract.getTask(taskId)
+        if (existingTask && existingTask.taskId === taskId) {
+          toast("Task ID already exists. Please use a different ID.")
+          setLoading(false)
+          return
+        }
+      } catch {
+        // Task doesn't exist, which is good - continue
+        console.log("[v0] Task ID is available")
+      }
+
+      toast("Checking cUSD allowance...")
+      const currentAllowance = await cUSDContract.allowance(account, CONTRACT_ADDRESS)
+
+      if (currentAllowance < totalDeposit) {
+        toast("Approving cUSD...")
+        const approveTx = await cUSDContract.approve(CONTRACT_ADDRESS, totalDeposit)
+        await approveTx.wait()
+        toast("cUSD approved!")
+      } else {
+        toast("cUSD already approved")
+      }
+
+      toast("Creating task on blockchain...")
       const tx = await contract.createTask(taskId, CUSD_ADDRESS, rewardWei, totalSlots, account)
       await tx.wait()
 
@@ -304,8 +378,8 @@ export default function TheOfficeApp() {
         }
       }, 2000)
     } catch (error) {
-      console.error(error)
-      toast("Error: " + (error as Error).message)
+      console.error("[v0] Create task error:", error)
+      toast("Error: " + parseContractError(error))
     } finally {
       setLoading(false)
     }
