@@ -6,14 +6,99 @@ export interface BlogPost {
   excerpt: string
   content: string
   tags: string[]
+  author: string
+  readTime: string
+  featured?: boolean
 }
 
 export const blogPosts: BlogPost[] = [
   {
+    id: "future-of-learn2earn",
+    title: "The Future of Learn2Earn in Web3",
+    date: "2024-01-10",
+    category: "Learn2Earn",
+    author: "Maria Santos",
+    readTime: "5 min read",
+    featured: true,
+    excerpt:
+      "Exploring how blockchain technology is revolutionizing education and creating new opportunities for learners worldwide.",
+    content: `The future of education is being revolutionized by blockchain technology, and Learn2Earn platforms are at the forefront of this transformation. As we move into a more decentralized world, the traditional barriers between learning and earning are dissolving.
+
+## What is Learn2Earn?
+
+Learn2Earn represents a paradigm shift where educational activities directly translate into economic rewards. Instead of spending years in traditional education systems without immediate financial returns, learners can now earn cryptocurrency tokens while acquiring new skills and knowledge.
+
+## Key Benefits
+
+### For Learners
+- Earn while you learn
+- Access to global opportunities
+- Verifiable credentials on blockchain
+- Direct path to employment
+
+### For Educators
+- New revenue streams
+- Global reach
+- Transparent reward systems
+
+## The Role of Blockchain
+
+Blockchain technology ensures that all educational achievements are:
+- Permanently recorded
+- Easily verifiable
+- Tamper-proof
+- Globally accessible
+
+Smart contracts automate the reward distribution, ensuring that learners receive their rewards fairly and promptly.
+
+## Web3 Integration
+
+The integration with Web3 technologies allows for:
+- Decentralized credential verification
+- Peer-to-peer knowledge sharing
+- Community governance of educational content
+- Cross-platform skill recognition
+
+## Real-World Applications
+
+We're already seeing Learn2Earn platforms making real impact:
+
+### Rural Communities
+Providing economic opportunities in underserved areas
+
+### Professional Development
+Helping workers adapt to changing job markets
+
+### Student Support
+Offering financial assistance through learning activities
+
+## The Future Outlook
+
+As blockchain adoption grows, we expect to see:
+- More sophisticated learning verification systems
+- Integration with traditional educational institutions
+- Greater emphasis on practical, applicable skills
+
+The Learn2Earn model isn't just about earning money while learning—it's about creating a more equitable, accessible, and practical educational ecosystem for everyone.
+
+## Getting Started
+
+Ready to join the Learn2Earn revolution? Start by:
+1. Exploring available tasks and opportunities
+2. Building your skills through practical projects
+3. Connecting with the community
+4. Contributing your own knowledge and expertise
+
+The future of education is here, and it's more rewarding than ever.`,
+    tags: ["Learn2Earn", "Web3", "Education"],
+  },
+  {
     id: "welcome-to-balaio",
     title: "Welcome to Balaio: Your Web3 Learn2Earn Platform",
-    date: "2024-12-01",
+    date: "2024-11-30",
     category: "Platform",
+    author: "Balaio Team",
+    readTime: "4 min read",
     excerpt:
       "Discover how Balaio bridges the gap between Web3 education and real-world opportunities through task-based learning and earning.",
     content: `# Welcome to Balaio
@@ -40,8 +125,10 @@ Join us in building the future of Web3 education and earning!`,
   {
     id: "user-types-explained",
     title: "Understanding User Types: Students, Contributors, Builders & Organizations",
-    date: "2024-12-05",
+    date: "2024-12-04",
     category: "Education",
+    author: "Balaio Team",
+    readTime: "6 min read",
     excerpt:
       "Learn about the different user types on Balaio and their unique capabilities, earning potential, and progression paths.",
     content: `# User Types & Capabilities
@@ -60,8 +147,6 @@ Balaio serves multiple user types, each with unique capabilities and earning pot
 
 **Earning Potential**: 5-25 cUSD per learning task
 
-**Progression Path**: Complete 5 learning tasks → Unlock Contributor Badge → Access to all platform tasks
-
 ## Contributors
 **Purpose**: Complete tasks and earn income while contributing to Web3 projects
 
@@ -70,7 +155,6 @@ Balaio serves multiple user types, each with unique capabilities and earning pot
 - Claim and complete various task types
 - Submit work for review and approval
 - Build reputation through Celo Star rankings
-- Create organizations to become Partners
 
 **Earning Potential**: 10-200+ cUSD per task (based on complexity)
 
@@ -82,7 +166,6 @@ Balaio serves multiple user types, each with unique capabilities and earning pot
 - Smart contract development opportunities
 - API and integration projects
 - Technical auditing and security reviews
-- Mentorship opportunities
 
 **Earning Potential**: 50-500+ cUSD per technical task
 
@@ -93,15 +176,16 @@ Balaio serves multiple user types, each with unique capabilities and earning pot
 - Create and manage tasks for their projects
 - Set custom rewards and requirements
 - Review and approve task submissions
-- Build talent pools of trusted contributors
-- Access analytics and performance metrics`,
+- Build talent pools of trusted contributors`,
     tags: ["Education", "User Types", "Getting Started"],
   },
   {
     id: "task-management-guide",
     title: "Complete Guide to Task Management on Balaio",
-    date: "2024-12-08",
+    date: "2024-12-07",
     category: "Tutorial",
+    author: "Balaio Team",
+    readTime: "7 min read",
     excerpt:
       "A comprehensive walkthrough of the task lifecycle on Balaio, from creation to completion and reward distribution.",
     content: `# Task Management System
@@ -111,72 +195,40 @@ Understanding the complete task lifecycle will help you make the most of Balaio.
 ## Task Lifecycle
 
 ### 1. Task Creation
-**Who**: Organizations, Administrators
-
-**Process**:
-1. Fill out task creation form with title, instructions, and requirements
-2. Choose category (Education, Research, Event, Partner Task, Other)
-3. Set complexity level (Low, Medium, High)
-4. Define reward amount in cUSD or USDC
-5. Set number of available slots
-6. Choose validation method:
-   - **Manual Review**: Human review of submitted work
-   - **File Upload**: Contributors upload files
-   - **URL Submission**: Submit links to completed work
-   - **Auto Verification**: System automatically validates
+Organizations and administrators can create tasks with:
+- Title and detailed instructions
+- Category selection (Education, Research, Event, Partner Task, Other)
+- Complexity level (Low, Medium, High)
+- Reward amount in cUSD or USDC
+- Number of available slots
+- Validation method selection
 
 ### 2. Task Discovery & Claiming
-**Who**: Students, Contributors, Builders
-
-**Process**:
-1. Browse tasks by category, complexity, reward, or tags
-2. View detailed task information including organization profile
-3. Claim task if slots are available
-4. Task status changes to "Claimed"
-5. Deadline tracking begins
+Contributors can:
+- Browse tasks by category, complexity, or reward
+- View detailed task information
+- Claim available task slots
+- Track deadlines
 
 ### 3. Task Completion & Submission
-**Who**: Task claimants
-
-**Process**:
-1. Complete work according to instructions
-2. Submit proof based on validation method
-3. Task status changes to "Pending"
-4. Submission enters review queue
+After completing work:
+- Submit proof based on validation method
+- Task status changes to "Pending"
+- Submission enters review queue
 
 ### 4. Review & Approval
-**Who**: Task creators, Administrators
-
-**Process**:
-1. Review submitted work against requirements
-2. Provide feedback if needed
-3. Approve or reject submission:
-   - **Approved**: Task marked "Completed", reward distributed
-   - **Rejected**: Task returns to "Claimed" with feedback
-
-## Task Categories
-
-### Education
-Learning modules, tutorials, skill assessments, educational content creation
-
-### Research
-Market analysis, technical research, competitive analysis, trend identification
-
-### Events
-Conference attendance, workshop facilitation, community event organization
-
-### Partner Tasks
-Organization-specific projects, brand collaboration, custom development
-
-### Other
-General tasks, experimental projects, community contributions`,
+Task creators review submissions:
+- Approved: Task marked "Completed", reward distributed
+- Rejected: Task returns to "Claimed" with feedback`,
     tags: ["Tutorial", "Tasks", "Guide"],
   },
   {
     id: "celo-star-rankings",
     title: "Celo Star Rankings: Build Your Reputation",
-    date: "2024-12-10",
+    date: "2024-12-09",
     category: "Gamification",
+    author: "Balaio Team",
+    readTime: "5 min read",
     excerpt:
       "Learn how the Orkut-style Celo Star ranking system works and how to improve your ratings across all six categories.",
     content: `# Celo Star Rankings
@@ -186,113 +238,31 @@ Our Orkut-style community rating system measures your contributions across 6 uni
 ## The Six Categories
 
 ### 1. Always On The Keyboard (AFK) 💬
-**Measures**: Responsiveness and communication
-**Based on**: Task completion frequency and activity level
-**How to improve**: Stay active, complete tasks regularly, respond quickly
+Measures responsiveness and communication based on task completion frequency.
 
 ### 2. Shipper 🚀
-**Measures**: On-time delivery performance
-**Based on**: Deadline adherence and timely completion
-**How to improve**: Submit work before deadlines, plan your time well
+Measures on-time delivery performance and deadline adherence.
 
 ### 3. Can Trust 🤝
-**Measures**: Reliability and trustworthiness
-**Based on**: Earnings history and completion rate
-**How to improve**: Complete tasks successfully, build long-term track record
+Measures reliability based on earnings history and completion rate.
 
 ### 4. Web3 Native 🔗
-**Measures**: Technical blockchain knowledge
-**Based on**: Technical task completion and complexity
-**How to improve**: Take on technical tasks, learn blockchain development
+Measures technical blockchain knowledge from technical task completion.
 
 ### 5. Community Builder 🏗️
-**Measures**: Contribution to ecosystem growth
-**Based on**: Community engagement and leadership
-**How to improve**: Help others, create content, organize events
+Measures contribution to ecosystem growth through community engagement.
 
 ### 6. Celo Champion 🏆
-**Measures**: Outstanding platform contribution
-**Based on**: High earnings and significant impact
-**How to improve**: Consistently deliver exceptional work, take on challenging tasks
+Measures outstanding platform contribution based on high earnings and impact.
 
 ## Why Rankings Matter
 
-- **Build Reputation**: Higher rankings attract better opportunities
-- **Earn More**: Top-ranked users get priority for high-value tasks
-- **Community Trust**: Rankings help organizations find reliable contributors
-- **Personal Growth**: Track your progress and identify areas to improve
-
-Start building your reputation today by completing tasks and engaging with the community!`,
+- Build reputation and attract better opportunities
+- Earn more with priority for high-value tasks
+- Gain community trust
+- Track personal growth`,
     tags: ["Gamification", "Rankings", "Community"],
   },
-  {
-    id: "getting-started-celo",
-    title: "Getting Started with Celo: Wallets, cUSD & USDC",
-    date: "2024-12-12",
-    category: "Education",
-    excerpt:
-      "A beginner-friendly guide to setting up your Celo wallet and understanding the stable currencies used on Balaio.",
-    content: `# Getting Started with Celo
-
-Balaio is built on the Celo blockchain, offering fast, low-cost transactions with stable currencies.
-
-## Supported Wallets
-
-### Valora
-The official Celo mobile wallet with built-in support for cUSD and USDC.
-- Download: [valora.xyz](https://valora.xyz)
-- Best for: Mobile-first users
-- Features: Easy onboarding, phone number recovery
-
-### MiniPay
-Opera's integrated Celo wallet for seamless payments.
-- Available in Opera Mini browser
-- Best for: Quick transactions
-- Features: Browser integration, low friction
-
-### MetaMask
-Popular multi-chain wallet with Celo support.
-- Download: [metamask.io](https://metamask.io)
-- Best for: Desktop users, multi-chain needs
-- Features: Wide ecosystem support
-
-## Understanding Stable Currencies
-
-### cUSD (Celo Dollar)
-- Pegged to USD (1 cUSD ≈ $1)
-- Native to Celo blockchain
-- Low transaction fees
-- 18 decimal places
-
-### USDC (USD Coin)
-- Circle's stablecoin on Celo
-- Widely recognized and trusted
-- Also pegged to USD
-- 6 decimal places
-
-Both currencies can be used for task rewards on Balaio!
-
-## Adding Celo to MetaMask
-
-1. Open MetaMask and click "Add Network"
-2. Enter Celo Mainnet details:
-   - Network Name: Celo
-   - RPC URL: https://forno.celo.org
-   - Chain ID: 42220
-   - Currency Symbol: CELO
-   - Block Explorer: https://explorer.celo.org
-
-3. Save and switch to Celo network
-
-## Getting Your First Tokens
-
-You can acquire cUSD or USDC by:
-- Completing tasks on Balaio
-- Using on-ramps like Ramp or MoonPay
-- Swapping CELO on Ubeswap or Mobius
-- Receiving from other users
-
-Welcome to the Celo ecosystem!`,
-    tags: ["Education", "Celo", "Getting Started", "Wallets"],
-  },
 ]
+
+export const blogCategories = ["All", "Platform", "Education", "Tutorial", "Gamification", "Learn2Earn"]

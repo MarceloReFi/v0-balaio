@@ -170,6 +170,13 @@ export function TheOfficeApp() {
               },
             ],
           })
+        } else {
+          const switchErr = switchError as { message?: string; code?: number }
+          if (switchErr.code === 4001) {
+            toast("Network switch cancelled by user")
+            return
+          }
+          throw switchError
         }
       }
 
@@ -192,9 +199,18 @@ export function TheOfficeApp() {
       setTokenContracts(contracts)
 
       toast("Wallet connected!")
-    } catch (error) {
-      console.error(error)
-      toast("Error: " + (error as Error).message)
+    } catch (error: unknown) {
+      console.error("Connect wallet error:", error)
+      const err = error as { message?: string; code?: number; reason?: string }
+      if (err.code === 4001) {
+        toast("Connection cancelled by user")
+      } else if (err.reason) {
+        toast("Error: " + err.reason)
+      } else if (err.message) {
+        toast("Error: " + err.message)
+      } else {
+        toast("Failed to connect wallet")
+      }
     }
   }
 
@@ -626,10 +642,9 @@ export function TheOfficeApp() {
       {account && (
         <nav className="fixed bottom-0 left-0 right-0 bg-[#3A4571] border-t-2 border-black flex z-40">
           {[
-            { id: "home" as const, icon: Home, label: "Home" },
-            { id: "tasks" as const, icon: Clipboard, label: "Tasks" },
-            { id: "profile" as const, icon: User, label: "Profile" },
-            { id: "blog" as const, icon: null, label: "Blog" },
+            { id: "home" as const, icon: Home, label: "HOME" },
+            { id: "tasks" as const, icon: Clipboard, label: "TASKS" },
+            { id: "profile" as const, icon: User, label: "PROFILE" },
           ].map((tab) => {
             const Icon = tab.icon
             return (
