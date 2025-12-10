@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X, ChevronDown } from "lucide-react"
 import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/constants"
+import { useTranslations, type Language } from "@/lib/translations"
 
 interface CreateTaskModalProps {
   open: boolean
@@ -17,9 +18,18 @@ interface CreateTaskModalProps {
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
+  language: Language
 }
 
-export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBalances }: CreateTaskModalProps) {
+export function CreateTaskModal({
+  open,
+  onClose,
+  onCreateTask,
+  loading,
+  tokenBalances,
+  language,
+}: CreateTaskModalProps) {
+  const t = useTranslations(language)
   const [taskId, setTaskId] = useState("")
   const [taskTitle, setTaskTitle] = useState("")
   const [taskDescription, setTaskDescription] = useState("")
@@ -49,7 +59,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white border-2 border-black p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-lg">Create New Task</h2>
+          <h2 className="font-bold text-lg">{t.createNewTask}</h2>
           <button onClick={onClose} className="hover:opacity-70">
             <X size={24} />
           </button>
@@ -57,7 +67,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
 
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block font-bold mb-2 text-xs">TASK ID</label>
+            <label className="block font-bold mb-2 text-xs">{t.taskId}</label>
             <input
               value={taskId}
               onChange={(e) => setTaskId(e.target.value)}
@@ -67,7 +77,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
           </div>
 
           <div>
-            <label className="block font-bold mb-2 text-xs">TITLE</label>
+            <label className="block font-bold mb-2 text-xs">{t.title}</label>
             <input
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
@@ -77,7 +87,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
           </div>
 
           <div>
-            <label className="block font-bold mb-2 text-xs">DESCRIPTION</label>
+            <label className="block font-bold mb-2 text-xs">{t.description}</label>
             <textarea
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
@@ -88,7 +98,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
           </div>
 
           <div>
-            <label className="block font-bold mb-2 text-xs">REWARD TOKEN</label>
+            <label className="block font-bold mb-2 text-xs">{t.selectToken}</label>
             <div className="relative">
               <button
                 type="button"
@@ -133,7 +143,9 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
           </div>
 
           <div>
-            <label className="block font-bold mb-2 text-xs">REWARD ({selectedToken})</label>
+            <label className="block font-bold mb-2 text-xs">
+              {t.reward} ({selectedToken})
+            </label>
             <input
               type="number"
               value={rewardPerSlot}
@@ -144,7 +156,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
           </div>
 
           <div>
-            <label className="block font-bold mb-2 text-xs">SLOTS</label>
+            <label className="block font-bold mb-2 text-xs">{language === "en" ? "SLOTS" : "VAGAS"}</label>
             <input
               type="number"
               value={totalSlots}
@@ -156,7 +168,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
 
           {totalCost && (
             <div className="bg-[#F2E885] border-2 border-black p-3">
-              <div className="font-bold text-xs">Total Cost:</div>
+              <div className="font-bold text-xs">{language === "en" ? "Total Cost:" : "Custo Total:"}</div>
               <div className="text-lg font-bold">
                 {totalCost} {selectedToken}
               </div>
@@ -168,7 +180,7 @@ export function CreateTaskModal({ open, onClose, onCreateTask, loading, tokenBal
             disabled={loading || !taskId || !rewardPerSlot || !totalSlots}
             className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-50"
           >
-            {loading ? "CREATING..." : "CREATE TASK"}
+            {loading ? (language === "en" ? "CREATING..." : "CRIANDO...") : t.createTaskButton}
           </button>
         </div>
       </div>

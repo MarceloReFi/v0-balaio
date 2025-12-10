@@ -1,76 +1,77 @@
 "use client"
 
+import { useTranslations, type Language } from "@/lib/translations"
+
 interface HomePageProps {
-  setCurrentPage: (page: "home" | "tasks" | "profile") => void
-  setShowCreateModal: (show: boolean) => void
+  onConnect: () => void
+  language: Language
 }
 
-export function HomePage({ setCurrentPage, setShowCreateModal }: HomePageProps) {
+export function HomePage({ onConnect, language }: HomePageProps) {
+  const t = useTranslations(language)
+
   const opportunities = [
     {
-      title: "Celo Public Goods - Support Streams",
+      title: t.celoPublicGoods,
       type: "Grant",
-      description: "Submit your Support Stream application and earn bi-weekly CELO incentive budgets",
+      description: t.celoPublicGoodsDesc,
       provider: "Celo Foundation",
-      amount: "Bi-weekly CELO",
-      deadline: "Rolling",
-      tags: ["Grant", "Support", "Celo"],
+      amount: language === "en" ? "Bi-weekly CELO" : "CELO quinzenal",
+      deadline: language === "en" ? "Rolling" : "Contínuo",
+      tags: language === "en" ? ["Grant", "Support", "Celo"] : ["Subsídio", "Suporte", "Celo"],
       link: "https://www.celopg.eco/",
     },
     {
-      title: "Celo Builder Fund",
-      type: "Rewards",
-      description: "Monthly rewards program by Celo PG x Talent Protocol",
+      title: t.celoBuilderFund,
+      type: language === "en" ? "Rewards" : "Recompensas",
+      description: t.celoBuilderFundDesc,
       provider: "Celo PG",
-      amount: "10,000 CELO/month",
-      deadline: "Monthly",
-      tags: ["Rewards", "Builder", "Monthly"],
+      amount: language === "en" ? "10,000 CELO/month" : "10.000 CELO/mês",
+      deadline: language === "en" ? "Monthly" : "Mensal",
+      tags: language === "en" ? ["Rewards", "Builder", "Monthly"] : ["Recompensas", "Construtor", "Mensal"],
       link: "https://www.celopg.eco/programs/celo-builder-fund",
     },
     {
-      title: "Prezenti Grants",
-      type: "Grant",
-      description: "Apply for Prezenti grants to fund your Celo project",
+      title: t.prezentiGrants,
+      type: language === "en" ? "Grant" : "Subsídio",
+      description: t.prezentiGrantsDesc,
       provider: "Prezenti",
-      amount: "Up to $50,000",
-      deadline: "Rolling",
-      tags: ["Grant", "Funding", "Celo"],
+      amount: language === "en" ? "Up to $50,000" : "Até $50.000",
+      deadline: language === "en" ? "Rolling" : "Contínuo",
+      tags: language === "en" ? ["Grant", "Funding", "Celo"] : ["Subsídio", "Financiamento", "Celo"],
       link: "http://prezenti.xyz/",
     },
     {
-      title: "Celo Camp Accelerator",
-      type: "Accelerator",
-      description: "The ecosystem's flagship accelerator that helps elevate projects to the next level",
+      title: t.celoCamp,
+      type: language === "en" ? "Accelerator" : "Aceleradora",
+      description: t.celoCampDesc,
       provider: "Celo Foundation",
-      amount: "Varies",
-      deadline: "Cohort-based",
-      tags: ["Accelerator", "Mentorship", "Ecosystem"],
+      amount: language === "en" ? "Varies" : "Varia",
+      deadline: language === "en" ? "Cohort-based" : "Por turma",
+      tags: language === "en" ? ["Accelerator", "Mentorship", "Ecosystem"] : ["Aceleradora", "Mentoria", "Ecossistema"],
       link: "https://www.celocamp.com/",
     },
   ]
 
   return (
     <div className="p-5 pb-24">
+      {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#2B325C] via-[#636D4F] to-[#F2E885] border-2 border-black p-8 mb-5 text-center">
         <div className="text-4xl mb-3">🚀</div>
-        <h2 className="text-2xl font-bold mb-2 text-white">Discover All Features</h2>
-        <p className="text-sm mb-4 text-white/90">
-          AI-powered task creation, mobile-first design, and comprehensive tools for every user type
-        </p>
+        <h2 className="text-2xl font-bold mb-2 text-white">{t.welcome}</h2>
+        <p className="text-sm mb-4 text-white/90">{t.subtitle}</p>
         <button
-          onClick={() => setCurrentPage("tasks")}
-          className="bg-[#FFF244] text-black px-6 py-3 font-bold border-2 border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow inline-flex items-center gap-2"
+          onClick={onConnect}
+          className="bg-[#FFF244] text-black px-6 py-3 font-bold border-2 border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow"
         >
-          📋 Explore Features
+          {t.connectWallet}
         </button>
       </div>
 
+      {/* Opportunities Section */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold flex items-center gap-2">🚀 Opportunities</h3>
-          <button className="bg-[#C36DF0] text-white px-4 py-2 text-sm font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow">
-            + More
-          </button>
+          <h3 className="text-lg font-bold flex items-center gap-2">🚀 {t.opportunities}</h3>
         </div>
 
         <div className="grid gap-3">
@@ -83,11 +84,11 @@ export function HomePage({ setCurrentPage, setShowCreateModal }: HomePageProps) 
               <div className="mb-2">
                 <span
                   className={`px-2 py-1 text-xs font-bold border-2 border-black ${
-                    opp.type === "Grant"
+                    opp.type.includes("Grant") || opp.type.includes("Subsídio")
                       ? "bg-[#636D4F] text-white"
-                      : opp.type === "Rewards"
+                      : opp.type.includes("Rewards") || opp.type.includes("Recompensas")
                         ? "bg-[#C36DF0] text-white"
-                        : opp.type === "Accelerator"
+                        : opp.type.includes("Accelerator") || opp.type.includes("Aceleradora")
                           ? "bg-[#FFF244] text-black"
                           : "bg-[#D96E5F] text-white"
                   }`}
@@ -118,11 +119,24 @@ export function HomePage({ setCurrentPage, setShowCreateModal }: HomePageProps) 
                 rel="noopener noreferrer"
                 className="bg-[#D96E5F] text-white px-4 py-2 text-sm font-bold border-2 border-black w-full hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow block text-center"
               >
-                Know more
+                {t.knowMore}
               </a>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-white border-2 border-black p-6 text-center">
+        <div className="text-3xl mb-3">🎯</div>
+        <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
+        <p className="text-sm text-gray-700 mb-4">{t.getStartedDesc}</p>
+        <button
+          onClick={onConnect}
+          className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+        >
+          {t.connectWallet}
+        </button>
       </div>
     </div>
   )

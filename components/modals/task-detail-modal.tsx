@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X } from "lucide-react"
 import type { Task } from "@/lib/types"
+import { useTranslations, type Language } from "@/lib/translations"
 
 interface TaskDetailModalProps {
   open: boolean
@@ -14,6 +15,7 @@ interface TaskDetailModalProps {
   onSubmitTask: (id: string, proof: string) => void
   onApproveTask: (id: string, claimant: string) => void
   onClaimReward: (id: string) => void
+  language: Language
 }
 
 export function TaskDetailModal({
@@ -26,7 +28,9 @@ export function TaskDetailModal({
   onSubmitTask,
   onApproveTask,
   onClaimReward,
+  language,
 }: TaskDetailModalProps) {
+  const t = useTranslations(language)
   const [proofUrl, setProofUrl] = useState("")
   const [approveAddress, setApproveAddress] = useState("")
 
@@ -53,11 +57,13 @@ export function TaskDetailModal({
 
         <div className="bg-gray-50 border-2 border-gray-300 p-3 mb-4">
           <div className="flex justify-between mb-2">
-            <span className="text-xs">Reward:</span>
-            <span className="font-bold">{task.reward} cUSD</span>
+            <span className="text-xs">{t.reward}:</span>
+            <span className="font-bold">
+              {task.reward} {task.token}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-xs">Available Slots:</span>
+            <span className="text-xs">{language === "en" ? "Available Slots:" : "Vagas Disponíveis:"}</span>
             <span className="font-bold">
               {task.availableSlots}/{task.totalSlots}
             </span>
@@ -72,7 +78,11 @@ export function TaskDetailModal({
               disabled={loading}
               className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-70"
             >
-              {loading ? "CLAIMING..." : "CLAIM TASK"}
+              {loading
+                ? language === "en"
+                  ? "CLAIMING..."
+                  : "REIVINDICANDO..."
+                : `${t.claim.toUpperCase()} ${language === "en" ? "TASK" : "TAREFA"}`}
             </button>
           )}
 
@@ -81,7 +91,9 @@ export function TaskDetailModal({
               <input
                 value={proofUrl}
                 onChange={(e) => setProofUrl(e.target.value)}
-                placeholder="Proof URL (IPFS, Google Drive, etc.)"
+                placeholder={
+                  language === "en" ? "Proof URL (IPFS, Google Drive, etc.)" : "URL da Prova (IPFS, Google Drive, etc.)"
+                }
                 className="w-full p-2.5 border-2 border-gray-300 font-mono"
               />
               <button
@@ -92,14 +104,18 @@ export function TaskDetailModal({
                 disabled={loading || !proofUrl}
                 className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-70"
               >
-                {loading ? "SUBMITTING..." : "SUBMIT WORK"}
+                {loading
+                  ? language === "en"
+                    ? "SUBMITTING..."
+                    : "ENVIANDO..."
+                  : `${t.submit.toUpperCase()} ${language === "en" ? "WORK" : "TRABALHO"}`}
               </button>
             </div>
           )}
 
           {isPending && (
             <div className="bg-[#F2E885] border-2 border-black p-3 text-center font-bold">
-              ⏳ Waiting for approval...
+              ⏳ {language === "en" ? "Waiting for approval..." : "Aguardando aprovação..."}
             </div>
           )}
 
@@ -109,23 +125,25 @@ export function TaskDetailModal({
               disabled={loading}
               className="bg-[#7A8770] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-70"
             >
-              {loading ? "CLAIMING..." : "CLAIM REWARD"}
+              {loading ? (language === "en" ? "CLAIMING..." : "REIVINDICANDO...") : `${t.claimReward.toUpperCase()}`}
             </button>
           )}
 
           {isCompleted && (
             <div className="bg-[#7A8770] border-2 border-black p-3 text-center font-bold text-white">
-              ✓ Reward claimed!
+              ✓ {language === "en" ? "Reward claimed!" : "Recompensa reivindicada!"}
             </div>
           )}
 
           {isCreator && (
             <div className="mt-4 p-3 bg-gray-50 border-2 border-gray-300">
-              <div className="font-bold mb-2 text-xs">TASK CREATOR ACTIONS</div>
+              <div className="font-bold mb-2 text-xs">
+                {language === "en" ? "TASK CREATOR ACTIONS" : "AÇÕES DO CRIADOR"}
+              </div>
               <input
                 value={approveAddress}
                 onChange={(e) => setApproveAddress(e.target.value)}
-                placeholder="Claimant address (0x...)"
+                placeholder={language === "en" ? "Claimant address (0x...)" : "Endereço do reivindicante (0x...)"}
                 className="w-full p-2 border-2 border-gray-300 mb-2 font-mono text-xs"
               />
               <button
@@ -138,7 +156,7 @@ export function TaskDetailModal({
                 disabled={loading}
                 className="bg-white text-[#3A4571] px-4 py-2 font-bold border-2 border-[#3A4571] w-full text-xs disabled:opacity-70"
               >
-                APPROVE SUBMISSION
+                {t.approve.toUpperCase()} {language === "en" ? "SUBMISSION" : "ENVIO"}
               </button>
             </div>
           )}

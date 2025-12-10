@@ -2,16 +2,18 @@
 
 import { Settings } from "lucide-react"
 import type { Task } from "@/lib/types"
+import { useTranslations, type Language } from "@/lib/translations"
 
 interface ProfilePageProps {
   account: string
   balance: string
-  usdcBalance: string
   tasks: Task[]
   onNavigateToBlog: () => void
+  language: Language
 }
 
-export function ProfilePage({ account, balance, usdcBalance, tasks, onNavigateToBlog }: ProfilePageProps) {
+export function ProfilePage({ account, balance, tasks, onNavigateToBlog, language }: ProfilePageProps) {
+  const t = useTranslations(language)
   const completedTasks = tasks.filter((t) => t.mySlot?.approved)
   const totalEarned = completedTasks.reduce((sum, task) => {
     const reward = Number.parseFloat(task.reward) || 0
@@ -26,7 +28,7 @@ export function ProfilePage({ account, balance, usdcBalance, tasks, onNavigateTo
             TO
           </div>
           <div>
-            <div className="text-xs opacity-80">WALLET ADDRESS</div>
+            <div className="text-xs opacity-80">{language === "en" ? "WALLET ADDRESS" : "ENDEREÇO DA CARTEIRA"}</div>
             <div className="font-bold text-sm">
               {account?.slice(0, 8)}...{account?.slice(-6)}
             </div>
@@ -36,17 +38,17 @@ export function ProfilePage({ account, balance, usdcBalance, tasks, onNavigateTo
         <div className="grid grid-cols-2 gap-2.5">
           <div className="bg-white border-2 border-black text-center p-3">
             <div className="text-xl font-bold text-[#2B325C]">{completedTasks.length}</div>
-            <div className="text-xs text-gray-600">Completed</div>
+            <div className="text-xs text-gray-600">{t.tasksCompleted}</div>
           </div>
           <div className="bg-white border-2 border-black text-center p-3">
             <div className="text-xl font-bold text-[#636D4F]">{totalEarned.toFixed(2)}</div>
-            <div className="text-xs text-gray-600">Earned (cUSD)</div>
+            <div className="text-xs text-gray-600">{t.totalEarned}</div>
           </div>
         </div>
       </div>
 
       <div className="bg-white border-2 border-black p-4 mb-5">
-        <h3 className="font-bold mb-3 flex items-center gap-2">📊 Recent Activity</h3>
+        <h3 className="font-bold mb-3 flex items-center gap-2">📊 {t.recentActivity}</h3>
         <div className="space-y-2">
           {tasks
             .filter((t) => t.mySlot)
@@ -63,30 +65,40 @@ export function ProfilePage({ account, balance, usdcBalance, tasks, onNavigateTo
                         : "text-gray-600"
                   }`}
                 >
-                  {task.mySlot?.approved ? "Approved" : task.mySlot?.submitted ? "Submitted" : "In Progress"}
+                  {task.mySlot?.approved
+                    ? t.approved
+                    : task.mySlot?.submitted
+                      ? t.submitted
+                      : language === "en"
+                        ? "In Progress"
+                        : "Em Progresso"}
                 </span>
               </div>
             ))}
-          {tasks.filter((t) => t.mySlot).length === 0 && <p className="text-xs text-gray-500">No recent activity</p>}
+          {tasks.filter((t) => t.mySlot).length === 0 && (
+            <p className="text-xs text-gray-500">
+              {language === "en" ? "No recent activity" : "Nenhuma atividade recente"}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="bg-white border-2 border-black p-4 mb-5">
-        <h3 className="font-bold mb-3 flex items-center gap-2">💡 Level Up Your Skills</h3>
+        <h3 className="font-bold mb-3 flex items-center gap-2">💡 {t.levelUpSkills}</h3>
         <div className="flex items-start gap-3 mb-3">
           <div className="w-20 h-20 bg-gray-200 border-2 border-black flex items-center justify-center text-2xl">
             🎓
           </div>
           <div className="flex-1">
-            <h4 className="font-bold text-sm mb-1">The Future of Learn2Earn in Web3</h4>
-            <p className="text-xs text-gray-600 mb-2">
-              Exploring how blockchain technology is revolutionizing education...
-            </p>
+            <h4 className="font-bold text-sm mb-1">
+              {language === "en" ? "The Future of Learn2Earn in Web3" : "O Futuro do Learn2Earn na Web3"}
+            </h4>
+            <p className="text-xs text-gray-600 mb-2">{t.visitBlogDesc}</p>
             <button
               onClick={onNavigateToBlog}
               className="bg-[#636D4F] text-white px-4 py-2 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow inline-flex items-center gap-1"
             >
-              📖 Read More
+              📖 {t.readMore}
             </button>
           </div>
         </div>
@@ -95,21 +107,20 @@ export function ProfilePage({ account, balance, usdcBalance, tasks, onNavigateTo
       <div className="bg-white border-2 border-black p-4">
         <h3 className="font-bold mb-3 flex items-center gap-2">
           <Settings size={18} />
-          Settings
+          {t.settings}
         </h3>
         <div className="space-y-2">
           <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm flex items-center justify-between">
-            <span>Notification Settings</span>
-            <span className="text-xs text-gray-500">soon</span>
+            <span>{t.notificationSettings}</span>
           </button>
           <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm flex items-center justify-between">
-            <span>Security Settings</span>
-            <span className="text-xs text-gray-500">soon</span>
+            <span>{t.securitySettings}</span>
           </button>
-          <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm">Export Data</button>
+          <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm">
+            {t.exportData}
+          </button>
           <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm flex items-center justify-between">
-            <span>Admin Settings</span>
-            <span className="text-xs text-gray-500">soon</span>
+            <span>{t.adminSettings}</span>
           </button>
         </div>
       </div>

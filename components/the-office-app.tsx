@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { ethers } from "ethers"
-import { Home, Clipboard, User, LogOut, ArrowLeft } from "lucide-react"
+import { Home, Clipboard, User, LogOut, ArrowLeft, Languages } from "lucide-react"
 import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
@@ -21,6 +21,7 @@ import { HomePage } from "@/components/pages/home-page"
 import { TasksPage } from "@/components/pages/tasks-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { BlogPage } from "@/components/pages/blog-page"
+import { useTranslations, type Language } from "@/lib/translations"
 
 declare global {
   interface Window {
@@ -50,6 +51,8 @@ export function TheOfficeApp() {
     USDC: "0.00",
   })
   const [tasks, setTasks] = useState<Task[]>([])
+  const [language, setLanguage] = useState<Language>("en")
+  const t = useTranslations(language)
 
   const toast = useCallback((msg: string) => {
     setToastMessage(msg)
@@ -559,10 +562,14 @@ export function TheOfficeApp() {
     toast("Logged out")
   }
 
+  const toggleLanguage = () => {
+    setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
+  }
+
   const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
 
   return (
-    <div className="min-h-screen bg-[#E6D9C3] font-mono">
+    <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
       {/* Header */}
       <header className="sticky top-0 bg-[#3A4571] px-4 py-3 border-b-2 border-black z-40">
         <div className="flex items-center justify-between">
@@ -576,11 +583,20 @@ export function TheOfficeApp() {
             <div className="w-10 h-10 bg-[#C4897B] border-2 border-black flex items-center justify-center font-bold text-white">
               TO
             </div>
-            <span className="font-bold text-white text-lg">Balaio</span>
+            <span className="font-bold text-white text-lg">{t.appName}</span>
           </div>
 
           {account && (
             <div className="flex items-center gap-2">
+              {/* Language toggle button */}
+              <button
+                onClick={toggleLanguage}
+                className="bg-[#B88FD8] px-2 py-1.5 text-xs border-2 border-black text-white font-bold hover:opacity-90 flex items-center gap-1"
+                title={language === "en" ? "Português" : "English"}
+              >
+                <Languages size={14} />
+                {language === "en" ? "PT" : "EN"}
+              </button>
               <div className="bg-[#7A8770] px-3 py-1.5 text-xs border-2 border-black text-white font-bold">
                 {displayBalance}
               </div>
@@ -593,58 +609,39 @@ export function TheOfficeApp() {
       </header>
 
       {/* Main Content */}
-      {!account ? (
-        <div className="p-12 text-center">
-          <div className="bg-[#F2E885] border-2 border-black p-6 max-w-md mx-auto">
-            <h1 className="text-3xl font-bold mb-3">Balaio</h1>
-            <p className="text-base mb-5 text-gray-700">AI-powered task creation for every user type</p>
-            <button
-              onClick={connectWallet}
-              disabled={loading}
-              className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? "Connecting..." : "Connect Wallet to Start"}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          {currentPage === "home" && (
-            <HomePage setCurrentPage={setCurrentPage} setShowCreateModal={setShowCreateModal} />
-          )}
-
-          {currentPage === "tasks" && (
-            <TasksPage
-              tasks={tasks}
-              loading={loading}
-              setShowCreateModal={setShowCreateModal}
-              searchTask={searchTask}
-              loadMyTasks={loadMyTasks}
-              setSelectedTask={setSelectedTask}
-              setShowTaskModal={setShowTaskModal}
-            />
-          )}
-
-          {currentPage === "profile" && (
-            <ProfilePage
-              account={account}
-              balance={displayBalance}
-              tasks={tasks}
-              onNavigateToBlog={() => setCurrentPage("blog")}
-            />
-          )}
-
-          {currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} />}
-        </>
-      )}
+      <main className="flex-1 overflow-y-auto pb-16">
+        {!account && currentPage === "home" && <HomePage onConnect={connectWallet} language={language} />}
+        {account && currentPage === "home" && <HomePage onConnect={connectWallet} language={language} />}
+        {account && currentPage === "tasks" && (
+          <TasksPage
+            tasks={tasks}
+            account={account}
+            searchTask={searchTask}
+            loadMyTasks={loadMyTasks}
+            setSelectedTask={setSelectedTask}
+            setShowTaskModal={setShowTaskModal}
+            language={language}
+          />
+        )}
+        {account && currentPage === "profile" && (
+          <ProfilePage
+            account={account}
+            balance={displayBalance}
+            tasks={tasks}
+            onNavigateToBlog={() => setCurrentPage("blog")}
+            language={language}
+          />
+        )}
+        {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} language={language} />}
+      </main>
 
       {/* Bottom Navigation */}
       {account && (
         <nav className="fixed bottom-0 left-0 right-0 bg-[#3A4571] border-t-2 border-black flex z-40">
           {[
-            { id: "home" as const, icon: Home, label: "HOME" },
-            { id: "tasks" as const, icon: Clipboard, label: "TASKS" },
-            { id: "profile" as const, icon: User, label: "PROFILE" },
+            { id: "home" as const, icon: Home, label: t.home },
+            { id: "tasks" as const, icon: Clipboard, label: t.tasks },
+            { id: "profile" as const, icon: User, label: t.profile },
           ].map((tab) => {
             const Icon = tab.icon
             return (
@@ -670,6 +667,7 @@ export function TheOfficeApp() {
         onCreateTask={createTask}
         loading={loading}
         tokenBalances={tokenBalances}
+        language={language}
       />
 
       <TaskDetailModal
@@ -682,6 +680,7 @@ export function TheOfficeApp() {
         onSubmitTask={submitTask}
         onApproveTask={approveTaskSubmission}
         onClaimReward={claimReward}
+        language={language}
       />
 
       {/* Toast */}

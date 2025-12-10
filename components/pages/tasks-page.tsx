@@ -4,46 +4,49 @@ import { useState } from "react"
 import { Search, HelpCircle, Loader2 } from "lucide-react"
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip-custom"
 import type { Task } from "@/lib/types"
+import { useTranslations, type Language } from "@/lib/translations"
 
 interface TasksPageProps {
   tasks: Task[]
-  loading: boolean
-  setShowCreateModal: (show: boolean) => void
+  account: string
   searchTask: (query: string) => void
   loadMyTasks: () => void
   setSelectedTask: (task: Task) => void
   setShowTaskModal: (show: boolean) => void
+  language: Language
 }
 
 export function TasksPage({
   tasks,
-  loading,
-  setShowCreateModal,
+  account,
   searchTask,
   loadMyTasks,
   setSelectedTask,
   setShowTaskModal,
+  language,
 }: TasksPageProps) {
+  const t = useTranslations(language)
   const [searchQuery, setSearchQuery] = useState("")
   const [taskFilter, setTaskFilter] = useState<"all" | "open" | "my">("all")
+  const [loading, setLoading] = useState(false)
 
   const getStatusBadge = (task: Task) => {
-    if (!task.mySlot) return { text: "AVAILABLE", color: "bg-[#7A8770]" }
-    if (task.mySlot.withdrawn) return { text: "COMPLETED", color: "bg-gray-700" }
-    if (task.mySlot.approved) return { text: "APPROVED", color: "bg-[#7A8770]" }
-    if (task.mySlot.submitted) return { text: "PENDING", color: "bg-[#F2E885] text-black" }
-    if (task.mySlot.claimed) return { text: "CLAIMED", color: "bg-[#B88FD8]" }
-    return { text: "AVAILABLE", color: "bg-[#7A8770]" }
+    if (!task.mySlot) return { text: t.open.toUpperCase(), color: "bg-[#7A8770]" }
+    if (task.mySlot.withdrawn) return { text: t.completed.toUpperCase(), color: "bg-gray-700" }
+    if (task.mySlot.approved) return { text: t.approved.toUpperCase(), color: "bg-[#7A8770]" }
+    if (task.mySlot.submitted) return { text: t.submitted.toUpperCase(), color: "bg-[#F2E885] text-black" }
+    if (task.mySlot.claimed) return { text: t.claimed.toUpperCase(), color: "bg-[#B88FD8]" }
+    return { text: t.open.toUpperCase(), color: "bg-[#7A8770]" }
   }
 
   const getTimeAgo = (date: Date) => {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
     const days = Math.floor(seconds / 86400)
-    if (days > 0) return `${days}d ago`
+    if (days > 0) return `${days}${language === "en" ? "d" : "d"} ${language === "en" ? "ago" : "atrás"}`
     const hours = Math.floor(seconds / 3600)
-    if (hours > 0) return `${hours}h ago`
+    if (hours > 0) return `${hours}${language === "en" ? "h" : "h"} ${language === "en" ? "ago" : "atrás"}`
     const minutes = Math.floor(seconds / 60)
-    return `${minutes}m ago`
+    return `${minutes}${language === "en" ? "m" : "m"} ${language === "en" ? "ago" : "atrás"}`
   }
 
   const filteredTasks = tasks.filter((task) => {
@@ -53,8 +56,17 @@ export function TasksPage({
     return true
   })
 
-  const handleSearch = () => {
-    searchTask(searchQuery)
+  const handleSearch = async () => {
+    if (!searchQuery) return
+    setLoading(true)
+    await searchTask(searchQuery)
+    setLoading(false)
+  }
+
+  const handleRefresh = async () => {
+    setLoading(true)
+    await loadMyTasks()
+    setLoading(false)
   }
 
   return (
@@ -62,17 +74,17 @@ export function TasksPage({
       <TooltipProvider>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-xl flex items-center gap-2">
-            📋 Tasks
-            <Tooltip text="Search for task IDs to view and claim available work">
+            📋 {t.tasks}
+            <Tooltip
+              text={
+                language === "en"
+                  ? "Search for task IDs to view and claim available work"
+                  : "Busque IDs de tarefas para visualizar e reivindicar trabalho disponível"
+              }
+            >
               <HelpCircle size={16} className="text-gray-600" />
             </Tooltip>
           </h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-[#3A4571] text-white px-4 py-2 font-bold border-2 border-black text-sm hover:opacity-90"
-          >
-            + Create
-          </button>
         </div>
       </TooltipProvider>
 
@@ -87,15 +99,15 @@ export function TasksPage({
                 : "bg-white text-[#3A4571] border-[#3A4571]"
             }`}
           >
-            {filter === "all" ? "All Tasks" : filter === "open" ? "Open Tasks" : "My Tasks"}
+            {filter === "all" ? t.allTasks : filter === "open" ? t.openTasks : t.myTasks}
           </button>
         ))}
         <button
-          onClick={loadMyTasks}
+          onClick={handleRefresh}
           disabled={loading}
           className="bg-white text-[#3A4571] px-4 py-2 font-bold border-2 border-[#3A4571] text-xs disabled:opacity-70"
         >
-          🔄 Refresh
+          🔄 {language === "en" ? "Refresh" : "Atualizar"}
         </button>
       </div>
 
@@ -104,7 +116,7 @@ export function TasksPage({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          placeholder="Search task by ID..."
+          placeholder={t.searchTask}
           className="flex-1 px-3 py-2.5 border-2 border-gray-300 bg-white font-mono text-sm"
         />
         <button
@@ -119,8 +131,8 @@ export function TasksPage({
       {filteredTasks.length === 0 ? (
         <div className="bg-white border-2 border-black p-10 text-center">
           <div className="text-4xl mb-3">🔍</div>
-          <p className="font-bold mb-1">No tasks found</p>
-          <p className="text-xs text-gray-600">Search for a task ID or create a new one</p>
+          <p className="font-bold mb-1">{t.noTasks}</p>
+          <p className="text-xs text-gray-600">{t.noTasksDesc}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -141,9 +153,11 @@ export function TasksPage({
                     <p className="text-xs text-gray-600 mb-2">{task.description}</p>
 
                     <div className="flex gap-3 text-xs mb-2">
-                      <span>💰 {task.reward} cUSD</span>
                       <span>
-                        👥 {task.availableSlots}/{task.totalSlots} slots
+                        💰 {task.reward} {task.token}
+                      </span>
+                      <span>
+                        👥 {task.availableSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
                       </span>
                       <span>⏰ {getTimeAgo(task.createdAt)}</span>
                     </div>
