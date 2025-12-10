@@ -2,10 +2,11 @@ export const CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
 export const CUSD_ADDRESS = "0x765DE816845861e75A25fCA122bb6898B8B1282a"
 export const USDC_ADDRESS = "0xcebA9300f2b948710d2653dD7B07f33A8B32118C"
 export const CRECY_ADDRESS = "0x34c11a932853ae24e845ad4b633e3cef91afe583"
+export const GD_ADDRESS = "0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A"
 export const CELO_RPC = "https://forno.celo.org"
 export const CELO_CHAIN_ID = "0xa4ec"
 
-export type TokenSymbol = "cUSD" | "USDC" | "cReCy"
+export type TokenSymbol = "cUSD" | "USDC" | "cReCy" | "GD"
 
 export interface TokenConfig {
   symbol: TokenSymbol
@@ -32,6 +33,12 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     address: CRECY_ADDRESS,
     decimals: 18, // Standard ERC20 decimals (verify if different)
     name: "Celo ReCy",
+  },
+  GD: {
+    symbol: "GD",
+    address: GD_ADDRESS,
+    decimals: 18,
+    name: "Good Dollar",
   },
 }
 
