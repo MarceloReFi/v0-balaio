@@ -33,27 +33,34 @@ declare global {
   }
 }
 
+// Initialize token states dynamically from SUPPORTED_TOKENS
+const initializeTokenContracts = (): Record<TokenSymbol, ethers.Contract | null> => {
+  return Object.keys(SUPPORTED_TOKENS).reduce(
+    (acc, symbol) => ({ ...acc, [symbol]: null }),
+    {} as Record<TokenSymbol, ethers.Contract | null>,
+  )
+}
+
+const initializeTokenBalances = (): Record<TokenSymbol, string> => {
+  return Object.keys(SUPPORTED_TOKENS).reduce(
+    (acc, symbol) => ({ ...acc, [symbol]: "0.00" }),
+    {} as Record<TokenSymbol, string>,
+  )
+}
+
 export function TheOfficeApp() {
   const [account, setAccount] = useState<string | null>(null)
   const [contract, setContract] = useState<ethers.Contract | null>(null)
-  const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
-    cUSD: null,
-    USDC: null,
-    cReCy: null,
-    GD: null,
-  })
+  const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>(
+    initializeTokenContracts(),
+  )
   const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
-  const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>({
-    cUSD: "0.00",
-    USDC: "0.00",
-    cReCy: "0.00",
-    GD: "0.00",
-  })
+  const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>(initializeTokenBalances())
   const [tasks, setTasks] = useState<Task[]>([])
   const [language, setLanguage] = useState<Language>("en")
   const t = useTranslations(language)
@@ -72,7 +79,7 @@ export function TheOfficeApp() {
       if (accountsArray.length === 0) {
         setAccount(null)
         setContract(null)
-        setTokenContracts({ cUSD: null, USDC: null, cReCy: null, GD: null })
+        setTokenContracts(initializeTokenContracts())
         setTasks([])
         setCurrentPage("home")
         toast("Wallet disconnected")
@@ -603,7 +610,7 @@ export function TheOfficeApp() {
   const logout = () => {
     setAccount(null)
     setContract(null)
-    setTokenContracts({ cUSD: null, USDC: null, cReCy: null, GD: null })
+    setTokenContracts(initializeTokenContracts())
     setTasks([])
     setCurrentPage("home")
     toast("Logged out")
