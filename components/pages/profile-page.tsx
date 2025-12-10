@@ -1,14 +1,16 @@
 "use client"
 
+import { BookOpen } from 'lucide-react'
 import type { Task } from "@/lib/types"
 
 interface ProfilePageProps {
   account: string
   balance: string
   tasks: Task[]
+  onNavigateToBlog: () => void
 }
 
-export function ProfilePage({ account, balance, tasks }: ProfilePageProps) {
+export function ProfilePage({ account, balance, tasks, onNavigateToBlog }: ProfilePageProps) {
   return (
     <div className="p-5">
       <div className="bg-[#B88FD8] border-2 border-black p-5 mb-5 text-white">
@@ -38,6 +40,23 @@ export function ProfilePage({ account, balance, tasks }: ProfilePageProps) {
             <div className="text-xs text-gray-600">Rating</div>
           </div>
         </div>
+      </div>
+
+      {/* <CHANGE> Added blog access button */}
+      <div className="mb-5">
+        <button
+          onClick={onNavigateToBlog}
+          className="w-full bg-[#F2E885] border-2 border-black p-4 font-bold flex items-center justify-between hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+        >
+          <div className="flex items-center gap-3">
+            <BookOpen size={24} />
+            <div className="text-left">
+              <div className="text-base">Balaio Blog</div>
+              <div className="text-xs font-normal opacity-80">Learn about Web3 & tasks</div>
+            </div>
+          </div>
+          <span className="text-xl">→</span>
+        </button>
       </div>
     </div>
   )

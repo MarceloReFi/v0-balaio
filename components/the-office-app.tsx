@@ -20,6 +20,7 @@ import { TaskDetailModal } from "@/components/modals/task-detail-modal"
 import { HomePage } from "@/components/pages/home-page"
 import { TasksPage } from "@/components/pages/tasks-page"
 import { ProfilePage } from "@/components/pages/profile-page"
+import { BlogPage } from "@/components/pages/blog-page"
 
 declare global {
   interface Window {
@@ -31,14 +32,14 @@ declare global {
   }
 }
 
-export default function TheOfficeApp() {
+export function TheOfficeApp() {
   const [account, setAccount] = useState<string | null>(null)
   const [contract, setContract] = useState<ethers.Contract | null>(null)
   const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
     cUSD: null,
     USDC: null,
   })
-  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile">("home")
+  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -545,7 +546,7 @@ export default function TheOfficeApp() {
   const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
 
   return (
-    <div className="min-h-screen bg-[#F5EBE9] pb-20 font-mono">
+    <div className="min-h-screen bg-[#E6D9C3] font-mono">
       {/* Header */}
       <header className="sticky top-0 bg-[#3A4571] px-4 py-3 border-b-2 border-black z-40">
         <div className="flex items-center justify-between">
@@ -608,7 +609,16 @@ export default function TheOfficeApp() {
             />
           )}
 
-          {currentPage === "profile" && <ProfilePage account={account} balance={displayBalance} tasks={tasks} />}
+          {currentPage === "profile" && (
+            <ProfilePage
+              account={account}
+              balance={displayBalance}
+              tasks={tasks}
+              onNavigateToBlog={() => setCurrentPage("blog")}
+            />
+          )}
+
+          {currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} />}
         </>
       )}
 
@@ -619,6 +629,7 @@ export default function TheOfficeApp() {
             { id: "home" as const, icon: Home, label: "Home" },
             { id: "tasks" as const, icon: Clipboard, label: "Tasks" },
             { id: "profile" as const, icon: User, label: "Profile" },
+            { id: "blog" as const, icon: null, label: "Blog" },
           ].map((tab) => {
             const Icon = tab.icon
             return (
@@ -629,7 +640,7 @@ export default function TheOfficeApp() {
                   currentPage === tab.id ? "bg-[#B88FD8]" : ""
                 }`}
               >
-                <Icon size={22} className="text-white" />
+                {Icon && <Icon size={22} className="text-white" />}
                 <span className="text-xs text-white">{tab.label}</span>
               </button>
             )
@@ -663,3 +674,5 @@ export default function TheOfficeApp() {
     </div>
   )
 }
+
+export default TheOfficeApp
