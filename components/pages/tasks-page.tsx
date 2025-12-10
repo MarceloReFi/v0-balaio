@@ -13,6 +13,7 @@ interface TasksPageProps {
   loadMyTasks: () => void
   setSelectedTask: (task: Task) => void
   setShowTaskModal: (show: boolean) => void
+  setShowCreateModal: (show: boolean) => void
   language: Language
 }
 
@@ -23,6 +24,7 @@ export function TasksPage({
   loadMyTasks,
   setSelectedTask,
   setShowTaskModal,
+  setShowCreateModal,
   language,
 }: TasksPageProps) {
   const t = useTranslations(language)
@@ -85,6 +87,12 @@ export function TasksPage({
               <HelpCircle size={16} className="text-gray-600" />
             </Tooltip>
           </h2>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-[#B88FD8] text-white px-4 py-2 font-bold border-2 border-black hover:shadow-md text-sm"
+          >
+            + {t.create}
+          </button>
         </div>
       </TooltipProvider>
 

@@ -676,6 +676,7 @@ export function TheOfficeApp() {
             loadMyTasks={loadMyTasks}
             setSelectedTask={setSelectedTask}
             setShowTaskModal={setShowTaskModal}
+            setShowCreateModal={setShowCreateModal}
             language={language}
           />
         )}
