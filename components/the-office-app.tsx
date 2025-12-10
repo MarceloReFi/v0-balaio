@@ -92,32 +92,83 @@ export function TheOfficeApp() {
     }
   }, [toast])
 
-  // Load tasks from localStorage
-  useEffect(() => {
-    if (account) {
-      const savedTasks = localStorage.getItem(`theoffice_tasks_${account}`)
-      if (savedTasks) {
-        try {
-          const parsed = JSON.parse(savedTasks)
-          setTasks(
-            parsed.map((t: Task) => ({
-              ...t,
-              createdAt: new Date(t.createdAt),
-            })),
-          )
-        } catch (error) {
-          console.error("Error loading tasks:", error)
+  const loadAllTasksFromBlockchain = useCallback(async () => {
+    if (!contract) return
+
+    try {
+      setLoading(true)
+      console.log("[v0] Fetching all tasks from blockchain events...")
+
+      // Query TaskCreated events from contract deployment
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+
+      // Get TaskCreated events (from block 0 or a reasonable starting block)
+      const filter = readOnlyContract.filters.TaskCreated()
+      const events = await readOnlyContract.queryFilter(filter, -10000, "latest") // Last ~10k blocks
+
+      console.log("[v0] Found", events.length, "TaskCreated events")
+
+      const taskIds = new Set<string>()
+      for (const event of events) {
+        if (event.args && event.args[0]) {
+          taskIds.add(event.args[0])
         }
       }
-    }
-  }, [account])
 
-  // Save tasks to localStorage
-  useEffect(() => {
-    if (account && tasks.length > 0) {
-      localStorage.setItem(`theoffice_tasks_${account}`, JSON.stringify(tasks))
+      console.log("[v0] Unique task IDs:", taskIds.size)
+
+      // Fetch details for each task
+      const loadedTasks: Task[] = []
+      for (const taskId of taskIds) {
+        try {
+          const taskData = await readOnlyContract.getTask(taskId)
+          const tokenAddress = taskData[3].toLowerCase()
+          let tokenSymbol: TokenSymbol = "cUSD"
+
+          for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
+            if (config.address.toLowerCase() === tokenAddress) {
+              tokenSymbol = symbol as TokenSymbol
+              break
+            }
+          }
+
+          const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
+
+          loadedTasks.push({
+            id: taskData[0],
+            title: `Task ${taskData[0].substring(0, 8)}...`,
+            description: "View details for more information",
+            reward: Number(ethers.formatUnits(taskData[4], tokenConfig.decimals)),
+            totalSlots: Number(taskData[6]),
+            claimedSlots: Number(taskData[6]),
+            availableSlots: Number(taskData[5]) - Number(taskData[6]),
+            token: tokenSymbol,
+            tokenAddress: tokenAddress,
+            creator: taskData[1],
+            status: taskData[7] ? "open" : "closed",
+            createdAt: new Date(Number(taskData[8]) * 1000),
+          })
+        } catch (err) {
+          console.error(`[v0] Error loading task ${taskId}:`, err)
+        }
+      }
+
+      console.log("[v0] Loaded", loadedTasks.length, "tasks")
+      setTasks(loadedTasks)
+      setLoading(false)
+    } catch (error) {
+      console.error("[v0] Error loading tasks from blockchain:", error)
+      setLoading(false)
+      toast("Error loading tasks from blockchain")
     }
-  }, [tasks, account])
+  }, [contract, toast])
+
+  useEffect(() => {
+    if (contract && account) {
+      loadAllTasksFromBlockchain()
+    }
+  }, [contract, account, loadAllTasksFromBlockchain])
 
   useEffect(() => {
     const fetchBalances = async () => {
@@ -434,15 +485,7 @@ export function TheOfficeApp() {
       setTasks([newTask, ...tasks])
       setShowCreateModal(false)
 
-      setTimeout(async () => {
-        const blockchainTask = await getTask(taskId)
-        if (blockchainTask) {
-          setTasks((prevTasks) => {
-            const filtered = prevTasks.filter((t) => t.id !== taskId)
-            return [blockchainTask, ...filtered]
-          })
-        }
-      }, 2000)
+      await loadAllTasksFromBlockchain()
     } catch (error) {
       console.error("Create task error:", error)
       toast("Error: " + parseContractError(error))
@@ -608,6 +651,19 @@ export function TheOfficeApp() {
         </div>
       </header>
 
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-[#2B325C] via-[#636D4F] to-[#F2E885] border-2 border-black p-8 mb-5 text-center">
+        <div className="text-4xl mb-3">🚀</div>
+        <h2 className="text-2xl font-bold mb-2 text-white">{t.welcome}</h2>
+        <p className="text-sm mb-4 text-white/90">{t.subtitle}</p>
+        <button
+          onClick={connectWallet}
+          className="bg-[#FFF244] text-black px-6 py-3 font-bold border-2 border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+        >
+          {account ? t.walletConnected : t.connectWallet}
+        </button>
+      </div>
+
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-16">
         {!account && currentPage === "home" && <HomePage onConnect={connectWallet} language={language} />}
@@ -634,6 +690,19 @@ export function TheOfficeApp() {
         )}
         {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} language={language} />}
       </main>
+
+      {/* CTA Section */}
+      <div className="bg-white border-2 border-black p-6 text-center">
+        <div className="text-3xl mb-3">🎯</div>
+        <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
+        <p className="text-sm text-gray-700 mb-4">{t.getStartedDesc}</p>
+        <button
+          onClick={connectWallet}
+          className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+        >
+          {account ? t.walletConnected : t.connectWallet}
+        </button>
+      </div>
 
       {/* Bottom Navigation */}
       {account && (

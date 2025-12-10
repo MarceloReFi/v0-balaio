@@ -55,19 +55,6 @@ export function HomePage({ onConnect, language }: HomePageProps) {
 
   return (
     <div className="p-5 pb-24">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#2B325C] via-[#636D4F] to-[#F2E885] border-2 border-black p-8 mb-5 text-center">
-        <div className="text-4xl mb-3">🚀</div>
-        <h2 className="text-2xl font-bold mb-2 text-white">{t.welcome}</h2>
-        <p className="text-sm mb-4 text-white/90">{t.subtitle}</p>
-        <button
-          onClick={onConnect}
-          className="bg-[#FFF244] text-black px-6 py-3 font-bold border-2 border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-        >
-          {t.connectWallet}
-        </button>
-      </div>
-
       {/* Opportunities Section */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
@@ -124,19 +111,6 @@ export function HomePage({ onConnect, language }: HomePageProps) {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="bg-white border-2 border-black p-6 text-center">
-        <div className="text-3xl mb-3">🎯</div>
-        <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
-        <p className="text-sm text-gray-700 mb-4">{t.getStartedDesc}</p>
-        <button
-          onClick={onConnect}
-          className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-        >
-          {t.connectWallet}
-        </button>
       </div>
     </div>
   )

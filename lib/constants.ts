@@ -37,6 +37,7 @@ export const CONTRACT_ABI = [
   "function getTask(string _taskId) external view returns (tuple(string taskId, address creator, address approver, address token, uint256 rewardPerSlot, uint256 totalSlots, uint256 claimedSlots, bool active, uint256 createdAt))",
   "function getTaskSlot(string _taskId, address _claimant) external view returns (tuple(address claimant, uint256 reward, bool claimed, bool submitted, bool approved, bool withdrawn))",
   "function getAvailableSlots(string _taskId) external view returns (uint256)",
+  "event TaskCreated(string indexed taskId, address indexed creator, address token, uint256 rewardPerSlot, uint256 totalSlots)",
 ]
 
 export const ERC20_ABI = [

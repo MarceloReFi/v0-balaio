@@ -7,6 +7,7 @@ export const translations = {
     // Header
     appName: "Balaio",
     logout: "Logout",
+    walletConnected: "Wallet Connected",
 
     // Navigation
     home: "HOME",
@@ -15,7 +16,7 @@ export const translations = {
 
     // Home Page
     welcome: "Welcome to Balaio",
-    subtitle: "Learn, Earn, and Grow with Web3 Tasks",
+    subtitle: "Web3 Tasks - A simple task-management dapp for the Celo ecosystem.",
     connectWallet: "Connect Wallet",
     heroDesc:
       "Join a decentralized platform where learning meets earning. Complete tasks, build skills, and earn rewards on the Celo blockchain.",
@@ -106,6 +107,7 @@ export const translations = {
     // Header
     appName: "Balaio",
     logout: "Sair",
+    walletConnected: "Carteira Conectada",
 
     // Navigation
     home: "INÍCIO",
@@ -114,7 +116,7 @@ export const translations = {
 
     // Home Page
     welcome: "Bem-vindo ao Balaio",
-    subtitle: "Aprenda, Ganhe e Cresça com Tarefas Web3",
+    subtitle: "Tarefas Web3 - Um dapp simples de gerenciamento de tarefas para o ecossistema Celo.",
     connectWallet: "Conectar Carteira",
     heroDesc:
       "Junte-se a uma plataforma descentralizada onde aprendizado encontra ganhos. Complete tarefas, desenvolva habilidades e ganhe recompensas na blockchain Celo.",
