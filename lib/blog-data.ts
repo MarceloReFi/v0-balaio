@@ -22,11 +22,7 @@ export const blogPosts: BlogPost[] = [
     featured: true,
     excerpt:
       "Exploring how blockchain technology is revolutionizing education and creating new opportunities for learners worldwide.",
-    content: `The future of education is being revolutionized by blockchain technology, and Learn2Earn platforms are at the forefront of this transformation.
-
-Learn2Earn represents a paradigm shift where educational activities directly translate into economic rewards. Instead of spending years in traditional education systems without immediate financial returns, learners can now earn cryptocurrency tokens while acquiring new skills and knowledge.
-
-Blockchain technology ensures that all educational achievements are permanently recorded, easily verifiable, tamper-proof, and globally accessible. Smart contracts automate the reward distribution, ensuring that learners receive their rewards fairly and promptly.`,
+    content: `Learn2Earn platforms are revolutionizing education by combining learning with earning. Through blockchain technology, educational achievements are permanently recorded and verified globally. Smart contracts ensure fair reward distribution, making education more accessible and rewarding.`,
     tags: ["Learn2Earn", "Web3", "Education"],
   },
   {
@@ -38,11 +34,7 @@ Blockchain technology ensures that all educational achievements are permanently 
     readTime: "4 min read",
     excerpt:
       "Discover how Balaio bridges the gap between Web3 education and real-world opportunities through task-based learning and earning.",
-    content: `Balaio bridges the gap between Web3 education and real-world opportunities, creating a sustainable ecosystem where learning directly translates to earning.
-
-Built with a mobile-first approach and featuring a distinctive pixel art aesthetic, the platform serves multiple user types with different capabilities and earning potential. Users can earn cUSD and USDC, participate in Celo Star Rankings, unlock achievement badges, and build their professional profiles.
-
-Join us in building the future of Web3 education and earning!`,
+    content: `Balaio bridges Web3 education with real opportunities through task-based learning. Built mobile-first with pixel art aesthetics, it serves multiple user types. Earn cUSD and USDC, participate in rankings, and build your Web3 profile.`,
     tags: ["Platform", "Introduction", "Web3"],
   },
   {
@@ -54,15 +46,7 @@ Join us in building the future of Web3 education and earning!`,
     readTime: "6 min read",
     excerpt:
       "Learn about the different user types on Balaio and their unique capabilities, earning potential, and progression paths.",
-    content: `Balaio serves multiple user types, each with unique capabilities and earning potential.
-
-Students learn Web3 fundamentals and earn while building skills, with earning potential of 5-25 cUSD per learning task.
-
-Contributors complete tasks and earn income while contributing to Web3 projects, with earning potential of 10-200+ cUSD per task based on complexity.
-
-Builders are technical contributors focused on development, with access to high-complexity technical tasks and earning potential of 50-500+ cUSD per technical task.
-
-Organizations create tasks, manage projects, and build teams by setting custom rewards and requirements.`,
+    content: `Balaio serves Students (learn fundamentals, 5-25 cUSD), Contributors (complete tasks, 10-200+ cUSD), Builders (technical work, 50-500+ cUSD), and Organizations (create tasks and manage projects). Each type has unique capabilities and earning potential.`,
     tags: ["Education", "User Types", "Getting Started"],
   },
   {
@@ -74,11 +58,7 @@ Organizations create tasks, manage projects, and build teams by setting custom r
     readTime: "7 min read",
     excerpt:
       "A comprehensive walkthrough of the task lifecycle on Balaio, from creation to completion and reward distribution.",
-    content: `Understanding the complete task lifecycle will help you make the most of Balaio.
-
-Tasks go through four stages: Creation (where organizations set requirements and rewards), Discovery & Claiming (where contributors browse and claim tasks), Completion & Submission (where work is submitted for review), and Review & Approval (where creators approve or reject submissions).
-
-Each stage is transparent and tracked on the blockchain, ensuring fair treatment for all participants.`,
+    content: `Tasks move through four stages: Creation (set requirements), Discovery (browse and claim), Completion (submit work), and Review (approval/rejection). All stages are blockchain-tracked for transparency and fairness.`,
     tags: ["Tutorial", "Tasks", "Guide"],
   },
   {
@@ -90,11 +70,7 @@ Each stage is transparent and tracked on the blockchain, ensuring fair treatment
     readTime: "5 min read",
     excerpt:
       "Learn how the Orkut-style Celo Star ranking system works and how to improve your ratings across all six categories.",
-    content: `Our Orkut-style community rating system measures your contributions across 6 unique categories.
-
-The six categories are: Always On The Keyboard (responsiveness), Shipper (on-time delivery), Can Trust (reliability), Web3 Native (technical knowledge), Community Builder (ecosystem growth), and Celo Champion (outstanding contribution).
-
-Rankings help you build reputation, attract better opportunities, earn more with priority access to high-value tasks, and track your personal growth on the platform.`,
+    content: `Orkut-style ratings across 6 categories: Always On The Keyboard, Shipper, Can Trust, Web3 Native, Community Builder, and Celo Champion. Rankings help you build reputation and access better opportunities.`,
     tags: ["Gamification", "Rankings", "Community"],
   },
 ]
