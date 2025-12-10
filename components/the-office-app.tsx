@@ -39,6 +39,7 @@ export function TheOfficeApp() {
   const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
     cUSD: null,
     USDC: null,
+    cReCy: null,
   })
   const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog">("home")
   const [toastMessage, setToastMessage] = useState("")
@@ -49,6 +50,7 @@ export function TheOfficeApp() {
   const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>({
     cUSD: "0.00",
     USDC: "0.00",
+    cReCy: "0.00",
   })
   const [tasks, setTasks] = useState<Task[]>([])
   const [language, setLanguage] = useState<Language>("en")
@@ -68,7 +70,7 @@ export function TheOfficeApp() {
       if (accountsArray.length === 0) {
         setAccount(null)
         setContract(null)
-        setTokenContracts({ cUSD: null, USDC: null })
+        setTokenContracts({ cUSD: null, USDC: null, cReCy: null })
         setTasks([])
         setCurrentPage("home")
         toast("Wallet disconnected")
@@ -599,7 +601,7 @@ export function TheOfficeApp() {
   const logout = () => {
     setAccount(null)
     setContract(null)
-    setTokenContracts({ cUSD: null, USDC: null })
+    setTokenContracts({ cUSD: null, USDC: null, cReCy: null })
     setTasks([])
     setCurrentPage("home")
     toast("Logged out")
@@ -609,7 +611,7 @@ export function TheOfficeApp() {
     setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
   }
 
-  const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
+  const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC | ${tokenBalances.cReCy} cReCy`
 
   return (
     <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
