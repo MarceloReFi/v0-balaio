@@ -6,13 +6,12 @@ import { useTranslations, type Language } from "@/lib/translations"
 
 interface ProfilePageProps {
   account: string
-  balance: string
   tasks: Task[]
   onNavigateToBlog: () => void
   language: Language
 }
 
-export function ProfilePage({ account, balance, tasks, onNavigateToBlog, language }: ProfilePageProps) {
+export function ProfilePage({ account, tasks, onNavigateToBlog, language }: ProfilePageProps) {
   const t = useTranslations(language)
   const completedTasks = tasks.filter((t) => t.mySlot?.approved)
   const totalEarned = completedTasks.reduce((sum, task) => {

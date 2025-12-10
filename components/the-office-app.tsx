@@ -613,8 +613,6 @@ export function TheOfficeApp() {
     setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
   }
 
-  const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC | ${tokenBalances.cReCy} cReCy | ${tokenBalances.GD} GD`
-
   return (
     <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
       {/* Header */}
@@ -644,9 +642,6 @@ export function TheOfficeApp() {
                 <Languages size={14} />
                 {language === "en" ? "PT" : "EN"}
               </button>
-              <div className="bg-[#7A8770] px-3 py-1.5 text-xs border-2 border-black text-white font-bold">
-                {displayBalance}
-              </div>
               <button onClick={logout} className="text-white hover:opacity-80">
                 <LogOut size={20} />
               </button>
@@ -687,7 +682,6 @@ export function TheOfficeApp() {
         {account && currentPage === "profile" && (
           <ProfilePage
             account={account}
-            balance={displayBalance}
             tasks={tasks}
             onNavigateToBlog={() => setCurrentPage("blog")}
             language={language}
