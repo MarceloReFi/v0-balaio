@@ -22,6 +22,7 @@ import { TasksPage } from "@/components/pages/tasks-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { BlogPage } from "@/components/pages/blog-page"
 import { useTranslations, type Language } from "@/lib/translations"
+import { createClient } from "@/lib/supabase/client"
 
 declare global {
   interface Window {
@@ -53,44 +54,97 @@ export function TheOfficeApp() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [language, setLanguage] = useState<Language>("en")
   const t = useTranslations(language)
+  const supabase = createClient()
 
   const toast = useCallback((msg: string) => {
     setToastMessage(msg)
     setTimeout(() => setToastMessage(""), 3000)
   }, [])
 
-  // Setup wallet listeners
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.ethereum) return
+  const loadAllTasksFromSupabase = useCallback(async () => {
+    try {
+      setLoading(true)
+      console.log("[v0] Loading tasks from Supabase...")
 
-    const handleAccountsChanged = async (accounts: unknown) => {
-      const accountsArray = accounts as string[]
-      if (accountsArray.length === 0) {
-        setAccount("")
-        setContract(null)
-        setTokenContracts({ cUSD: null, USDC: null })
-        setTasks([])
-        setCurrentPage("home")
-        toast("Wallet disconnected")
-      } else {
-        toast("Account changed - reloading...")
-        setTimeout(() => window.location.reload(), 500)
+      const { data, error } = await supabase
+        .from("tasks_metadata")
+        .select("*")
+        .order("created_at", { ascending: false })
+
+      if (error) {
+        console.error("[v0] Supabase error:", error.message)
+        toast("Error loading tasks from database")
+        setLoading(false)
+        return
       }
-    }
 
-    const handleChainChanged = () => {
-      toast("Network changed - reloading...")
-      setTimeout(() => window.location.reload(), 500)
-    }
+      if (data && data.length > 0) {
+        const loadedTasks: Task[] = data.map((row) => ({
+          id: row.task_id,
+          title: row.title || `Task ${row.task_id.substring(0, 8)}...`,
+          description: row.description || "Complete this task and earn rewards",
+          reward: "0",
+          totalSlots: "1",
+          claimedSlots: "0",
+          availableSlots: "1",
+          active: true,
+          creator: row.creator_address,
+          createdAt: new Date(row.created_at),
+          token: "cUSD" as TokenSymbol,
+          tokenAddress: SUPPORTED_TOKENS["cUSD"].address,
+          mySlot: null,
+          category: row.category,
+          complexity: row.complexity,
+          validationMethod: row.validation_method,
+          deadline: row.deadline ? new Date(row.deadline) : undefined,
+          tags: row.tags || [],
+        }))
 
-    window.ethereum.on("accountsChanged", handleAccountsChanged)
-    window.ethereum.on("chainChanged", handleChainChanged)
+        console.log("[v0] Loaded", loadedTasks.length, "tasks from Supabase")
+        setTasks(loadedTasks)
+      } else {
+        console.log("[v0] No tasks found in Supabase")
+        setTasks([])
+      }
 
-    return () => {
-      window.ethereum?.removeListener("accountsChanged", handleAccountsChanged)
-      window.ethereum?.removeListener("chainChanged", handleChainChanged)
+      setLoading(false)
+    } catch (error) {
+      console.error("[v0] Error loading tasks from Supabase:", error)
+      toast("Error loading tasks")
+      setLoading(false)
     }
-  }, [toast])
+  }, [supabase, toast])
+
+  const saveTaskToSupabase = useCallback(
+    async (task: Task) => {
+      try {
+        const { error } = await supabase.from("tasks_metadata").upsert(
+          {
+            task_id: task.id,
+            title: task.title,
+            description: task.description,
+            category: (task as any).category || "general",
+            complexity: (task as any).complexity || "medium",
+            validation_method: (task as any).validationMethod || "manual",
+            deadline: (task as any).deadline || null,
+            tags: (task as any).tags || [],
+            creator_address: task.creator,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "task_id" },
+        )
+
+        if (error) {
+          console.error("[v0] Error saving task to Supabase:", error.message)
+        } else {
+          console.log("[v0] Task saved to Supabase:", task.id)
+        }
+      } catch (error) {
+        console.error("[v0] Error saving task:", error)
+      }
+    },
+    [supabase],
+  )
 
   const loadAllTasksFromBlockchain = useCallback(async () => {
     if (!contract) return
@@ -98,7 +152,6 @@ export function TheOfficeApp() {
     try {
       setLoading(true)
 
-      // Load task IDs from localStorage instead of querying expensive events
       const storedTaskIds = localStorage.getItem("taskIds")
       const taskIds = new Set<string>()
 
@@ -108,7 +161,6 @@ export function TheOfficeApp() {
 
       console.log("[v0] Loading", taskIds.size, "tasks from storage")
 
-      // Fetch details for each task
       const loadedTasks: Task[] = []
       for (const taskId of taskIds) {
         try {
@@ -152,6 +204,38 @@ export function TheOfficeApp() {
       setLoading(false)
     }
   }, [contract])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.ethereum) return
+
+    const handleAccountsChanged = async (accounts: unknown) => {
+      const accountsArray = accounts as string[]
+      if (accountsArray.length === 0) {
+        setAccount("")
+        setContract(null)
+        setTokenContracts({ cUSD: null, USDC: null })
+        setTasks([])
+        setCurrentPage("home")
+        toast("Wallet disconnected")
+      } else {
+        toast("Account changed - reloading...")
+        setTimeout(() => window.location.reload(), 500)
+      }
+    }
+
+    const handleChainChanged = () => {
+      toast("Network changed - reloading...")
+      setTimeout(() => window.location.reload(), 500)
+    }
+
+    window.ethereum.on("accountsChanged", handleAccountsChanged)
+    window.ethereum.on("chainChanged", handleChainChanged)
+
+    return () => {
+      window.ethereum?.removeListener("accountsChanged", handleAccountsChanged)
+      window.ethereum?.removeListener("chainChanged", handleChainChanged)
+    }
+  }, [toast])
 
   useEffect(() => {
     if (contract && account) {
@@ -471,10 +555,12 @@ export function TheOfficeApp() {
         mySlot: null,
       }
 
+      await saveTaskToSupabase(newTask)
+
       setTasks([newTask, ...tasks])
       setShowCreateModal(false)
 
-      await loadAllTasksFromBlockchain()
+      await loadAllTasksFromSupabase()
     } catch (error) {
       console.error("Create task error:", error)
       toast("Error: " + parseContractError(error))
@@ -499,6 +585,7 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
+        await saveTaskToSupabase(updated)
       }
     } catch (error) {
       console.error(error)
@@ -524,6 +611,10 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
+        await supabase
+          .from("tasks_metadata")
+          .update({ submission_link: proof, updated_at: new Date().toISOString() })
+          .eq("task_id", id)
       }
     } catch (error) {
       console.error(error)
@@ -549,6 +640,7 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
+        await saveTaskToSupabase(updated)
       }
     } catch (error) {
       console.error(error)
@@ -574,6 +666,7 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
+        await saveTaskToSupabase(updated)
       }
 
       setShowTaskModal(false)
@@ -599,6 +692,16 @@ export function TheOfficeApp() {
   }
 
   const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
+
+  useEffect(() => {
+    loadAllTasksFromSupabase()
+  }, [loadAllTasksFromSupabase])
+
+  useEffect(() => {
+    if (contract && account) {
+      loadAllTasksFromSupabase()
+    }
+  }, [contract, account, loadAllTasksFromSupabase])
 
   return (
     <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
