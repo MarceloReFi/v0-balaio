@@ -15,6 +15,7 @@ import {
 } from "@/lib/constants"
 import type { Task, TaskCategory, TaskComplexity, TaskValidationMethod } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
+import { saveTaskMetadata, fetchTaskMetadata } from "@/lib/api"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
 import { HomePage } from "@/components/pages/home-page"
@@ -114,9 +115,10 @@ export function TheOfficeApp() {
       const provider = new ethers.JsonRpcProvider(CELO_RPC)
       const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-      // Get TaskCreated events (from block 0 or a reasonable starting block)
+      // Get TaskCreated events from a larger block range to ensure we get all tasks
+      // Using -100000 blocks (~2 weeks on Celo with 5sec blocks) to ensure we catch all recent tasks
       const filter = readOnlyContract.filters.TaskCreated()
-      const events = await readOnlyContract.queryFilter(filter, -10000, "latest") // Last ~10k blocks
+      const events = await readOnlyContract.queryFilter(filter, -100000, "latest")
 
       console.log("[v0] Found", events.length, "TaskCreated events")
 
@@ -127,16 +129,18 @@ export function TheOfficeApp() {
         }
       }
 
-      // Also load task IDs from localStorage to ensure we don't miss any tasks
-      const taskIdsKey = "theoffice_all_task_ids"
-      const storedTaskIds = JSON.parse(localStorage.getItem(taskIdsKey) || "[]")
-      storedTaskIds.forEach((id: string) => taskIds.add(id))
+      console.log("[v0] Unique task IDs from blockchain:", taskIds.size)
 
-      console.log("[v0] Unique task IDs (blockchain + localStorage):", taskIds.size)
-
-      // Load task metadata from localStorage
-      const metadataKey = "theoffice_task_metadata"
-      const taskMetadata = JSON.parse(localStorage.getItem(metadataKey) || "{}")
+      // Load task metadata from API
+      let taskMetadata: Record<string, any> = {}
+      try {
+        const { fetchAllTasksMetadata } = await import("@/lib/api")
+        taskMetadata = await fetchAllTasksMetadata()
+        console.log("[v0] Loaded metadata for", Object.keys(taskMetadata).length, "tasks from API")
+      } catch (error) {
+        console.error("[v0] Failed to load metadata from API:", error)
+        // Continue without metadata
+      }
 
       // Fetch details for each task
       const loadedTasks: Task[] = []
@@ -359,17 +363,29 @@ export function TheOfficeApp() {
         const tokenSymbol = getTokenSymbolFromAddress(task.token)
         const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
+        // Load metadata from API if available
+        let metadata: any = {}
+        try {
+          const metadataFromApi = await fetchTaskMetadata(id)
+          if (metadataFromApi) {
+            metadata = metadataFromApi
+          }
+        } catch (error) {
+          console.error("Failed to load task metadata from API:", error)
+          // Continue without metadata
+        }
+
         return {
           id: task.taskId,
-          title: task.taskId,
-          description: "Complete this task and earn rewards",
+          title: metadata.title || task.taskId,
+          description: metadata.description || "Complete this task and earn rewards",
           reward: ethers.formatUnits(task.rewardPerSlot, tokenConfig.decimals),
           totalSlots: task.totalSlots.toString(),
           claimedSlots: task.claimedSlots.toString(),
           availableSlots: availableSlots.toString(),
           active: task.active,
           creator: task.creator,
-          createdAt: new Date(Number(task.createdAt) * 1000),
+          createdAt: metadata.createdAt ? new Date(metadata.createdAt) : new Date(Number(task.createdAt) * 1000),
           token: tokenSymbol,
           tokenAddress: task.token,
           mySlot: mySlot
@@ -380,6 +396,12 @@ export function TheOfficeApp() {
                 withdrawn: mySlot.withdrawn,
               }
             : null,
+          // Extended metadata fields
+          category: metadata.category,
+          complexity: metadata.complexity,
+          validationMethod: metadata.validationMethod,
+          deadline: metadata.deadline ? new Date(metadata.deadline) : undefined,
+          tags: metadata.tags || [],
         }
       } catch (error) {
         console.error("Error getting task:", error)
@@ -510,32 +532,24 @@ export function TheOfficeApp() {
 
       toast("Task created successfully!")
 
-      // Store extended metadata in localStorage
-      const taskMetadata = {
-        id: taskId,
-        title: taskTitle,
-        description: taskDescription,
-        category,
-        complexity,
-        validationMethod,
-        deadline: deadline ? new Date(deadline).toISOString() : undefined,
-        tags,
-        creator: account,
-        createdAt: new Date().toISOString(),
-      }
-
-      // Get existing metadata
-      const metadataKey = "theoffice_task_metadata"
-      const existingMetadata = JSON.parse(localStorage.getItem(metadataKey) || "{}")
-      existingMetadata[taskId] = taskMetadata
-      localStorage.setItem(metadataKey, JSON.stringify(existingMetadata))
-
-      // Also track this task ID globally
-      const taskIdsKey = "theoffice_all_task_ids"
-      const existingTaskIds = JSON.parse(localStorage.getItem(taskIdsKey) || "[]")
-      if (!existingTaskIds.includes(taskId)) {
-        existingTaskIds.push(taskId)
-        localStorage.setItem(taskIdsKey, JSON.stringify(existingTaskIds))
+      // Save metadata to API database
+      try {
+        toast("Saving task details...")
+        await saveTaskMetadata({
+          task_id: taskId,
+          title: taskTitle,
+          description: taskDescription,
+          category,
+          complexity,
+          validation_method: validationMethod,
+          deadline: deadline || undefined,
+          tags,
+          creator_address: account,
+        })
+        toast("Task details saved!")
+      } catch (error) {
+        console.error("Failed to save task metadata:", error)
+        toast("Warning: Task created but metadata save failed")
       }
 
       const newTask: Task = {

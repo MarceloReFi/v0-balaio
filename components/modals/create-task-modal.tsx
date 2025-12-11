@@ -36,7 +36,6 @@ export function CreateTaskModal({
   language,
 }: CreateTaskModalProps) {
   const t = useTranslations(language)
-  const [taskId, setTaskId] = useState("")
   const [taskTitle, setTaskTitle] = useState("")
   const [taskDescription, setTaskDescription] = useState("")
   const [rewardPerSlot, setRewardPerSlot] = useState("")
@@ -55,7 +54,17 @@ export function CreateTaskModal({
 
   if (!open) return null
 
+  // Generate a unique task ID
+  const generateTaskId = () => {
+    const timestamp = Date.now().toString(36)
+    const randomStr = Math.random().toString(36).substring(2, 7)
+    return `task_${timestamp}_${randomStr}`
+  }
+
   const handleCreate = () => {
+    // Auto-generate task ID
+    const taskId = generateTaskId()
+
     onCreateTask(
       taskId,
       taskTitle,
@@ -70,7 +79,6 @@ export function CreateTaskModal({
       tags,
     )
     // Reset form
-    setTaskId("")
     setTaskTitle("")
     setTaskDescription("")
     setRewardPerSlot("")
