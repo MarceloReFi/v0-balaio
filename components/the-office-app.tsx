@@ -60,7 +60,7 @@ export function TheOfficeApp() {
     setTimeout(() => setToastMessage(""), 3000)
   }, [])
 
-  // Initialize Farcaster SDK
+  // Initialize Farcaster SDK and auto-connect if available
   useEffect(() => {
     const initFarcasterSDK = async () => {
       try {
@@ -216,22 +216,41 @@ export function TheOfficeApp() {
 
   const connectWallet = async () => {
     try {
-      if (typeof window === "undefined" || !window.ethereum) {
-        toast("Please install MetaMask, Valora, or MiniPay")
-        return
+      let ethereumProvider
+
+      // Check if running in Farcaster MiniApp context
+      try {
+        const farcasterProvider = await sdk.wallet.getEthereumProvider()
+        if (farcasterProvider) {
+          console.log("[Farcaster] Using Farcaster wallet provider")
+          ethereumProvider = farcasterProvider
+          toast("Connecting via Farcaster...")
+        }
+      } catch (error) {
+        console.log("[Farcaster] Not in Farcaster context, using standard wallet")
       }
 
-      const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[]
+      // Fall back to window.ethereum if not in Farcaster
+      if (!ethereumProvider) {
+        if (typeof window === "undefined" || !window.ethereum) {
+          toast("Please install MetaMask, Valora, or MiniPay")
+          return
+        }
+        ethereumProvider = window.ethereum
+        toast("Connecting to Web3...")
+      }
+
+      const accounts = (await ethereumProvider.request({ method: "eth_requestAccounts" })) as string[]
 
       try {
-        await window.ethereum.request({
+        await ethereumProvider.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: CELO_CHAIN_ID }],
         })
       } catch (switchError: unknown) {
         const error = switchError as { code?: number }
         if (error.code === 4902) {
-          await window.ethereum.request({
+          await ethereumProvider.request({
             method: "wallet_addEthereumChain",
             params: [
               {
@@ -253,8 +272,7 @@ export function TheOfficeApp() {
         }
       }
 
-      toast("Connecting to Web3...")
-      const provider = new ethers.BrowserProvider(window.ethereum)
+      const provider = new ethers.BrowserProvider(ethereumProvider)
       const signer = await provider.getSigner()
 
       const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
