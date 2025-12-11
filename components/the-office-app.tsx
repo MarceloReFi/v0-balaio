@@ -65,13 +65,14 @@ export function TheOfficeApp() {
     const initFarcasterSDK = async () => {
       try {
         // Wait for the app to be fully loaded
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && sdk && sdk.actions) {
           // Call ready() to hide the splash screen and show the app
           await sdk.actions.ready()
           console.log("[Farcaster] MiniApp SDK initialized and ready")
         }
       } catch (error) {
-        console.error("[Farcaster] Error initializing SDK:", error)
+        // Silently fail if not in Farcaster context - app will work normally in browser
+        console.log("[Farcaster] Not in Farcaster context, running in standard browser mode")
       }
     }
 
@@ -220,11 +221,13 @@ export function TheOfficeApp() {
 
       // Check if running in Farcaster MiniApp context
       try {
-        const farcasterProvider = await sdk.wallet.getEthereumProvider()
-        if (farcasterProvider) {
-          console.log("[Farcaster] Using Farcaster wallet provider")
-          ethereumProvider = farcasterProvider
-          toast("Connecting via Farcaster...")
+        if (sdk && sdk.wallet && typeof sdk.wallet.getEthereumProvider === 'function') {
+          const farcasterProvider = await sdk.wallet.getEthereumProvider()
+          if (farcasterProvider) {
+            console.log("[Farcaster] Using Farcaster wallet provider")
+            ethereumProvider = farcasterProvider
+            toast("Connecting via Farcaster...")
+          }
         }
       } catch (error) {
         console.log("[Farcaster] Not in Farcaster context, using standard wallet")
