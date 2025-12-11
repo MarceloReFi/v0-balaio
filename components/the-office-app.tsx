@@ -33,34 +33,23 @@ declare global {
   }
 }
 
-// Initialize token states dynamically from SUPPORTED_TOKENS
-const initializeTokenContracts = (): Record<TokenSymbol, ethers.Contract | null> => {
-  return Object.keys(SUPPORTED_TOKENS).reduce(
-    (acc, symbol) => ({ ...acc, [symbol]: null }),
-    {} as Record<TokenSymbol, ethers.Contract | null>,
-  )
-}
-
-const initializeTokenBalances = (): Record<TokenSymbol, string> => {
-  return Object.keys(SUPPORTED_TOKENS).reduce(
-    (acc, symbol) => ({ ...acc, [symbol]: "0.00" }),
-    {} as Record<TokenSymbol, string>,
-  )
-}
-
 export function TheOfficeApp() {
   const [account, setAccount] = useState<string | null>(null)
   const [contract, setContract] = useState<ethers.Contract | null>(null)
-  const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>(
-    initializeTokenContracts(),
-  )
+  const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
+    cUSD: null,
+    USDC: null,
+  })
   const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
-  const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>(initializeTokenBalances())
+  const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>({
+    cUSD: "0.00",
+    USDC: "0.00",
+  })
   const [tasks, setTasks] = useState<Task[]>([])
   const [language, setLanguage] = useState<Language>("en")
   const t = useTranslations(language)
@@ -79,7 +68,7 @@ export function TheOfficeApp() {
       if (accountsArray.length === 0) {
         setAccount(null)
         setContract(null)
-        setTokenContracts(initializeTokenContracts())
+        setTokenContracts({ cUSD: null, USDC: null })
         setTasks([])
         setCurrentPage("home")
         toast("Wallet disconnected")
@@ -610,7 +599,7 @@ export function TheOfficeApp() {
   const logout = () => {
     setAccount(null)
     setContract(null)
-    setTokenContracts(initializeTokenContracts())
+    setTokenContracts({ cUSD: null, USDC: null })
     setTasks([])
     setCurrentPage("home")
     toast("Logged out")
@@ -619,6 +608,8 @@ export function TheOfficeApp() {
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
   }
+
+  const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
 
   return (
     <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
@@ -649,6 +640,9 @@ export function TheOfficeApp() {
                 <Languages size={14} />
                 {language === "en" ? "PT" : "EN"}
               </button>
+              <div className="bg-[#7A8770] px-3 py-1.5 text-xs border-2 border-black text-white font-bold">
+                {displayBalance}
+              </div>
               <button onClick={logout} className="text-white hover:opacity-80">
                 <LogOut size={20} />
               </button>
@@ -689,6 +683,7 @@ export function TheOfficeApp() {
         {account && currentPage === "profile" && (
           <ProfilePage
             account={account}
+            balance={displayBalance}
             tasks={tasks}
             onNavigateToBlog={() => setCurrentPage("blog")}
             language={language}
