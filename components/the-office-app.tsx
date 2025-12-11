@@ -34,7 +34,7 @@ declare global {
 }
 
 export function TheOfficeApp() {
-  const [account, setAccount] = useState<string | null>(null)
+  const [account, setAccount] = useState<string>("")
   const [contract, setContract] = useState<ethers.Contract | null>(null)
   const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
     cUSD: null,
@@ -66,7 +66,7 @@ export function TheOfficeApp() {
     const handleAccountsChanged = async (accounts: unknown) => {
       const accountsArray = accounts as string[]
       if (accountsArray.length === 0) {
-        setAccount(null)
+        setAccount("")
         setContract(null)
         setTokenContracts({ cUSD: null, USDC: null })
         setTasks([])
@@ -586,7 +586,7 @@ export function TheOfficeApp() {
   }
 
   const logout = () => {
-    setAccount(null)
+    setAccount("")
     setContract(null)
     setTokenContracts({ cUSD: null, USDC: null })
     setTasks([])

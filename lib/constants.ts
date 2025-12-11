@@ -1,10 +1,24 @@
 export const CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
-export const CUSD_ADDRESS = "0x765DE816845861e75A25fCA122bb6898B8B1282a"
-export const USDC_ADDRESS = "0xcebA9300f2b948710d2653dD7B07f33A8B32118C"
 export const CELO_RPC = "https://forno.celo.org"
 export const CELO_CHAIN_ID = "0xa4ec"
 
-export type TokenSymbol = "cUSD" | "USDC"
+export type TokenSymbol =
+  | "cUSD"
+  | "cEUR"
+  | "cREAL"
+  | "cKES"
+  | "PUSO"
+  | "cCOP"
+  | "cCAD"
+  | "eXOF"
+  | "cGHS"
+  | "cJPY"
+  | "cCHF"
+  | "cAUD"
+  | "cNGN"
+  | "cZAR"
+  | "cGBP"
+  | "USDC"
 
 export interface TokenConfig {
   symbol: TokenSymbol
@@ -14,16 +28,102 @@ export interface TokenConfig {
 }
 
 export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
+  // Mento Stablecoins (all 18 decimals)
   cUSD: {
     symbol: "cUSD",
-    address: CUSD_ADDRESS,
+    address: "0x765DE816845861e75A25fCA122bb6898B8B1282a",
     decimals: 18,
     name: "Celo Dollar",
   },
+  cEUR: {
+    symbol: "cEUR",
+    address: "0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73",
+    decimals: 18,
+    name: "Celo Euro",
+  },
+  cREAL: {
+    symbol: "cREAL",
+    address: "0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787",
+    decimals: 18,
+    name: "Celo Brazilian Real",
+  },
+  cKES: {
+    symbol: "cKES",
+    address: "0x456a3D042C0DbD3db53D5489e98dFb038553B0d0",
+    decimals: 18,
+    name: "Celo Kenyan Shilling",
+  },
+  PUSO: {
+    symbol: "PUSO",
+    address: "0x105d4A9306D2E55a71d2Eb95B81553AE1dC20d7B",
+    decimals: 18,
+    name: "Philippine Peso",
+  },
+  cCOP: {
+    symbol: "cCOP",
+    address: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA",
+    decimals: 18,
+    name: "Celo Colombian Peso",
+  },
+  cCAD: {
+    symbol: "cCAD",
+    address: "0xff4Ab19391af240c311c54200a492233052B6325",
+    decimals: 18,
+    name: "Celo Canadian Dollar",
+  },
+  eXOF: {
+    symbol: "eXOF",
+    address: "0x73F93dcc49cB8A239e2032663e9475dd5ef29A08",
+    decimals: 18,
+    name: "ECO CFA Franc",
+  },
+  cGHS: {
+    symbol: "cGHS",
+    address: "0xfAeA5F3404bbA20D3cc2f8C4B0A888F55a3c7313",
+    decimals: 18,
+    name: "Celo Ghanaian Cedi",
+  },
+  cJPY: {
+    symbol: "cJPY",
+    address: "0xc45eCF20f3CD864B32D9794d6f76814aE8892e20",
+    decimals: 18,
+    name: "Celo Japanese Yen",
+  },
+  cCHF: {
+    symbol: "cCHF",
+    address: "0xb55a79F398E759E43C95b979163f30eC87Ee131D",
+    decimals: 18,
+    name: "Celo Swiss Franc",
+  },
+  cAUD: {
+    symbol: "cAUD",
+    address: "0x7175504C455076F15c04A2F90a8e352281F492F9",
+    decimals: 18,
+    name: "Celo Australian Dollar",
+  },
+  cNGN: {
+    symbol: "cNGN",
+    address: "0xE2702Bd97ee33c88c8f6f92DA3B733608aa76F71",
+    decimals: 18,
+    name: "Celo Nigerian Naira",
+  },
+  cZAR: {
+    symbol: "cZAR",
+    address: "0x4c35853A3B4e647fD266f4de678dCc8fEC410BF6",
+    decimals: 18,
+    name: "Celo South African Rand",
+  },
+  cGBP: {
+    symbol: "cGBP",
+    address: "0xCCF663b1fF11028f0b19058d0f7B674004a40746",
+    decimals: 18,
+    name: "Celo British Pound",
+  },
+  // Circle USDC (6 decimals)
   USDC: {
     symbol: "USDC",
-    address: USDC_ADDRESS,
-    decimals: 6, // USDC uses 6 decimals
+    address: "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
+    decimals: 6,
     name: "USD Coin",
   },
 }
