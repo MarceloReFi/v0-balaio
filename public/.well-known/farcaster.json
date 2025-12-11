@@ -1,0 +1,17 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "Balaio",
+    "iconUrl": "https://v0--balaio-q9.vercel.app/apple-icon.png",
+    "homeUrl": "https://v0--balaio-q9.vercel.app/",
+    "imageUrl": "https://v0--balaio-q9.vercel.app/placeholder-logo.png",
+    "buttonTitle": "Launch Balaio",
+    "splashImageUrl": "https://v0--balaio-q9.vercel.app/apple-icon.png",
+    "splashBackgroundColor": "#EBDAD8",
+    "requiredChains": ["eip155:42220"],
+    "requiredCapabilities": [
+      "actions.signIn",
+      "wallet.getEthereumProvider"
+    ]
+  }
+}
