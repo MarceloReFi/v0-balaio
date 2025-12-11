@@ -13,9 +13,8 @@ import {
   SUPPORTED_TOKENS,
   type TokenSymbol,
 } from "@/lib/constants"
-import type { Task, TaskCategory, TaskComplexity, TaskValidationMethod } from "@/lib/types"
+import type { Task } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
-import { saveTaskMetadata, fetchTaskMetadata } from "@/lib/api"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
 import { HomePage } from "@/components/pages/home-page"
@@ -34,34 +33,23 @@ declare global {
   }
 }
 
-// Initialize token states dynamically from SUPPORTED_TOKENS
-const initializeTokenContracts = (): Record<TokenSymbol, ethers.Contract | null> => {
-  return Object.keys(SUPPORTED_TOKENS).reduce(
-    (acc, symbol) => ({ ...acc, [symbol]: null }),
-    {} as Record<TokenSymbol, ethers.Contract | null>,
-  )
-}
-
-const initializeTokenBalances = (): Record<TokenSymbol, string> => {
-  return Object.keys(SUPPORTED_TOKENS).reduce(
-    (acc, symbol) => ({ ...acc, [symbol]: "0.00" }),
-    {} as Record<TokenSymbol, string>,
-  )
-}
-
 export function TheOfficeApp() {
   const [account, setAccount] = useState<string | null>(null)
   const [contract, setContract] = useState<ethers.Contract | null>(null)
-  const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>(
-    initializeTokenContracts(),
-  )
+  const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
+    cUSD: null,
+    USDC: null,
+  })
   const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
-  const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>(initializeTokenBalances())
+  const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>({
+    cUSD: "0.00",
+    USDC: "0.00",
+  })
   const [tasks, setTasks] = useState<Task[]>([])
   const [language, setLanguage] = useState<Language>("en")
   const t = useTranslations(language)
@@ -80,7 +68,7 @@ export function TheOfficeApp() {
       if (accountsArray.length === 0) {
         setAccount(null)
         setContract(null)
-        setTokenContracts(initializeTokenContracts())
+        setTokenContracts({ cUSD: null, USDC: null })
         setTasks([])
         setCurrentPage("home")
         toast("Wallet disconnected")
@@ -109,44 +97,22 @@ export function TheOfficeApp() {
 
     try {
       setLoading(true)
-      console.log("[v0] Fetching all tasks from blockchain events...")
 
-      // Query TaskCreated events from contract deployment
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-
-      // Get TaskCreated events from a larger block range to ensure we get all tasks
-      // Using -100000 blocks (~2 weeks on Celo with 5sec blocks) to ensure we catch all recent tasks
-      const filter = readOnlyContract.filters.TaskCreated()
-      const events = await readOnlyContract.queryFilter(filter, -100000, "latest")
-
-      console.log("[v0] Found", events.length, "TaskCreated events")
-
+      // Load task IDs from localStorage instead of querying expensive events
+      const storedTaskIds = localStorage.getItem("taskIds")
       const taskIds = new Set<string>()
-      for (const event of events) {
-        if ("args" in event && event.args && event.args[0]) {
-          taskIds.add(event.args[0])
-        }
+
+      if (storedTaskIds) {
+        JSON.parse(storedTaskIds).forEach((id: string) => taskIds.add(id))
       }
 
-      console.log("[v0] Unique task IDs from blockchain:", taskIds.size)
-
-      // Load task metadata from API
-      let taskMetadata: Record<string, any> = {}
-      try {
-        const { fetchAllTasksMetadata } = await import("@/lib/api")
-        taskMetadata = await fetchAllTasksMetadata()
-        console.log("[v0] Loaded metadata for", Object.keys(taskMetadata).length, "tasks from API")
-      } catch (error) {
-        console.error("[v0] Failed to load metadata from API:", error)
-        // Continue without metadata
-      }
+      console.log("[v0] Loading", taskIds.size, "tasks from storage")
 
       // Fetch details for each task
       const loadedTasks: Task[] = []
       for (const taskId of taskIds) {
         try {
-          const taskData = await readOnlyContract.getTask(taskId)
+          const taskData = await contract.getTask(taskId)
           const tokenAddress = taskData[3].toLowerCase()
           let tokenSymbol: TokenSymbol = "cUSD"
 
@@ -159,32 +125,22 @@ export function TheOfficeApp() {
 
           const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
-          // Get metadata for this task if available
-          const metadata = taskMetadata[taskId] || {}
-
           loadedTasks.push({
             id: taskData[0],
-            title: metadata.title || `Task ${taskData[0].substring(0, 8)}...`,
-            description: metadata.description || "View details for more information",
-            reward: Number(ethers.formatUnits(taskData[4], tokenConfig.decimals)).toString(),
-            totalSlots: Number(taskData[5]).toString(),
-            claimedSlots: Number(taskData[6]).toString(),
-            availableSlots: (Number(taskData[5]) - Number(taskData[6])).toString(),
+            title: `Task ${taskData[0].substring(0, 8)}...`,
+            description: "View details for more information",
+            reward: Number(ethers.formatUnits(taskData[4], tokenConfig.decimals)),
+            totalSlots: Number(taskData[6]),
+            claimedSlots: Number(taskData[6]),
+            availableSlots: Number(taskData[5]) - Number(taskData[6]),
             token: tokenSymbol,
             tokenAddress: tokenAddress,
             creator: taskData[1],
-            active: taskData[7],
-            createdAt: metadata.createdAt ? new Date(metadata.createdAt) : new Date(Number(taskData[8]) * 1000),
-            mySlot: null,
-            // Extended metadata fields
-            category: metadata.category,
-            complexity: metadata.complexity,
-            validationMethod: metadata.validationMethod,
-            deadline: metadata.deadline ? new Date(metadata.deadline) : undefined,
-            tags: metadata.tags || [],
+            status: taskData[7] ? "open" : "closed",
+            createdAt: new Date(Number(taskData[8]) * 1000),
           })
         } catch (err) {
-          console.error(`[v0] Error loading task ${taskId}:`, err)
+          console.error("[v0] Error loading task", taskId, ":", err)
         }
       }
 
@@ -192,11 +148,10 @@ export function TheOfficeApp() {
       setTasks(loadedTasks)
       setLoading(false)
     } catch (error) {
-      console.error("[v0] Error loading tasks from blockchain:", error)
+      console.error("[v0] Error loading tasks:", error)
       setLoading(false)
-      toast("Error loading tasks from blockchain")
     }
-  }, [contract, toast])
+  }, [contract])
 
   useEffect(() => {
     if (contract && account) {
@@ -208,13 +163,7 @@ export function TheOfficeApp() {
     const fetchBalances = async () => {
       if (!account) return
 
-      const newBalances: Record<TokenSymbol, string> = Object.keys(SUPPORTED_TOKENS).reduce(
-        (acc, symbol) => {
-          acc[symbol as TokenSymbol] = "0.00"
-          return acc
-        },
-        {} as Record<TokenSymbol, string>,
-      )
+      const newBalances: Record<TokenSymbol, string> = { cUSD: "0.00", USDC: "0.00" }
 
       for (const [symbol, tokenContract] of Object.entries(tokenContracts)) {
         if (tokenContract) {
@@ -280,13 +229,10 @@ export function TheOfficeApp() {
 
       const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
 
-      const contracts: Record<TokenSymbol, ethers.Contract | null> = Object.keys(SUPPORTED_TOKENS).reduce(
-        (acc, symbol) => {
-          acc[symbol as TokenSymbol] = null
-          return acc
-        },
-        {} as Record<TokenSymbol, ethers.Contract | null>,
-      )
+      const contracts: Record<TokenSymbol, ethers.Contract | null> = {
+        cUSD: null,
+        USDC: null,
+      }
       for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
         contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
       }
@@ -363,29 +309,17 @@ export function TheOfficeApp() {
         const tokenSymbol = getTokenSymbolFromAddress(task.token)
         const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
-        // Load metadata from API if available
-        let metadata: any = {}
-        try {
-          const metadataFromApi = await fetchTaskMetadata(id)
-          if (metadataFromApi) {
-            metadata = metadataFromApi
-          }
-        } catch (error) {
-          console.error("Failed to load task metadata from API:", error)
-          // Continue without metadata
-        }
-
         return {
           id: task.taskId,
-          title: metadata.title || task.taskId,
-          description: metadata.description || "Complete this task and earn rewards",
+          title: task.taskId,
+          description: "Complete this task and earn rewards",
           reward: ethers.formatUnits(task.rewardPerSlot, tokenConfig.decimals),
           totalSlots: task.totalSlots.toString(),
           claimedSlots: task.claimedSlots.toString(),
           availableSlots: availableSlots.toString(),
           active: task.active,
           creator: task.creator,
-          createdAt: metadata.createdAt ? new Date(metadata.createdAt) : new Date(Number(task.createdAt) * 1000),
+          createdAt: new Date(Number(task.createdAt) * 1000),
           token: tokenSymbol,
           tokenAddress: task.token,
           mySlot: mySlot
@@ -396,12 +330,6 @@ export function TheOfficeApp() {
                 withdrawn: mySlot.withdrawn,
               }
             : null,
-          // Extended metadata fields
-          category: metadata.category,
-          complexity: metadata.complexity,
-          validationMethod: metadata.validationMethod,
-          deadline: metadata.deadline ? new Date(metadata.deadline) : undefined,
-          tags: metadata.tags || [],
         }
       } catch (error) {
         console.error("Error getting task:", error)
@@ -469,11 +397,6 @@ export function TheOfficeApp() {
     rewardPerSlot: string,
     totalSlots: string,
     token: TokenSymbol,
-    category: TaskCategory,
-    complexity: TaskComplexity,
-    validationMethod: TaskValidationMethod,
-    deadline: string,
-    tags: string[],
   ) => {
     if (!contract || !account) return
 
@@ -505,14 +428,13 @@ export function TheOfficeApp() {
       toast("Checking task ID availability...")
       try {
         const existingTask = await contract.getTask(taskId)
-        // Check if task actually exists by verifying creator is not zero address
-        if (existingTask && existingTask.creator && existingTask.creator !== ethers.ZeroAddress) {
+        if (existingTask && existingTask.taskId === taskId) {
           toast("Task ID already exists. Please use a different ID.")
           setLoading(false)
           return
         }
       } catch {
-        // Task doesn't exist, which is good - continue with creation
+        // Task doesn't exist, which is good
       }
 
       toast(`Checking ${token} allowance...`)
@@ -533,26 +455,6 @@ export function TheOfficeApp() {
 
       toast("Task created successfully!")
 
-      // Save metadata to API database
-      try {
-        toast("Saving task details...")
-        await saveTaskMetadata({
-          task_id: taskId,
-          title: taskTitle,
-          description: taskDescription,
-          category,
-          complexity,
-          validation_method: validationMethod,
-          deadline: deadline || undefined,
-          tags,
-          creator_address: account,
-        })
-        toast("Task details saved!")
-      } catch (error) {
-        console.error("Failed to save task metadata:", error)
-        toast("Warning: Task created but metadata save failed")
-      }
-
       const newTask: Task = {
         id: taskId,
         title: taskTitle || taskId,
@@ -567,11 +469,6 @@ export function TheOfficeApp() {
         token: token,
         tokenAddress: tokenConfig.address,
         mySlot: null,
-        category,
-        complexity,
-        validationMethod,
-        deadline: deadline ? new Date(deadline) : undefined,
-        tags,
       }
 
       setTasks([newTask, ...tasks])
@@ -691,7 +588,7 @@ export function TheOfficeApp() {
   const logout = () => {
     setAccount(null)
     setContract(null)
-    setTokenContracts(initializeTokenContracts())
+    setTokenContracts({ cUSD: null, USDC: null })
     setTasks([])
     setCurrentPage("home")
     toast("Logged out")
@@ -700,6 +597,8 @@ export function TheOfficeApp() {
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
   }
+
+  const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
 
   return (
     <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
@@ -730,6 +629,9 @@ export function TheOfficeApp() {
                 <Languages size={14} />
                 {language === "en" ? "PT" : "EN"}
               </button>
+              <div className="bg-[#7A8770] px-3 py-1.5 text-xs border-2 border-black text-white font-bold">
+                {displayBalance}
+              </div>
               <button onClick={logout} className="text-white hover:opacity-80">
                 <LogOut size={20} />
               </button>
@@ -770,13 +672,13 @@ export function TheOfficeApp() {
         {account && currentPage === "profile" && (
           <ProfilePage
             account={account}
-            balance={tokenBalances.cUSD}
+            balance={displayBalance}
             tasks={tasks}
             onNavigateToBlog={() => setCurrentPage("blog")}
             language={language}
           />
         )}
-        {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} />}
+        {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} language={language} />}
       </main>
 
       {/* CTA Section */}
