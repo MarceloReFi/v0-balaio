@@ -62,69 +62,12 @@ export function TaskDetailModal({
               {task.reward} {task.token}
             </span>
           </div>
-          <div className="flex justify-between mb-2">
+          <div className="flex justify-between">
             <span className="text-xs">{language === "en" ? "Available Slots:" : "Vagas Disponíveis:"}</span>
             <span className="font-bold">
               {task.availableSlots}/{task.totalSlots}
             </span>
           </div>
-          {task.category && (
-            <div className="flex justify-between mb-2">
-              <span className="text-xs">Category:</span>
-              <span className="font-bold">
-                {task.category === "Education"
-                  ? "📚"
-                  : task.category === "Research"
-                    ? "🔬"
-                    : task.category === "Event"
-                      ? "🎉"
-                      : "🤝"}{" "}
-                {task.category}
-              </span>
-            </div>
-          )}
-          {task.complexity && (
-            <div className="flex justify-between mb-2">
-              <span className="text-xs">Complexity:</span>
-              <span
-                className={`font-bold px-2 py-0.5 text-xs rounded text-white ${
-                  task.complexity === "Low"
-                    ? "bg-green-500"
-                    : task.complexity === "Medium"
-                      ? "bg-yellow-500"
-                      : "bg-red-500"
-                }`}
-              >
-                {task.complexity}
-              </span>
-            </div>
-          )}
-          {task.validationMethod && (
-            <div className="flex justify-between mb-2">
-              <span className="text-xs">Validation:</span>
-              <span className="font-bold">{task.validationMethod}</span>
-            </div>
-          )}
-          {task.deadline && (
-            <div className="flex justify-between mb-2">
-              <span className="text-xs">Deadline:</span>
-              <span className={`font-bold ${new Date(task.deadline) < new Date() ? "text-red-600" : ""}`}>
-                {new Date(task.deadline).toLocaleString()}
-              </span>
-            </div>
-          )}
-          {task.tags && task.tags.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-300">
-              <span className="text-xs block mb-1">Tags:</span>
-              <div className="flex gap-1 flex-wrap">
-                {task.tags.map((tag) => (
-                  <span key={tag} className="bg-gray-200 px-2 py-0.5 text-xs border border-gray-400">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Actions */}
