@@ -317,6 +317,10 @@ export function TheOfficeApp() {
       toast("Wallet connected!")
     } catch (error: unknown) {
       console.error("Connect wallet error:", error)
+      if (!error || typeof error !== 'object') {
+        toast("Failed to connect wallet")
+        return
+      }
       const err = error as { message?: string; code?: number; reason?: string }
       if (err.code === 4001) {
         toast("Connection cancelled by user")
@@ -331,6 +335,14 @@ export function TheOfficeApp() {
   }
 
   const parseContractError = (error: unknown): string => {
+    if (!error) {
+      return "Unknown error occurred"
+    }
+
+    if (typeof error !== 'object') {
+      return String(error).slice(0, 100)
+    }
+
     const err = error as { data?: string; message?: string; reason?: string }
 
     if (err.data && CUSTOM_ERRORS[err.data]) {
@@ -575,7 +587,8 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      toast("Error: " + errorMessage)
     } finally {
       setLoading(false)
     }
@@ -600,7 +613,8 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      toast("Error: " + errorMessage)
     } finally {
       setLoading(false)
     }
@@ -625,7 +639,8 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      toast("Error: " + errorMessage)
     } finally {
       setLoading(false)
     }
@@ -652,7 +667,8 @@ export function TheOfficeApp() {
       setShowTaskModal(false)
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      toast("Error: " + errorMessage)
     } finally {
       setLoading(false)
     }
