@@ -19,6 +19,7 @@ export type TokenSymbol =
   | "cZAR"
   | "cGBP"
   | "USDC"
+  | "CRECY"
 
 export interface TokenConfig {
   symbol: TokenSymbol
@@ -125,6 +126,12 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     address: "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
     decimals: 6,
     name: "USD Coin",
+  },
+  CRECY: {
+    symbol: "CRECY",
+    address: "0x34c11A932853Ae24E845ad4B633e3cEf91aFe583",
+    decimals: 18,
+    name: "CRECY",
   },
 }
 
