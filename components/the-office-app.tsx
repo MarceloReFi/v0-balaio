@@ -505,13 +505,14 @@ export function TheOfficeApp() {
       toast("Checking task ID availability...")
       try {
         const existingTask = await contract.getTask(taskId)
-        if (existingTask && existingTask.taskId === taskId) {
+        // Check if task actually exists by verifying creator is not zero address
+        if (existingTask && existingTask.creator && existingTask.creator !== ethers.ZeroAddress) {
           toast("Task ID already exists. Please use a different ID.")
           setLoading(false)
           return
         }
       } catch {
-        // Task doesn't exist, which is good
+        // Task doesn't exist, which is good - continue with creation
       }
 
       toast(`Checking ${token} allowance...`)
