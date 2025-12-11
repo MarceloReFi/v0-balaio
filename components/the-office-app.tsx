@@ -59,44 +59,6 @@ export function TheOfficeApp() {
     setTimeout(() => setToastMessage(""), 3000)
   }, [])
 
-  // Initialize Farcaster SDK and auto-connect if available
-  useEffect(() => {
-    const initFarcasterSDK = async () => {
-      // Only run in browser, not during SSR
-      if (typeof window === "undefined") return
-
-      try {
-        // Dynamically import SDK only when needed and in browser context
-        const module = await import("@farcaster/miniapp-sdk").catch(() => null)
-        if (!module || !module.default) {
-          console.log("[Farcaster] SDK not available")
-          return
-        }
-
-        const sdk = module.default
-        if (sdk && sdk.actions && typeof sdk.actions.ready === 'function') {
-          // Call ready() to hide the splash screen and show the app
-          await sdk.actions.ready().catch((err: unknown) => {
-            console.log("[Farcaster] SDK ready() failed:", err)
-          })
-          console.log("[Farcaster] MiniApp SDK initialized and ready")
-        }
-      } catch (error) {
-        // Silently fail if not in Farcaster context - app will work normally in browser
-        console.log("[Farcaster] Not in Farcaster context, running in standard browser mode", error)
-      }
-    }
-
-    // Add a small delay to ensure DOM is fully loaded
-    const timer = setTimeout(() => {
-      initFarcasterSDK().catch(() => {
-        // Swallow any remaining errors
-      })
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [])
-
   // Setup wallet listeners
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return
@@ -135,32 +97,22 @@ export function TheOfficeApp() {
 
     try {
       setLoading(true)
-      console.log("[v0] Fetching all tasks from blockchain events...")
 
-      // Query TaskCreated events from contract deployment
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-
-      // Get TaskCreated events (from block 0 or a reasonable starting block)
-      const filter = readOnlyContract.filters.TaskCreated()
-      const events = await readOnlyContract.queryFilter(filter, -10000, "latest") // Last ~10k blocks
-
-      console.log("[v0] Found", events.length, "TaskCreated events")
-
+      // Load task IDs from localStorage instead of querying expensive events
+      const storedTaskIds = localStorage.getItem("taskIds")
       const taskIds = new Set<string>()
-      for (const event of events) {
-        if (event.args && event.args[0]) {
-          taskIds.add(event.args[0])
-        }
+
+      if (storedTaskIds) {
+        JSON.parse(storedTaskIds).forEach((id: string) => taskIds.add(id))
       }
 
-      console.log("[v0] Unique task IDs:", taskIds.size)
+      console.log("[v0] Loading", taskIds.size, "tasks from storage")
 
       // Fetch details for each task
       const loadedTasks: Task[] = []
       for (const taskId of taskIds) {
         try {
-          const taskData = await readOnlyContract.getTask(taskId)
+          const taskData = await contract.getTask(taskId)
           const tokenAddress = taskData[3].toLowerCase()
           let tokenSymbol: TokenSymbol = "cUSD"
 
@@ -188,7 +140,7 @@ export function TheOfficeApp() {
             createdAt: new Date(Number(taskData[8]) * 1000),
           })
         } catch (err) {
-          console.error(`[v0] Error loading task ${taskId}:`, err)
+          console.error("[v0] Error loading task", taskId, ":", err)
         }
       }
 
@@ -196,11 +148,10 @@ export function TheOfficeApp() {
       setTasks(loadedTasks)
       setLoading(false)
     } catch (error) {
-      console.error("[v0] Error loading tasks from blockchain:", error)
+      console.error("[v0] Error loading tasks:", error)
       setLoading(false)
-      toast("Error loading tasks from blockchain")
     }
-  }, [contract, toast])
+  }, [contract])
 
   useEffect(() => {
     if (contract && account) {
@@ -235,47 +186,22 @@ export function TheOfficeApp() {
 
   const connectWallet = async () => {
     try {
-      let ethereumProvider
-
-      // Check if running in Farcaster MiniApp context
-      try {
-        const module = await import("@farcaster/miniapp-sdk").catch(() => null)
-        if (module && module.default) {
-          const sdk = module.default
-          if (sdk && sdk.wallet && typeof sdk.wallet.getEthereumProvider === 'function') {
-            const farcasterProvider = await sdk.wallet.getEthereumProvider().catch(() => null)
-            if (farcasterProvider) {
-              console.log("[Farcaster] Using Farcaster wallet provider")
-              ethereumProvider = farcasterProvider
-              toast("Connecting via Farcaster...")
-            }
-          }
-        }
-      } catch (error) {
-        console.log("[Farcaster] Not in Farcaster context, using standard wallet")
+      if (typeof window === "undefined" || !window.ethereum) {
+        toast("Please install MetaMask, Valora, or MiniPay")
+        return
       }
 
-      // Fall back to window.ethereum if not in Farcaster
-      if (!ethereumProvider) {
-        if (typeof window === "undefined" || !window.ethereum) {
-          toast("Please install MetaMask, Valora, or MiniPay")
-          return
-        }
-        ethereumProvider = window.ethereum
-        toast("Connecting to Web3...")
-      }
-
-      const accounts = (await ethereumProvider.request({ method: "eth_requestAccounts" })) as string[]
+      const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[]
 
       try {
-        await ethereumProvider.request({
+        await window.ethereum.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: CELO_CHAIN_ID }],
         })
       } catch (switchError: unknown) {
         const error = switchError as { code?: number }
         if (error.code === 4902) {
-          await ethereumProvider.request({
+          await window.ethereum.request({
             method: "wallet_addEthereumChain",
             params: [
               {
@@ -297,7 +223,8 @@ export function TheOfficeApp() {
         }
       }
 
-      const provider = new ethers.BrowserProvider(ethereumProvider)
+      toast("Connecting to Web3...")
+      const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
 
       const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
@@ -317,10 +244,6 @@ export function TheOfficeApp() {
       toast("Wallet connected!")
     } catch (error: unknown) {
       console.error("Connect wallet error:", error)
-      if (!error || typeof error !== 'object') {
-        toast("Failed to connect wallet")
-        return
-      }
       const err = error as { message?: string; code?: number; reason?: string }
       if (err.code === 4001) {
         toast("Connection cancelled by user")
@@ -335,14 +258,6 @@ export function TheOfficeApp() {
   }
 
   const parseContractError = (error: unknown): string => {
-    if (!error) {
-      return "Unknown error occurred"
-    }
-
-    if (typeof error !== 'object') {
-      return String(error).slice(0, 100)
-    }
-
     const err = error as { data?: string; message?: string; reason?: string }
 
     if (err.data && CUSTOM_ERRORS[err.data]) {
@@ -587,8 +502,7 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
-      toast("Error: " + errorMessage)
+      toast("Error: " + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -613,8 +527,7 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
-      toast("Error: " + errorMessage)
+      toast("Error: " + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -639,8 +552,7 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
-      toast("Error: " + errorMessage)
+      toast("Error: " + (error as Error).message)
     } finally {
       setLoading(false)
     }
@@ -667,8 +579,7 @@ export function TheOfficeApp() {
       setShowTaskModal(false)
     } catch (error) {
       console.error(error)
-      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
-      toast("Error: " + errorMessage)
+      toast("Error: " + (error as Error).message)
     } finally {
       setLoading(false)
     }

@@ -30,13 +30,6 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
-  other: {
-    "fc:miniapp": "1",
-    "fc:miniapp:name": "Balaio",
-    "fc:miniapp:icon": "https://v0--balaio-q9.vercel.app/apple-icon.png",
-    "fc:miniapp:splash:image": "https://v0--balaio-q9.vercel.app/apple-icon.png",
-    "fc:miniapp:splash:background_color": "#EBDAD8",
-  },
 }
 
 export const viewport: Viewport = {
