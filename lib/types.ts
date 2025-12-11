@@ -7,6 +7,10 @@ export interface TaskSlot {
   withdrawn: boolean
 }
 
+export type TaskCategory = "Education" | "Research" | "Event" | "Partner Task"
+export type TaskComplexity = "Low" | "Medium" | "High"
+export type TaskValidationMethod = "Manual Review" | "Automatic" | "Peer Review"
+
 export interface Task {
   id: string
   title: string
@@ -21,4 +25,10 @@ export interface Task {
   mySlot: TaskSlot | null
   token?: TokenSymbol
   tokenAddress?: string
+  // Extended metadata fields
+  category?: TaskCategory
+  complexity?: TaskComplexity
+  validationMethod?: TaskValidationMethod
+  deadline?: Date
+  tags?: string[]
 }
