@@ -62,23 +62,39 @@ export function TheOfficeApp() {
   // Initialize Farcaster SDK and auto-connect if available
   useEffect(() => {
     const initFarcasterSDK = async () => {
+      // Only run in browser, not during SSR
+      if (typeof window === "undefined") return
+
       try {
-        if (typeof window !== "undefined") {
-          // Dynamically import SDK only when needed
-          const { default: sdk } = await import("@farcaster/miniapp-sdk")
-          if (sdk && sdk.actions) {
-            // Call ready() to hide the splash screen and show the app
-            await sdk.actions.ready()
-            console.log("[Farcaster] MiniApp SDK initialized and ready")
-          }
+        // Dynamically import SDK only when needed and in browser context
+        const module = await import("@farcaster/miniapp-sdk").catch(() => null)
+        if (!module || !module.default) {
+          console.log("[Farcaster] SDK not available")
+          return
+        }
+
+        const sdk = module.default
+        if (sdk && sdk.actions && typeof sdk.actions.ready === 'function') {
+          // Call ready() to hide the splash screen and show the app
+          await sdk.actions.ready().catch((err: unknown) => {
+            console.log("[Farcaster] SDK ready() failed:", err)
+          })
+          console.log("[Farcaster] MiniApp SDK initialized and ready")
         }
       } catch (error) {
         // Silently fail if not in Farcaster context - app will work normally in browser
-        console.log("[Farcaster] Not in Farcaster context, running in standard browser mode")
+        console.log("[Farcaster] Not in Farcaster context, running in standard browser mode", error)
       }
     }
 
-    initFarcasterSDK()
+    // Add a small delay to ensure DOM is fully loaded
+    const timer = setTimeout(() => {
+      initFarcasterSDK().catch(() => {
+        // Swallow any remaining errors
+      })
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [])
 
   // Setup wallet listeners
@@ -223,13 +239,16 @@ export function TheOfficeApp() {
 
       // Check if running in Farcaster MiniApp context
       try {
-        const { default: sdk } = await import("@farcaster/miniapp-sdk")
-        if (sdk && sdk.wallet && typeof sdk.wallet.getEthereumProvider === 'function') {
-          const farcasterProvider = await sdk.wallet.getEthereumProvider()
-          if (farcasterProvider) {
-            console.log("[Farcaster] Using Farcaster wallet provider")
-            ethereumProvider = farcasterProvider
-            toast("Connecting via Farcaster...")
+        const module = await import("@farcaster/miniapp-sdk").catch(() => null)
+        if (module && module.default) {
+          const sdk = module.default
+          if (sdk && sdk.wallet && typeof sdk.wallet.getEthereumProvider === 'function') {
+            const farcasterProvider = await sdk.wallet.getEthereumProvider().catch(() => null)
+            if (farcasterProvider) {
+              console.log("[Farcaster] Using Farcaster wallet provider")
+              ethereumProvider = farcasterProvider
+              toast("Connecting via Farcaster...")
+            }
           }
         }
       } catch (error) {
