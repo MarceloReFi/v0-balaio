@@ -114,9 +114,10 @@ export function TheOfficeApp() {
       const provider = new ethers.JsonRpcProvider(CELO_RPC)
       const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-      // Get TaskCreated events (from block 0 or a reasonable starting block)
+      // Get TaskCreated events from a larger block range to ensure we get all tasks
+      // Using -100000 blocks (~2 weeks on Celo with 5sec blocks) to ensure we catch all recent tasks
       const filter = readOnlyContract.filters.TaskCreated()
-      const events = await readOnlyContract.queryFilter(filter, -10000, "latest") // Last ~10k blocks
+      const events = await readOnlyContract.queryFilter(filter, -100000, "latest")
 
       console.log("[v0] Found", events.length, "TaskCreated events")
 
@@ -127,12 +128,7 @@ export function TheOfficeApp() {
         }
       }
 
-      // Also load task IDs from localStorage to ensure we don't miss any tasks
-      const taskIdsKey = "theoffice_all_task_ids"
-      const storedTaskIds = JSON.parse(localStorage.getItem(taskIdsKey) || "[]")
-      storedTaskIds.forEach((id: string) => taskIds.add(id))
-
-      console.log("[v0] Unique task IDs (blockchain + localStorage):", taskIds.size)
+      console.log("[v0] Unique task IDs from blockchain:", taskIds.size)
 
       // Load task metadata from localStorage
       const metadataKey = "theoffice_task_metadata"
@@ -359,17 +355,22 @@ export function TheOfficeApp() {
         const tokenSymbol = getTokenSymbolFromAddress(task.token)
         const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
+        // Load metadata from localStorage if available
+        const metadataKey = "theoffice_task_metadata"
+        const taskMetadata = JSON.parse(localStorage.getItem(metadataKey) || "{}")
+        const metadata = taskMetadata[id] || {}
+
         return {
           id: task.taskId,
-          title: task.taskId,
-          description: "Complete this task and earn rewards",
+          title: metadata.title || task.taskId,
+          description: metadata.description || "Complete this task and earn rewards",
           reward: ethers.formatUnits(task.rewardPerSlot, tokenConfig.decimals),
           totalSlots: task.totalSlots.toString(),
           claimedSlots: task.claimedSlots.toString(),
           availableSlots: availableSlots.toString(),
           active: task.active,
           creator: task.creator,
-          createdAt: new Date(Number(task.createdAt) * 1000),
+          createdAt: metadata.createdAt ? new Date(metadata.createdAt) : new Date(Number(task.createdAt) * 1000),
           token: tokenSymbol,
           tokenAddress: task.token,
           mySlot: mySlot
@@ -380,6 +381,12 @@ export function TheOfficeApp() {
                 withdrawn: mySlot.withdrawn,
               }
             : null,
+          // Extended metadata fields
+          category: metadata.category,
+          complexity: metadata.complexity,
+          validationMethod: metadata.validationMethod,
+          deadline: metadata.deadline ? new Date(metadata.deadline) : undefined,
+          tags: metadata.tags || [],
         }
       } catch (error) {
         console.error("Error getting task:", error)
