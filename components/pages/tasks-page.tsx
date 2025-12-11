@@ -91,7 +91,7 @@ export function TasksPage({
             onClick={() => setShowCreateModal(true)}
             className="bg-[#B88FD8] text-white px-4 py-2 font-bold border-2 border-black hover:shadow-md text-sm"
           >
-            + {t.create}
+            + {t.createTask}
           </button>
         </div>
       </TooltipProvider>
@@ -157,10 +157,39 @@ export function TasksPage({
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
-                    <h3 className="font-bold text-base mb-1">{task.title}</h3>
-                    <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-base">{task.title}</h3>
+                      {task.complexity && (
+                        <span
+                          className={`px-2 py-0.5 text-xs font-bold rounded text-white ${
+                            task.complexity === "Low"
+                              ? "bg-green-500"
+                              : task.complexity === "Medium"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                          }`}
+                        >
+                          {task.complexity}
+                        </span>
+                      )}
+                    </div>
 
-                    <div className="flex gap-3 text-xs mb-2">
+                    {task.category && (
+                      <div className="text-xs text-gray-500 mb-1">
+                        {task.category === "Education"
+                          ? "📚"
+                          : task.category === "Research"
+                            ? "🔬"
+                            : task.category === "Event"
+                              ? "🎉"
+                              : "🤝"}{" "}
+                        {task.category}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">{task.description}</p>
+
+                    <div className="flex gap-3 text-xs mb-2 flex-wrap">
                       <span>
                         💰 {task.reward} {task.token}
                       </span>
@@ -168,7 +197,23 @@ export function TasksPage({
                         👥 {task.availableSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
                       </span>
                       <span>⏰ {getTimeAgo(task.createdAt)}</span>
+                      {task.deadline && new Date(task.deadline) > new Date() && (
+                        <span className="text-orange-600 font-bold">
+                          📅 {language === "en" ? "Deadline:" : "Prazo:"}{" "}
+                          {new Date(task.deadline).toLocaleDateString()}
+                        </span>
+                      )}
                     </div>
+
+                    {task.tags && task.tags.length > 0 && (
+                      <div className="flex gap-1 mb-2 flex-wrap">
+                        {task.tags.map((tag) => (
+                          <span key={tag} className="bg-gray-200 px-2 py-0.5 text-xs border border-gray-400">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     <span
                       className={`inline-block px-3 py-1 text-xs font-bold rounded-full text-white ${status.color}`}
