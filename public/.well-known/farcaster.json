@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM0NTYyNCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDM0NzQ2MjkyMjMzNzQxQzNDNjkyREM2NUY0M0FCRUJGNmU4RjA5QUQifQ",
+    "payload": "eyJkb21haW4iOiJ2MC0tYmFsYWlvLXE5LnZlcmNlbC5hcHAifQ",
+    "signature": "+80EtlYZSZgoU4EtTtsclM2mRF1FlsxuAm1eZAwSajsRerSfxva+nyPhhUJgF/LuLCkrSpiEhhDBErZe6IeoQBw="
+  },
   "miniapp": {
     "version": "1",
     "name": "Balaio",
