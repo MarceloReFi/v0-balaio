@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { ethers } from "ethers"
 import { Home, Clipboard, User, LogOut, ArrowLeft, Languages } from "lucide-react"
-import sdk from "@farcaster/miniapp-sdk"
 import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
@@ -64,11 +63,14 @@ export function TheOfficeApp() {
   useEffect(() => {
     const initFarcasterSDK = async () => {
       try {
-        // Wait for the app to be fully loaded
-        if (typeof window !== "undefined" && sdk && sdk.actions) {
-          // Call ready() to hide the splash screen and show the app
-          await sdk.actions.ready()
-          console.log("[Farcaster] MiniApp SDK initialized and ready")
+        if (typeof window !== "undefined") {
+          // Dynamically import SDK only when needed
+          const { default: sdk } = await import("@farcaster/miniapp-sdk")
+          if (sdk && sdk.actions) {
+            // Call ready() to hide the splash screen and show the app
+            await sdk.actions.ready()
+            console.log("[Farcaster] MiniApp SDK initialized and ready")
+          }
         }
       } catch (error) {
         // Silently fail if not in Farcaster context - app will work normally in browser
@@ -221,6 +223,7 @@ export function TheOfficeApp() {
 
       // Check if running in Farcaster MiniApp context
       try {
+        const { default: sdk } = await import("@farcaster/miniapp-sdk")
         if (sdk && sdk.wallet && typeof sdk.wallet.getEthereumProvider === 'function') {
           const farcasterProvider = await sdk.wallet.getEthereumProvider()
           if (farcasterProvider) {
