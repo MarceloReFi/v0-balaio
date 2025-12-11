@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { ethers } from "ethers"
 import { Home, Clipboard, User, LogOut, ArrowLeft, Languages } from "lucide-react"
+import sdk from "@farcaster/miniapp-sdk"
 import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
@@ -57,6 +58,24 @@ export function TheOfficeApp() {
   const toast = useCallback((msg: string) => {
     setToastMessage(msg)
     setTimeout(() => setToastMessage(""), 3000)
+  }, [])
+
+  // Initialize Farcaster SDK
+  useEffect(() => {
+    const initFarcasterSDK = async () => {
+      try {
+        // Wait for the app to be fully loaded
+        if (typeof window !== "undefined") {
+          // Call ready() to hide the splash screen and show the app
+          await sdk.actions.ready()
+          console.log("[Farcaster] MiniApp SDK initialized and ready")
+        }
+      } catch (error) {
+        console.error("[Farcaster] Error initializing SDK:", error)
+      }
+    }
+
+    initFarcasterSDK()
   }, [])
 
   // Setup wallet listeners
