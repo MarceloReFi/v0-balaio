@@ -715,8 +715,8 @@ export function TheOfficeApp() {
           )}
 
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 bg-[#C4897B] border-2 border-black flex items-center justify-center font-bold text-white">
-              B
+            <div className="w-10 h-10 border-2 border-black flex items-center justify-center bg-white">
+              <img src="/logo.png" alt="Balaio Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-bold text-white text-lg">{t.appName}</span>
           </div>
@@ -745,9 +745,9 @@ export function TheOfficeApp() {
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#2B325C] via-[#636D4F] to-[#F2E885] border-2 border-black p-8 mb-5 text-center">
-        <div className="text-4xl mb-3">🚀</div>
-        <h2 className="text-2xl font-bold mb-2 text-white">{t.welcome}</h2>
-        <p className="text-sm mb-4 text-white/90">{t.subtitle}</p>
+        
+        <h2 className="text-2xl font-bold mb-2 text-white text-left">{t.welcome}</h2>
+        <p className="text-sm mb-4 text-white/90 text-left">{t.subtitle}</p>
         <button
           onClick={connectWallet}
           className="bg-[#FFF244] text-black px-6 py-3 font-bold border-2 border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow"
@@ -799,7 +799,7 @@ export function TheOfficeApp() {
 
       {/* CTA Section */}
       <div className="bg-white border-2 border-black p-6 text-center">
-        <div className="text-3xl mb-3">🎯</div>
+        
         <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
         <p className="text-sm text-gray-700 mb-4">{t.getStartedDesc}</p>
         <button
