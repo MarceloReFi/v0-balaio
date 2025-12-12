@@ -716,7 +716,7 @@ export function TheOfficeApp() {
 
           <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 bg-[#C4897B] border-2 border-black flex items-center justify-center font-bold text-white">
-              TO
+              B
             </div>
             <span className="font-bold text-white text-lg">{t.appName}</span>
           </div>
@@ -759,7 +759,20 @@ export function TheOfficeApp() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-16">
         {!account && currentPage === "home" && <HomePage onConnect={connectWallet} language={language} />}
-        {account && currentPage === "home" && <HomePage onConnect={connectWallet} language={language} />}
+        {account && currentPage === "home" && (
+          <HomePage
+            onConnect={connectWallet}
+            language={language}
+            tasks={tasks}
+            account={account}
+            onViewTask={(task) => {
+              setSelectedTask(task)
+              setShowTaskModal(true)
+            }}
+            onClaimTask={(task) => claimTask(task.id)}
+            onNavigateToTasks={() => setCurrentPage("tasks")}
+          />
+        )}
         {account && currentPage === "tasks" && (
           <TasksPage
             tasks={tasks}

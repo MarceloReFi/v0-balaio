@@ -23,7 +23,11 @@ export const translations = {
     cta1: "Start Learning",
     cta2: "Explore Tasks",
     opportunities: "Opportunities",
-    knowMore: "Know more",
+    knowMore: "Apply",
+    latestTasks: "Latest Tasks",
+    discoverFeatures: "Discover All Features",
+    discoverFeaturesDesc: "AI-powered task creation, mobile-first design, and comprehensive tools for every user type",
+    exploreFeatures: "Explore Features",
     getStarted: "Ready to Start?",
     getStartedDesc: "Connect your Celo wallet and start your Learn2Earn journey today!",
 
@@ -123,7 +127,12 @@ export const translations = {
     cta1: "Começar a Aprender",
     cta2: "Explorar Tarefas",
     opportunities: "Oportunidades",
-    knowMore: "Saiba mais",
+    knowMore: "Aplicar",
+    latestTasks: "Últimas Tarefas",
+    discoverFeatures: "Descubra Todas as Funcionalidades",
+    discoverFeaturesDesc:
+      "Criação de tarefas com IA, design mobile-first e ferramentas completas para todos os tipos de usuário",
+    exploreFeatures: "Explorar Funcionalidades",
     getStarted: "Pronto para Começar?",
     getStartedDesc: "Conecte sua carteira Celo e comece sua jornada Learn2Earn hoje!",
 
