@@ -29,7 +29,7 @@ export function TasksPage({
 }: TasksPageProps) {
   const t = useTranslations(language)
   const [searchQuery, setSearchQuery] = useState("")
-  const [taskFilter, setTaskFilter] = useState<"all" | "open" | "my">("all")
+  const [taskFilter, setTaskFilter] = useState<"all" | "open" | "created" | "claimed">("all")
   const [loading, setLoading] = useState(false)
 
   const getStatusBadge = (task: Task) => {
@@ -54,7 +54,8 @@ export function TasksPage({
   const filteredTasks = tasks.filter((task) => {
     if (taskFilter === "all") return true
     if (taskFilter === "open") return task.active && Number(task.availableSlots) > 0
-    if (taskFilter === "my") return task.mySlot && task.mySlot.claimed
+    if (taskFilter === "created") return task.creator.toLowerCase() === account.toLowerCase()
+    if (taskFilter === "claimed") return task.mySlot && task.mySlot.claimed
     return true
   })
 
@@ -97,7 +98,7 @@ export function TasksPage({
       </TooltipProvider>
 
       <div className="flex gap-2 mb-4 flex-wrap">
-        {(["all", "open", "my"] as const).map((filter) => (
+        {(["all", "open", "created", "claimed"] as const).map((filter) => (
           <button
             key={filter}
             onClick={() => setTaskFilter(filter)}
@@ -107,7 +108,7 @@ export function TasksPage({
                 : "bg-white text-[#3A4571] border-[#3A4571]"
             }`}
           >
-            {filter === "all" ? t.allTasks : filter === "open" ? t.openTasks : t.myTasks}
+            {filter === "all" ? t.allTasks : filter === "open" ? t.openTasks : filter === "created" ? t.createdTasks : t.claimedTasks}
           </button>
         ))}
         <button
