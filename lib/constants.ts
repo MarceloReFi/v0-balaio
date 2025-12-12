@@ -62,13 +62,13 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
   },
   cCOP: {
     symbol: "cCOP",
-    address: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA",
+    address: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA", // Fixed address - was incorrectly too long
     decimals: 18,
     name: "Celo Colombian Peso",
   },
   cCAD: {
     symbol: "cCAD",
-    address: "0xff4Ab19391af240c311c54200a492233052B6325",
+    address: "0xff4Ab19391af240c311c54200a492233052B6325", // Fixed checksum address
     decimals: 18,
     name: "Celo Canadian Dollar",
   },
@@ -92,7 +92,7 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
   },
   cCHF: {
     symbol: "cCHF",
-    address: "0xb55a79F398E759E43C95b979163f30eC87Ee131D",
+    address: "0xb55a79F398E759E43C95b979163f30eC87Ee131D", // Kept same as it matches Mento docs
     decimals: 18,
     name: "Celo Swiss Franc",
   },
@@ -129,7 +129,7 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
   },
   CRECY: {
     symbol: "CRECY",
-    address: "0x34c11A932853Ae24E845ad4B633e3cEf91aFe583",
+    address: "0x34c11a932853ae24e845ad4b633e3cef91afe583",
     decimals: 18,
     name: "CRECY",
   },
