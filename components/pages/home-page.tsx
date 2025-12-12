@@ -178,7 +178,7 @@ export function HomePage({
       {/* Opportunities Section */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-bold flex items-center gap-2">🚀 {t.opportunities}</h3>
+          
           <button className="bg-white border-2 border-black px-3 py-1.5 text-sm font-bold hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow">
             + More
           </button>
@@ -239,19 +239,25 @@ export function HomePage({
       </div>
 
       {/* Discover Features Section */}
-      <div className="bg-[#636D4F] border-2 border-black p-6 text-center">
-        <div className="text-3xl mb-3">🚀</div>
-        <h3 className="text-white font-bold text-lg mb-2">
-          {language === "en" ? "Discover All Features" : "Descubra Todas as Funcionalidades"}
-        </h3>
-        <p className="text-white/80 text-sm mb-4">
-          {language === "en"
-            ? "AI-powered task creation, mobile-first design, and comprehensive tools for every user type"
-            : "Criação de tarefas com IA, design mobile-first e ferramentas completas para todos os tipos de usuário"}
-        </p>
-        <button className="bg-[#FFF244] text-black px-4 py-2 text-sm font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow">
-          📋 {language === "en" ? "Explore Features" : "Explorar Funcionalidades"}
-        </button>
+      <div className="bg-[#636D4F] border-2 border-black p-6 relative overflow-hidden">
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">
+          <img src="/logo.png" alt="Balaio" className="w-32 h-32 object-contain" />
+        </div>
+
+        <div className="text-center relative z-10">
+          
+          <h3 className="text-white font-bold text-lg mb-2">
+            {language === "en" ? "Discover All Features" : "Descubra Todas as Funcionalidades"}
+          </h3>
+          <p className="text-white/80 text-sm mb-4">
+            {language === "en"
+              ? "AI-powered task creation, mobile-first design, and comprehensive tools for every user type"
+              : "Criação de tarefas com IA, design mobile-first e ferramentas completas para todos os tipos de usuário"}
+          </p>
+          <button className="bg-[#FFF244] text-black px-4 py-2 text-sm font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow">
+            📋 {language === "en" ? "Explore Features" : "Explorar Funcionalidades"}
+          </button>
+        </div>
       </div>
     </div>
   )
