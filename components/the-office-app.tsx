@@ -67,7 +67,7 @@ export function TheOfficeApp() {
       console.log("[v0] Loading tasks from Supabase...")
 
       const { data, error } = await supabase
-        .from("tasks_metadata")
+        .from("tasks")
         .select("*")
         .order("created_at", { ascending: false })
 
@@ -80,8 +80,8 @@ export function TheOfficeApp() {
 
       if (data && data.length > 0) {
         const loadedTasks: Task[] = data.map((row) => ({
-          id: row.task_id,
-          title: row.title || `Task ${row.task_id.substring(0, 8)}...`,
+          id: row.id,
+          title: row.title || `Task ${row.id.substring(0, 8)}...`,
           description: row.description || "Complete this task and earn rewards",
           reward: "0",
           totalSlots: "1",
@@ -118,20 +118,23 @@ export function TheOfficeApp() {
   const saveTaskToSupabase = useCallback(
     async (task: Task) => {
       try {
-        const { error } = await supabase.from("tasks_metadata").upsert(
+        const { error } = await supabase.from("tasks").upsert(
           {
-            task_id: task.id,
+            id: task.id,
             title: task.title,
             description: task.description,
-            category: (task as any).category || "general",
-            complexity: (task as any).complexity || "medium",
-            validation_method: (task as any).validationMethod || "manual",
-            deadline: (task as any).deadline || null,
-            tags: (task as any).tags || [],
+            reward: task.reward,
+            token: task.token,
+            token_address: task.tokenAddress,
             creator_address: task.creator,
+            worker_address: (task as any).workerAddress || null,
+            status: (task as any).status || 0,
+            slots: parseInt(task.totalSlots) || 1,
+            claimed_slots: parseInt(task.claimedSlots) || 0,
+            submission_link: (task as any).submissionLink || null,
             updated_at: new Date().toISOString(),
           },
-          { onConflict: "task_id" },
+          { onConflict: "id" },
         )
 
         if (error) {
@@ -612,9 +615,9 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         await supabase
-          .from("tasks_metadata")
+          .from("tasks")
           .update({ submission_link: proof, updated_at: new Date().toISOString() })
-          .eq("task_id", id)
+          .eq("id", id)
       }
     } catch (error) {
       console.error(error)
