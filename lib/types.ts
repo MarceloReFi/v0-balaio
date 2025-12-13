@@ -7,6 +7,9 @@ export interface TaskSlot {
   withdrawn: boolean
 }
 
+export type TaskCategory = "development" | "design" | "content" | "research" | "community" | "other"
+export type TaskComplexity = "easy" | "medium" | "hard"
+
 export interface Task {
   id: string
   title: string
@@ -21,4 +24,9 @@ export interface Task {
   mySlot: TaskSlot | null
   token?: TokenSymbol
   tokenAddress?: string
+  category?: TaskCategory
+  complexity?: TaskComplexity
+  validationMethod?: string
+  deadline?: Date | null
+  tags?: string[]
 }
