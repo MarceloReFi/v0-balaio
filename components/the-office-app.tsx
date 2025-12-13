@@ -13,7 +13,7 @@ import {
   SUPPORTED_TOKENS,
   type TokenSymbol,
 } from "@/lib/constants"
-import type { Task } from "@/lib/types"
+import type { Task, TaskCategory, TaskComplexity } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
@@ -128,6 +128,11 @@ export function TheOfficeApp() {
             claimed_slots: parseInt(task.claimedSlots) || 0,
             submission_link: (task as any).submissionLink || null,
             updated_at: new Date().toISOString(),
+            category: task.category || null,
+            complexity: task.complexity || null,
+            validation_method: task.validationMethod || null,
+            deadline: task.deadline ? task.deadline.toISOString() : null,
+            tags: task.tags || [],
           },
           { onConflict: "id" },
         )
@@ -479,6 +484,11 @@ export function TheOfficeApp() {
     rewardPerSlot: string,
     totalSlots: string,
     token: TokenSymbol,
+    category: TaskCategory,
+    complexity: TaskComplexity,
+    validationMethod: string,
+    deadline: Date | null,
+    tags: string[],
   ) => {
     if (!contract || !account) return
 
@@ -551,6 +561,11 @@ export function TheOfficeApp() {
         token: token,
         tokenAddress: tokenConfig.address,
         mySlot: null,
+        category: category,
+        complexity: complexity,
+        validationMethod: validationMethod,
+        deadline: deadline,
+        tags: tags,
       }
 
       await saveTaskToSupabase(newTask)
