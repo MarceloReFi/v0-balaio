@@ -18,6 +18,7 @@ import { Toast } from "@/components/ui/toast-custom"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
 import { HomePage } from "@/components/pages/home-page"
+import { LandingPage } from "@/components/pages/landing-page"
 import { TasksPage } from "@/components/pages/tasks-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { BlogPage } from "@/components/pages/blog-page"
@@ -734,44 +735,47 @@ export function TheOfficeApp() {
             <span className="font-bold text-white text-lg">{t.appName}</span>
           </div>
 
-          {account && (
-            <div className="flex items-center gap-2">
-              {/* Language toggle button */}
-              <button
-                onClick={toggleLanguage}
-                className="bg-[#B88FD8] px-2 py-1.5 text-xs border-2 border-black text-white font-bold hover:opacity-90 flex items-center gap-1"
-                title={language === "en" ? "Português" : "English"}
-              >
-                <Languages size={14} />
-                {language === "en" ? "PT" : "EN"}
-              </button>
-              <div className="bg-[#7A8770] px-3 py-1.5 text-xs border-2 border-black text-white font-bold">
-                {displayBalance}
-              </div>
-              <button onClick={logout} className="text-white hover:opacity-80">
-                <LogOut size={20} />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Language toggle button - always visible */}
+            <button
+              onClick={toggleLanguage}
+              className="bg-[#B88FD8] px-2 py-1.5 text-xs border-2 border-black text-white font-bold hover:opacity-90 flex items-center gap-1"
+              title={language === "en" ? "Português" : "English"}
+            >
+              <Languages size={14} />
+              {language === "en" ? "PT" : "EN"}
+            </button>
+            {account && (
+              <>
+                <div className="bg-[#7A8770] px-3 py-1.5 text-xs border-2 border-black text-white font-bold">
+                  {displayBalance}
+                </div>
+                <button onClick={logout} className="text-white hover:opacity-80">
+                  <LogOut size={20} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-[#2B325C] via-[#636D4F] to-[#F2E885] border-2 border-black p-8 mb-5 text-center">
-        
-        <h2 className="text-2xl font-bold mb-2 text-white text-left">{t.welcome}</h2>
-        <p className="text-sm mb-4 text-white/90 text-left">{t.subtitle}</p>
-        <button
-          onClick={connectWallet}
-          className="bg-[#FFF244] text-black px-6 py-3 font-bold border-2 border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-        >
-          {account ? t.walletConnected : t.connectWallet}
-        </button>
-      </div>
+      {/* Hero Section - Only show when logged in */}
+      {account && (
+        <div className="bg-gradient-to-r from-[#2B325C] via-[#636D4F] to-[#F2E885] border-2 border-black p-8 mb-5 text-center">
+          <h2 className="text-2xl font-bold mb-2 text-white text-left">{t.welcome}</h2>
+          <p className="text-sm mb-4 text-white/90 text-left">{t.subtitle}</p>
+          <button
+            onClick={connectWallet}
+            className="bg-[#FFF244] text-black px-6 py-3 font-bold border-2 border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+          >
+            {t.walletConnected}
+          </button>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-16">
-        {!account && currentPage === "home" && <HomePage onConnect={connectWallet} language={language} />}
+        {!account && <LandingPage onConnect={connectWallet} language={language} />}
         {account && currentPage === "home" && (
           <HomePage
             onConnect={connectWallet}
@@ -810,18 +814,19 @@ export function TheOfficeApp() {
         {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} language={language} />}
       </main>
 
-      {/* CTA Section */}
-      <div className="bg-white border-2 border-black p-6 text-center">
-        
-        <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
-        <p className="text-sm text-gray-700 mb-4">{t.getStartedDesc}</p>
-        <button
-          onClick={connectWallet}
-          className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-        >
-          {account ? t.walletConnected : t.connectWallet}
-        </button>
-      </div>
+      {/* CTA Section - Only show when logged in */}
+      {account && (
+        <div className="bg-white border-2 border-black p-6 text-center">
+          <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
+          <p className="text-sm text-gray-700 mb-4">{t.getStartedDesc}</p>
+          <button
+            onClick={connectWallet}
+            className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+          >
+            {t.walletConnected}
+          </button>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       {account && (
