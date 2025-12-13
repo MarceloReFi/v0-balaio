@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { X, ChevronDown } from "lucide-react"
+import { X, ChevronDown, Calendar } from "lucide-react"
 import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/constants"
 import { useTranslations, type Language } from "@/lib/translations"
+import type { TaskCategory, TaskComplexity } from "@/lib/types"
 
 interface CreateTaskModalProps {
   open: boolean
@@ -15,6 +16,11 @@ interface CreateTaskModalProps {
     rewardPerSlot: string,
     totalSlots: string,
     token: TokenSymbol,
+    category: TaskCategory,
+    complexity: TaskComplexity,
+    validationMethod: string,
+    deadline: Date | null,
+    tags: string[],
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
@@ -37,23 +43,74 @@ export function CreateTaskModal({
   const [totalSlots, setTotalSlots] = useState("")
   const [selectedToken, setSelectedToken] = useState<TokenSymbol>("cUSD")
   const [showTokenDropdown, setShowTokenDropdown] = useState(false)
+  const [category, setCategory] = useState<TaskCategory>("other")
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [complexity, setComplexity] = useState<TaskComplexity>("medium")
+  const [showComplexityDropdown, setShowComplexityDropdown] = useState(false)
+  const [deadline, setDeadline] = useState<string>("")
+  const [tagsInput, setTagsInput] = useState("")
 
   if (!open) return null
 
   const handleCreate = () => {
-    onCreateTask(taskId, taskTitle, taskDescription, rewardPerSlot, totalSlots, selectedToken)
+    const parsedDeadline = deadline ? new Date(deadline) : null
+    const parsedTags = tagsInput
+      .split(",")
+      .map((tag: string) => tag.trim())
+      .filter((tag: string) => tag.length > 0)
+
+    onCreateTask(
+      taskId,
+      taskTitle,
+      taskDescription,
+      rewardPerSlot,
+      totalSlots,
+      selectedToken,
+      category,
+      complexity,
+      "url",
+      parsedDeadline,
+      parsedTags,
+    )
     setTaskId("")
     setTaskTitle("")
     setTaskDescription("")
     setRewardPerSlot("")
     setTotalSlots("")
     setSelectedToken("cUSD")
+    setCategory("other")
+    setComplexity("medium")
+    setDeadline("")
+    setTagsInput("")
   }
 
   const totalCost =
     rewardPerSlot && totalSlots ? (Number.parseFloat(rewardPerSlot) * Number.parseInt(totalSlots)).toFixed(2) : null
 
   const tokenOptions = Object.values(SUPPORTED_TOKENS)
+
+  const categoryOptions: { value: TaskCategory; label: string }[] = [
+    { value: "development", label: t.categoryDevelopment },
+    { value: "design", label: t.categoryDesign },
+    { value: "content", label: t.categoryContent },
+    { value: "research", label: t.categoryResearch },
+    { value: "community", label: t.categoryCommunity },
+    { value: "other", label: t.categoryOther },
+  ]
+
+  const complexityOptions: { value: TaskComplexity; label: string }[] = [
+    { value: "easy", label: t.complexityEasy },
+    { value: "medium", label: t.complexityMedium },
+    { value: "hard", label: t.complexityHard },
+  ]
+
+  const getCategoryLabel = (cat: TaskCategory) => {
+    return categoryOptions.find((c) => c.value === cat)?.label || cat
+  }
+
+  const getComplexityLabel = (comp: TaskComplexity) => {
+    return complexityOptions.find((c) => c.value === comp)?.label || comp
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -93,6 +150,113 @@ export function CreateTaskModal({
               onChange={(e) => setTaskDescription(e.target.value)}
               placeholder="Task description"
               rows={3}
+              className="w-full p-2.5 border-2 border-gray-300 font-mono"
+            />
+          </div>
+
+          {/* Category Dropdown */}
+          <div>
+            <label className="block font-bold mb-2 text-xs">{t.category}</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                className="w-full p-2.5 border-2 border-gray-300 font-mono flex items-center justify-between bg-white"
+              >
+                <span>{getCategoryLabel(category)}</span>
+                <ChevronDown size={18} className={`transition-transform ${showCategoryDropdown ? "rotate-180" : ""}`} />
+              </button>
+
+              {showCategoryDropdown && (
+                <div className="absolute top-full left-0 right-0 bg-white border-2 border-black border-t-0 z-10">
+                  {categoryOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setCategory(opt.value)
+                        setShowCategoryDropdown(false)
+                      }}
+                      className={`w-full p-2.5 text-left hover:bg-gray-100 ${
+                        category === opt.value ? "bg-[#F2E885]" : ""
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Complexity Dropdown */}
+          <div>
+            <label className="block font-bold mb-2 text-xs">{t.complexity}</label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowComplexityDropdown(!showComplexityDropdown)}
+                className="w-full p-2.5 border-2 border-gray-300 font-mono flex items-center justify-between bg-white"
+              >
+                <span>{getComplexityLabel(complexity)}</span>
+                <ChevronDown
+                  size={18}
+                  className={`transition-transform ${showComplexityDropdown ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {showComplexityDropdown && (
+                <div className="absolute top-full left-0 right-0 bg-white border-2 border-black border-t-0 z-10">
+                  {complexityOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setComplexity(opt.value)
+                        setShowComplexityDropdown(false)
+                      }}
+                      className={`w-full p-2.5 text-left hover:bg-gray-100 ${
+                        complexity === opt.value ? "bg-[#F2E885]" : ""
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Validation Method (fixed to URL) */}
+          <div>
+            <label className="block font-bold mb-2 text-xs">{t.validationMethod}</label>
+            <div className="w-full p-2.5 border-2 border-gray-300 font-mono bg-gray-50 text-gray-600">
+              {t.validationUrl}
+            </div>
+          </div>
+
+          {/* Deadline Calendar */}
+          <div>
+            <label className="block font-bold mb-2 text-xs">{t.deadline}</label>
+            <div className="relative">
+              <input
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className="w-full p-2.5 border-2 border-gray-300 font-mono pr-10"
+              />
+              <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block font-bold mb-2 text-xs">{t.tags}</label>
+            <input
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder={t.tagsPlaceholder}
               className="w-full p-2.5 border-2 border-gray-300 font-mono"
             />
           </div>
@@ -177,7 +341,7 @@ export function CreateTaskModal({
 
           <button
             onClick={handleCreate}
-            disabled={loading || !taskId || !rewardPerSlot || !totalSlots}
+            disabled={loading || !taskId || !taskTitle || !rewardPerSlot || !totalSlots}
             className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-50"
           >
             {loading ? (language === "en" ? "CREATING..." : "CRIANDO...") : t.createTaskButton}
