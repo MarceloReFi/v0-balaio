@@ -12,7 +12,6 @@ const courierPrime = Courier_Prime({
 export const metadata: Metadata = {
   title: "Balaio - Web3 Task Management on Celo",
   description: "A simple task-management dapp for the Celo ecosystem",
-  generator: "v0.app",
   icons: {
     icon: [
       {
