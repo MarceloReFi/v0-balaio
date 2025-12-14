@@ -251,8 +251,8 @@ export function HomePage({
           </h3>
           <p className="text-white/80 text-sm mb-4">
             {language === "en"
-              ? "AI-powered task creation, mobile-first design, and comprehensive tools for every user type"
-              : "Criação de tarefas com IA, design mobile-first e ferramentas completas para todos os tipos de usuário"}
+              ? "Smart task creation, mobile-first design, and comprehensive tools for every user type"
+              : "Criação inteligente de tarefas, design mobile-first e ferramentas completas para todos os tipos de usuário"}
           </p>
           <button className="bg-[#FFF244] text-black px-4 py-2 text-sm font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow">
             📋 {language === "en" ? "Explore Features" : "Explorar Funcionalidades"}
