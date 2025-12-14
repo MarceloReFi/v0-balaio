@@ -65,7 +65,7 @@ export function TheOfficeApp() {
   const loadAllTasksFromSupabase = useCallback(async () => {
     try {
       setLoading(true)
-      console.log("[v0] Loading tasks from Supabase...")
+      console.log("[balaio] Loading tasks from Supabase...")
 
       const { data, error } = await supabase
         .from("tasks")
@@ -73,7 +73,7 @@ export function TheOfficeApp() {
         .order("created_at", { ascending: false })
 
       if (error) {
-        console.error("[v0] Supabase error:", error.message)
+        console.error("[balaio] Supabase error:", error.message)
         toast("Error loading tasks from database")
         setLoading(false)
         return
@@ -96,16 +96,16 @@ export function TheOfficeApp() {
           mySlot: null,
         }))
 
-        console.log("[v0] Loaded", loadedTasks.length, "tasks from Supabase")
+        console.log("[balaio] Loaded", loadedTasks.length, "tasks from Supabase")
         setTasks(loadedTasks)
       } else {
-        console.log("[v0] No tasks found in Supabase")
+        console.log("[balaio] No tasks found in Supabase")
         setTasks([])
       }
 
       setLoading(false)
     } catch (error) {
-      console.error("[v0] Error loading tasks from Supabase:", error)
+      console.error("[balaio] Error loading tasks from Supabase:", error)
       toast("Error loading tasks")
       setLoading(false)
     }
@@ -139,12 +139,12 @@ export function TheOfficeApp() {
         )
 
         if (error) {
-          console.error("[v0] Error saving task to Supabase:", error.message)
+          console.error("[balaio] Error saving task to Supabase:", error.message)
         } else {
-          console.log("[v0] Task saved to Supabase:", task.id)
+          console.log("[balaio] Task saved to Supabase:", task.id)
         }
       } catch (error) {
-        console.error("[v0] Error saving task:", error)
+        console.error("[balaio] Error saving task:", error)
       }
     },
     [supabase],
@@ -163,7 +163,7 @@ export function TheOfficeApp() {
         JSON.parse(storedTaskIds).forEach((id: string) => taskIds.add(id))
       }
 
-      console.log("[v0] Loading", taskIds.size, "tasks from storage")
+      console.log("[balaio] Loading", taskIds.size, "tasks from storage")
 
       const loadedTasks: Task[] = []
       for (const taskId of taskIds) {
@@ -196,15 +196,15 @@ export function TheOfficeApp() {
             createdAt: new Date(Number(taskData[8]) * 1000),
           })
         } catch (err) {
-          console.error("[v0] Error loading task", taskId, ":", err)
+          console.error("[balaio] Error loading task", taskId, ":", err)
         }
       }
 
-      console.log("[v0] Loaded", loadedTasks.length, "tasks")
+      console.log("[balaio] Loaded", loadedTasks.length, "tasks")
       setTasks(loadedTasks)
       setLoading(false)
     } catch (error) {
-      console.error("[v0] Error loading tasks:", error)
+      console.error("[balaio] Error loading tasks:", error)
       setLoading(false)
     }
   }, [contract])
