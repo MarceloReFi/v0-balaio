@@ -6,7 +6,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
- 
+  // Empty turbopack config to suppress warning
+  turbopack: {},
 }
 
 export default nextConfig

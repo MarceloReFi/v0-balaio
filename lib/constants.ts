@@ -2,6 +2,10 @@ export const CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
 export const CELO_RPC = "https://forno.celo.org"
 export const CELO_CHAIN_ID = "0xa4ec"
 
+// Valora deep link for opening dApps in Valora's browser
+// Format: celo://wallet/dappkit?dappName=&url=
+export const VALORA_DEEP_LINK_BASE = "celo://wallet/dappkit"
+
 export type TokenSymbol =
   | "cUSD"
   | "cEUR"

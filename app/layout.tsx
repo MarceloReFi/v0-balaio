@@ -1,13 +1,10 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Courier_Prime } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
-const courierPrime = Courier_Prime({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-})
+// Font class for monospace styling - using system fonts for reliability
+const fontClass = "font-mono"
 
 export const metadata: Metadata = {
   title: "Balaio - Web3 Task Management on Celo",
@@ -39,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${courierPrime.className} antialiased`}>
+      <body className={`${fontClass} antialiased`}>
         {children}
         <Analytics />
       </body>
