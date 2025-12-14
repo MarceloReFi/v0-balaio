@@ -42,10 +42,25 @@ const isMobileDevice = () => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 }
 
-// Helper to check if we're inside a wallet's in-app browser
-const isInWalletBrowser = () => {
+// Helper to check if we're inside a known mobile wallet's in-app browser
+const isInMobileWalletBrowser = () => {
+  if (typeof window === "undefined" || !window.ethereum) return false
+
+  const ethereum = window.ethereum as {
+    isValora?: boolean
+    isMetaMask?: boolean
+    isMiniPay?: boolean
+    isCelo?: boolean
+  }
+
+  // Check for specific mobile wallet identifiers
+  // Valora, MetaMask Mobile, and MiniPay all have specific flags
+  return !!(ethereum.isValora || ethereum.isMiniPay || (ethereum.isMetaMask && isMobileDevice()) || ethereum.isCelo)
+}
+
+// Helper to check if any ethereum provider exists
+const hasEthereumProvider = () => {
   if (typeof window === "undefined") return false
-  // Valora, MetaMask mobile, and other wallets inject window.ethereum in their in-app browsers
   return !!window.ethereum
 }
 
@@ -300,22 +315,24 @@ export function TheOfficeApp() {
   const connectWallet = async () => {
     try {
       const isMobile = isMobileDevice()
-      const hasInjectedProvider = isInWalletBrowser()
+      const inMobileWallet = isInMobileWalletBrowser()
+      const hasProvider = hasEthereumProvider()
 
-      // On mobile without injected provider, redirect to Valora app
-      // Valora will open the dApp in its in-app browser where window.ethereum is available
-      if (isMobile && !hasInjectedProvider) {
+      // On mobile: check if we're in a known wallet browser (Valora, MetaMask Mobile, MiniPay)
+      // If not, redirect to Valora app - this handles the case where a browser has
+      // a generic/broken window.ethereum that doesn't work properly
+      if (isMobile && !inMobileWallet) {
         openInValora()
         return
       }
 
       // On desktop without extension, show install message
-      if (!hasInjectedProvider) {
+      if (!isMobile && !hasProvider) {
         toast("Please install MetaMask or use Valora on mobile")
         return
       }
 
-      // Has injected provider (MetaMask, Valora in-app, MiniPay) - connect directly
+      // Has proper provider (MetaMask extension, Valora in-app, MiniPay) - connect directly
       toast("Connecting to wallet...")
 
       const accounts = (await window.ethereum!.request({ method: "eth_requestAccounts" })) as string[]
