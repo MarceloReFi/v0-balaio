@@ -11,6 +11,7 @@ import {
   CELO_RPC,
   CUSTOM_ERRORS,
   SUPPORTED_TOKENS,
+  VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
 } from "@/lib/constants"
 import type { Task, TaskCategory, TaskComplexity } from "@/lib/types"
@@ -33,6 +34,19 @@ declare global {
       removeListener: (event: string, callback: (...args: unknown[]) => void) => void
     }
   }
+}
+
+// Helper to detect mobile devices
+const isMobileDevice = () => {
+  if (typeof window === "undefined") return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+// Helper to check if we're inside a wallet's in-app browser
+const isInWalletBrowser = () => {
+  if (typeof window === "undefined") return false
+  // Valora, MetaMask mobile, and other wallets inject window.ethereum in their in-app browsers
+  return !!window.ethereum
 }
 
 export function TheOfficeApp() {
@@ -272,24 +286,49 @@ export function TheOfficeApp() {
     fetchBalances()
   }, [account, tokenContracts])
 
+  // Open Valora app via deep link - this will open the dApp in Valora's in-app browser
+  const openInValora = () => {
+    const currentUrl = window.location.href
+    const dappName = encodeURIComponent("Balaio")
+    const encodedUrl = encodeURIComponent(currentUrl)
+    const deepLink = `${VALORA_DEEP_LINK_BASE}?dappName=${dappName}&url=${encodedUrl}`
+
+    toast("Opening Valora...")
+    window.location.href = deepLink
+  }
+
   const connectWallet = async () => {
     try {
-      if (typeof window === "undefined" || !window.ethereum) {
-        toast("Please install MetaMask, Valora, or MiniPay")
+      const isMobile = isMobileDevice()
+      const hasInjectedProvider = isInWalletBrowser()
+
+      // On mobile without injected provider, redirect to Valora app
+      // Valora will open the dApp in its in-app browser where window.ethereum is available
+      if (isMobile && !hasInjectedProvider) {
+        openInValora()
         return
       }
 
-      const accounts = (await window.ethereum.request({ method: "eth_requestAccounts" })) as string[]
+      // On desktop without extension, show install message
+      if (!hasInjectedProvider) {
+        toast("Please install MetaMask or use Valora on mobile")
+        return
+      }
+
+      // Has injected provider (MetaMask, Valora in-app, MiniPay) - connect directly
+      toast("Connecting to wallet...")
+
+      const accounts = (await window.ethereum!.request({ method: "eth_requestAccounts" })) as string[]
 
       try {
-        await window.ethereum.request({
+        await window.ethereum!.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: CELO_CHAIN_ID }],
         })
       } catch (switchError: unknown) {
         const error = switchError as { code?: number }
         if (error.code === 4902) {
-          await window.ethereum.request({
+          await window.ethereum!.request({
             method: "wallet_addEthereumChain",
             params: [
               {
@@ -311,8 +350,7 @@ export function TheOfficeApp() {
         }
       }
 
-      toast("Connecting to Web3...")
-      const provider = new ethers.BrowserProvider(window.ethereum)
+      const provider = new ethers.BrowserProvider(window.ethereum!)
       const signer = await provider.getSigner()
 
       const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
@@ -333,8 +371,10 @@ export function TheOfficeApp() {
     } catch (error: unknown) {
       console.error("Connect wallet error:", error)
       const err = error as { message?: string; code?: number; reason?: string }
-      if (err.code === 4001) {
+      if (err.code === 4001 || err.message?.includes("cancelled")) {
         toast("Connection cancelled by user")
+      } else if (err.message?.includes("User rejected")) {
+        toast("Connection rejected")
       } else if (err.reason) {
         toast("Error: " + err.reason)
       } else if (err.message) {
