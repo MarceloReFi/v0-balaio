@@ -24,6 +24,7 @@ export type TokenSymbol =
   | "cGBP"
   | "USDC"
   | "CRECY"
+  | "G$"
 
 export interface TokenConfig {
   symbol: TokenSymbol
@@ -136,6 +137,13 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     address: "0x34c11a932853ae24e845ad4b633e3cef91afe583",
     decimals: 18,
     name: "CRECY",
+  },
+  // GoodDollar UBI Token
+  "G$": {
+    symbol: "G$",
+    address: "0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A",
+    decimals: 18,
+    name: "GoodDollar",
   },
 }
 
