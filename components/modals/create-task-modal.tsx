@@ -4,7 +4,7 @@ import { useState } from "react"
 import { X, ChevronDown, Calendar } from "lucide-react"
 import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/constants"
 import { useTranslations, type Language } from "@/lib/translations"
-import type { TaskCategory, TaskComplexity } from "@/lib/types"
+import type { TaskCategory, TaskComplexity, PaymentMethod } from "@/lib/types"
 
 interface CreateTaskModalProps {
   open: boolean
@@ -21,6 +21,8 @@ interface CreateTaskModalProps {
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
+    paymentMethod: PaymentMethod,
+    fiatAmount: number | null,
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
@@ -49,6 +51,8 @@ export function CreateTaskModal({
   const [showComplexityDropdown, setShowComplexityDropdown] = useState(false)
   const [deadline, setDeadline] = useState<string>("")
   const [tagsInput, setTagsInput] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("crypto")
+  const [fiatAmount, setFiatAmount] = useState("")
 
   if (!open) return null
 
@@ -58,6 +62,7 @@ export function CreateTaskModal({
       .split(",")
       .map((tag: string) => tag.trim())
       .filter((tag: string) => tag.length > 0)
+    const parsedFiatAmount = fiatAmount ? parseFloat(fiatAmount) : null
 
     onCreateTask(
       taskId,
@@ -71,6 +76,8 @@ export function CreateTaskModal({
       "url",
       parsedDeadline,
       parsedTags,
+      paymentMethod,
+      parsedFiatAmount,
     )
     setTaskId("")
     setTaskTitle("")
@@ -82,10 +89,15 @@ export function CreateTaskModal({
     setComplexity("medium")
     setDeadline("")
     setTagsInput("")
+    setPaymentMethod("crypto")
+    setFiatAmount("")
   }
 
   const totalCost =
     rewardPerSlot && totalSlots ? (Number.parseFloat(rewardPerSlot) * Number.parseInt(totalSlots)).toFixed(2) : null
+
+  const totalFiatCost =
+    fiatAmount && totalSlots ? (Number.parseFloat(fiatAmount) * Number.parseInt(totalSlots)).toFixed(2) : null
 
   const tokenOptions = Object.values(SUPPORTED_TOKENS)
 
@@ -261,63 +273,116 @@ export function CreateTaskModal({
             />
           </div>
 
+          {/* Payment Method Selection */}
           <div>
-            <label className="block font-bold mb-2 text-xs">{t.selectToken}</label>
-            <div className="relative">
+            <label className="block font-bold mb-2 text-xs">{t.paymentMethod}</label>
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-                className="w-full p-2.5 border-2 border-gray-300 font-mono flex items-center justify-between bg-white"
+                onClick={() => setPaymentMethod("crypto")}
+                className={`flex-1 p-2.5 border-2 font-mono text-sm ${
+                  paymentMethod === "crypto"
+                    ? "border-black bg-[#F2E885]"
+                    : "border-gray-300 bg-white hover:bg-gray-50"
+                }`}
               >
-                <span className="flex items-center gap-2">
-                  <span className="font-bold">{selectedToken}</span>
-                  <span className="text-gray-500 text-sm">
-                    (Balance: {tokenBalances[selectedToken]} {selectedToken})
-                  </span>
-                </span>
-                <ChevronDown size={18} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
+                {t.cryptoPayment}
               </button>
-
-              {showTokenDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border-2 border-black border-t-0 z-10">
-                  {tokenOptions.map((token) => (
-                    <button
-                      key={token.symbol}
-                      type="button"
-                      onClick={() => {
-                        setSelectedToken(token.symbol)
-                        setShowTokenDropdown(false)
-                      }}
-                      className={`w-full p-2.5 text-left hover:bg-gray-100 flex items-center justify-between ${
-                        selectedToken === token.symbol ? "bg-[#F2E885]" : ""
-                      }`}
-                    >
-                      <span>
-                        <span className="font-bold">{token.symbol}</span>
-                        <span className="text-gray-500 text-sm ml-2">({token.name})</span>
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        {tokenBalances[token.symbol]} {token.symbol}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("pix")}
+                className={`flex-1 p-2.5 border-2 font-mono text-sm ${
+                  paymentMethod === "pix"
+                    ? "border-black bg-[#32BCAD]"
+                    : "border-gray-300 bg-white hover:bg-gray-50"
+                }`}
+              >
+                {t.pixPayment}
+              </button>
             </div>
           </div>
 
-          <div>
-            <label className="block font-bold mb-2 text-xs">
-              {t.reward} ({selectedToken})
-            </label>
-            <input
-              type="number"
-              value={rewardPerSlot}
-              onChange={(e) => setRewardPerSlot(e.target.value)}
-              placeholder="10"
-              className="w-full p-2.5 border-2 border-gray-300 font-mono"
-            />
-          </div>
+          {/* Pix Amount (only shown when Pix is selected) */}
+          {paymentMethod === "pix" && (
+            <div>
+              <label className="block font-bold mb-2 text-xs">{t.pixAmount}</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-mono">R$</span>
+                <input
+                  type="number"
+                  value={fiatAmount}
+                  onChange={(e) => setFiatAmount(e.target.value)}
+                  placeholder="50.00"
+                  step="0.01"
+                  min="0"
+                  className="w-full p-2.5 pl-10 border-2 border-gray-300 font-mono"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Token Selection (only shown when crypto is selected) */}
+          {paymentMethod === "crypto" && (
+            <>
+              <div>
+                <label className="block font-bold mb-2 text-xs">{t.selectToken}</label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowTokenDropdown(!showTokenDropdown)}
+                    className="w-full p-2.5 border-2 border-gray-300 font-mono flex items-center justify-between bg-white"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="font-bold">{selectedToken}</span>
+                      <span className="text-gray-500 text-sm">
+                        (Balance: {tokenBalances[selectedToken]} {selectedToken})
+                      </span>
+                    </span>
+                    <ChevronDown size={18} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {showTokenDropdown && (
+                    <div className="absolute top-full left-0 right-0 bg-white border-2 border-black border-t-0 z-10">
+                      {tokenOptions.map((token) => (
+                        <button
+                          key={token.symbol}
+                          type="button"
+                          onClick={() => {
+                            setSelectedToken(token.symbol)
+                            setShowTokenDropdown(false)
+                          }}
+                          className={`w-full p-2.5 text-left hover:bg-gray-100 flex items-center justify-between ${
+                            selectedToken === token.symbol ? "bg-[#F2E885]" : ""
+                          }`}
+                        >
+                          <span>
+                            <span className="font-bold">{token.symbol}</span>
+                            <span className="text-gray-500 text-sm ml-2">({token.name})</span>
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            {tokenBalances[token.symbol]} {token.symbol}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold mb-2 text-xs">
+                  {t.reward} ({selectedToken})
+                </label>
+                <input
+                  type="number"
+                  value={rewardPerSlot}
+                  onChange={(e) => setRewardPerSlot(e.target.value)}
+                  placeholder="10"
+                  className="w-full p-2.5 border-2 border-gray-300 font-mono"
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block font-bold mb-2 text-xs">{language === "en" ? "SLOTS" : "VAGAS"}</label>
@@ -330,18 +395,36 @@ export function CreateTaskModal({
             />
           </div>
 
-          {totalCost && (
+          {/* Total Cost for Crypto */}
+          {paymentMethod === "crypto" && totalCost && (
             <div className="bg-[#F2E885] border-2 border-black p-3">
-              <div className="font-bold text-xs">{language === "en" ? "Total Cost:" : "Custo Total:"}</div>
+              <div className="font-bold text-xs">{t.totalCostBrl}</div>
               <div className="text-lg font-bold">
                 {totalCost} {selectedToken}
               </div>
             </div>
           )}
 
+          {/* Total Cost for Pix */}
+          {paymentMethod === "pix" && totalFiatCost && (
+            <div className="bg-[#32BCAD] border-2 border-black p-3 text-white">
+              <div className="font-bold text-xs">{t.totalCostBrl}</div>
+              <div className="text-lg font-bold">
+                R$ {totalFiatCost}
+              </div>
+            </div>
+          )}
+
           <button
             onClick={handleCreate}
-            disabled={loading || !taskId || !taskTitle || !rewardPerSlot || !totalSlots}
+            disabled={
+              loading ||
+              !taskId ||
+              !taskTitle ||
+              !totalSlots ||
+              (paymentMethod === "crypto" && !rewardPerSlot) ||
+              (paymentMethod === "pix" && !fiatAmount)
+            }
             className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-50"
           >
             {loading ? (language === "en" ? "CREATING..." : "CRIANDO...") : t.createTaskButton}
