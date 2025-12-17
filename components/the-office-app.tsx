@@ -14,7 +14,7 @@ import {
   VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
 } from "@/lib/constants"
-import type { Task, TaskCategory, TaskComplexity } from "@/lib/types"
+import type { Task, TaskCategory, TaskComplexity, PaymentMethod, PixKeyType } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
@@ -120,9 +120,16 @@ export function TheOfficeApp() {
           active: row.status === 0,
           creator: row.creator_address,
           createdAt: new Date(row.created_at),
-          token: (row.token || "cUSD") as TokenSymbol,
-          tokenAddress: row.token_address || SUPPORTED_TOKENS["cUSD"].address,
+          token: row.token as TokenSymbol | undefined,
+          tokenAddress: row.token_address || undefined,
           mySlot: null,
+          // Pix payment fields
+          paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
+          fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
+          workerPixKey: row.worker_pix_key || undefined,
+          workerPixKeyType: row.worker_pix_key_type as "cpf" | "email" | "phone" | "random" | undefined,
+          pixPaymentConfirmed: row.pix_payment_confirmed || false,
+          pixPaymentConfirmedAt: row.pix_payment_confirmed_at ? new Date(row.pix_payment_confirmed_at) : undefined,
         }))
 
         console.log("[balaio] Loaded", loadedTasks.length, "tasks from Supabase")
@@ -149,8 +156,8 @@ export function TheOfficeApp() {
             title: task.title,
             description: task.description,
             reward: task.reward,
-            token: task.token,
-            token_address: task.tokenAddress,
+            token: task.token || null,
+            token_address: task.tokenAddress || null,
             creator_address: task.creator,
             worker_address: (task as any).workerAddress || null,
             status: (task as any).status || 0,
@@ -163,6 +170,13 @@ export function TheOfficeApp() {
             validation_method: task.validationMethod || null,
             deadline: task.deadline ? task.deadline.toISOString() : null,
             tags: task.tags || [],
+            // Pix payment fields
+            payment_method: task.paymentMethod || "crypto",
+            fiat_amount: task.fiatAmount || null,
+            worker_pix_key: task.workerPixKey || null,
+            worker_pix_key_type: task.workerPixKeyType || null,
+            pix_payment_confirmed: task.pixPaymentConfirmed || false,
+            pix_payment_confirmed_at: task.pixPaymentConfirmedAt ? task.pixPaymentConfirmedAt.toISOString() : null,
           },
           { onConflict: "id" },
         )
@@ -547,8 +561,58 @@ export function TheOfficeApp() {
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
+    paymentMethod: PaymentMethod,
+    fiatAmount: number | null,
   ) => {
-    if (!contract || !account) return
+    if (!account) return
+
+    // For Pix payments, we don't need blockchain interaction
+    if (paymentMethod === "pix") {
+      try {
+        setLoading(true)
+        toast("Creating Pix task...")
+
+        const newTask: Task = {
+          id: taskId,
+          title: taskTitle || taskId,
+          description: taskDescription || "Complete this task and earn rewards",
+          reward: "0", // No crypto reward for Pix tasks
+          totalSlots: totalSlots,
+          claimedSlots: "0",
+          availableSlots: totalSlots,
+          active: true,
+          creator: account,
+          createdAt: new Date(),
+          token: undefined,
+          tokenAddress: undefined,
+          mySlot: null,
+          category: category,
+          complexity: complexity,
+          validationMethod: validationMethod,
+          deadline: deadline,
+          tags: tags,
+          paymentMethod: "pix",
+          fiatAmount: fiatAmount || 0,
+          pixPaymentConfirmed: false,
+        }
+
+        await saveTaskToSupabase(newTask)
+        toast("Pix task created successfully!")
+
+        setTasks([newTask, ...tasks])
+        setShowCreateModal(false)
+        await loadAllTasksFromSupabase()
+      } catch (error) {
+        console.error("Create Pix task error:", error)
+        toast("Error creating task: " + (error as Error).message)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // For crypto payments, use the blockchain
+    if (!contract) return
 
     const tokenContract = tokenContracts[token]
     const tokenConfig = SUPPORTED_TOKENS[token]
@@ -624,6 +688,7 @@ export function TheOfficeApp() {
         validationMethod: validationMethod,
         deadline: deadline,
         tags: tags,
+        paymentMethod: "crypto",
       }
 
       await saveTaskToSupabase(newTask)
@@ -666,8 +731,53 @@ export function TheOfficeApp() {
     }
   }
 
-  const submitTask = async (id: string, proof: string) => {
-    if (!contract || !proof) return
+  const submitTask = async (id: string, proof: string, pixKey?: string, pixKeyType?: PixKeyType) => {
+    if (!proof) return
+
+    // Find the task to check if it's a Pix payment
+    const task = tasks.find((t) => t.id === id)
+    const isPixPayment = task?.paymentMethod === "pix"
+
+    // For Pix payments, we only need to update the database
+    if (isPixPayment) {
+      try {
+        setLoading(true)
+        toast("Submitting work...")
+
+        await supabase
+          .from("tasks")
+          .update({
+            submission_link: proof,
+            worker_pix_key: pixKey,
+            worker_pix_key_type: pixKeyType,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id)
+
+        toast("Work submitted!")
+
+        // Update local state
+        const updatedTask = {
+          ...task!,
+          workerPixKey: pixKey,
+          workerPixKeyType: pixKeyType,
+          mySlot: { claimed: true, submitted: true, approved: false, withdrawn: false },
+        }
+        setTasks(tasks.map((t) => (t.id === id ? updatedTask : t)))
+        setSelectedTask(updatedTask)
+
+        await loadAllTasksFromSupabase()
+      } catch (error) {
+        console.error(error)
+        toast("Error: " + (error as Error).message)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+
+    // For crypto payments, use the blockchain
+    if (!contract) return
 
     try {
       setLoading(true)
@@ -738,6 +848,43 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         await saveTaskToSupabase(updated)
+      }
+
+      setShowTaskModal(false)
+    } catch (error) {
+      console.error(error)
+      toast("Error: " + (error as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const confirmPixPayment = async (id: string) => {
+    try {
+      setLoading(true)
+      toast("Confirming Pix payment...")
+
+      await supabase
+        .from("tasks")
+        .update({
+          pix_payment_confirmed: true,
+          pix_payment_confirmed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+
+      toast("Payment confirmed!")
+
+      // Update local state
+      const task = tasks.find((t) => t.id === id)
+      if (task) {
+        const updatedTask = {
+          ...task,
+          pixPaymentConfirmed: true,
+          pixPaymentConfirmedAt: new Date(),
+        }
+        setTasks(tasks.map((t) => (t.id === id ? updatedTask : t)))
+        setSelectedTask(updatedTask)
       }
 
       setShowTaskModal(false)
@@ -930,6 +1077,7 @@ export function TheOfficeApp() {
         onSubmitTask={submitTask}
         onApproveTask={approveTaskSubmission}
         onClaimReward={claimReward}
+        onConfirmPixPayment={confirmPixPayment}
         language={language}
       />
 
