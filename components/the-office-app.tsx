@@ -148,7 +148,7 @@ export function TheOfficeApp() {
   }, [supabase, toast])
 
   const saveTaskToSupabase = useCallback(
-    async (task: Task) => {
+    async (task: Task): Promise<{ success: boolean; error?: string }> => {
       try {
         const { error } = await supabase.from("tasks").upsert(
           {
@@ -183,11 +183,14 @@ export function TheOfficeApp() {
 
         if (error) {
           console.error("[balaio] Error saving task to Supabase:", error.message)
+          return { success: false, error: error.message }
         } else {
           console.log("[balaio] Task saved to Supabase:", task.id)
+          return { success: true }
         }
       } catch (error) {
         console.error("[balaio] Error saving task:", error)
+        return { success: false, error: (error as Error).message }
       }
     },
     [supabase],
@@ -596,7 +599,11 @@ export function TheOfficeApp() {
           pixPaymentConfirmed: false,
         }
 
-        await saveTaskToSupabase(newTask)
+        const saveResult = await saveTaskToSupabase(newTask)
+        if (!saveResult.success) {
+          toast(`Error creating Pix task: ${saveResult.error}`)
+          return
+        }
         toast("Pix task created successfully!")
 
         setTasks([newTask, ...tasks])
@@ -667,7 +674,7 @@ export function TheOfficeApp() {
       const tx = await contract.createTask(taskId, tokenConfig.address, rewardWei, totalSlots, account)
       await tx.wait()
 
-      toast("Task created successfully!")
+      toast("Blockchain transaction confirmed, saving to database...")
 
       const newTask: Task = {
         id: taskId,
@@ -691,7 +698,12 @@ export function TheOfficeApp() {
         paymentMethod: "crypto",
       }
 
-      await saveTaskToSupabase(newTask)
+      const saveResult = await saveTaskToSupabase(newTask)
+      if (!saveResult.success) {
+        toast(`Task created on blockchain but failed to save to database: ${saveResult.error}. Please try searching for task ID "${taskId}" to sync it.`)
+      } else {
+        toast("Task created successfully!")
+      }
 
       setTasks([newTask, ...tasks])
       setShowCreateModal(false)
