@@ -167,5 +167,12 @@ export const ERC20_ABI = [
 
 export const CUSTOM_ERRORS: Record<string, string> = {
   "0xf2e16b03": "Task ID already exists or insufficient allowance",
+  "0xe374566b": "No slots available - task is full or has no slots",
+  "0x621a8e4d": "Task is not active",
+  "0x646cf558": "You have already claimed this task",
+  "0xc325ae33": "Task not found",
+  "0x9fbfc589": "You have already submitted work for this task",
+  "0x94eeef66": "You are not the claimant of this task",
+  "0xc19f17a9": "Task submission not approved yet",
   "0x": "Unknown contract error",
 }
