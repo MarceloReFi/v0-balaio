@@ -737,7 +737,7 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      toast("Error: " + parseContractError(error))
     } finally {
       setLoading(false)
     }
@@ -811,7 +811,7 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      toast("Error: " + parseContractError(error))
     } finally {
       setLoading(false)
     }
@@ -837,7 +837,7 @@ export function TheOfficeApp() {
       }
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      toast("Error: " + parseContractError(error))
     } finally {
       setLoading(false)
     }
@@ -865,7 +865,7 @@ export function TheOfficeApp() {
       setShowTaskModal(false)
     } catch (error) {
       console.error(error)
-      toast("Error: " + (error as Error).message)
+      toast("Error: " + parseContractError(error))
     } finally {
       setLoading(false)
     }
