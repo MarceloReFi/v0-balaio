@@ -14,7 +14,7 @@ import {
   VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
 } from "@/lib/constants"
-import type { Task, TaskCategory, TaskComplexity } from "@/lib/types"
+import type { Task, TaskCategory, TaskComplexity, TaskVisibility } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
@@ -23,6 +23,7 @@ import { LandingPage } from "@/components/pages/landing-page"
 import { TasksPage } from "@/components/pages/tasks-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { BlogPage } from "@/components/pages/blog-page"
+import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 
@@ -71,7 +72,7 @@ export function TheOfficeApp() {
     cUSD: null,
     USDC: null,
   })
-  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog">("home")
+  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -124,6 +125,7 @@ export function TheOfficeApp() {
           token: row.token as TokenSymbol | undefined,
           tokenAddress: row.token_address || undefined,
           mySlot: null,
+          visibility: (row.visibility || "public") as "public" | "private",
           // Pix payment fields
           paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
           fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
@@ -194,6 +196,7 @@ export function TheOfficeApp() {
           token: row.token as TokenSymbol | undefined,
           tokenAddress: row.token_address || undefined,
           mySlot: null,
+          visibility: (row.visibility || "public") as "public" | "private",
           status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
         })
 
@@ -236,6 +239,7 @@ export function TheOfficeApp() {
             validation_method: task.validationMethod || null,
             deadline: task.deadline ? task.deadline.toISOString() : null,
             tags: task.tags || [],
+            visibility: task.visibility || "public",
             // Pix payment fields
             payment_method: task.paymentMethod || "crypto",
             fiat_amount: task.fiatAmount || null,
@@ -630,6 +634,7 @@ export function TheOfficeApp() {
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
+    visibility: TaskVisibility,
   ) => {
     if (!account) return
     if (!contract) return
@@ -708,6 +713,7 @@ export function TheOfficeApp() {
         validationMethod: validationMethod,
         deadline: deadline,
         tags: tags,
+        visibility: visibility,
         paymentMethod: "crypto",
       }
 
@@ -942,7 +948,11 @@ export function TheOfficeApp() {
             }}
             onClaimTask={(task) => claimTask(task.id)}
             onNavigateToTasks={() => setCurrentPage("tasks")}
+            onNavigateToFeatures={() => setCurrentPage("features")}
           />
+        )}
+        {account && currentPage === "features" && (
+          <ExploreFeaturesPage onBack={() => setCurrentPage("home")} language={language} />
         )}
         {account && currentPage === "tasks" && (
           <TasksPage
