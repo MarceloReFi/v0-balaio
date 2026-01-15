@@ -241,8 +241,7 @@ export function TheOfficeApp() {
             validation_method: task.validationMethod || null,
             deadline: task.deadline ? task.deadline.toISOString() : null,
             tags: task.tags || [],
-            // Note: visibility field requires migration 004 to be run first
-            // visibility: task.visibility || "public",
+            visibility: task.visibility || "public",
           },
           { onConflict: "id" },
         )
@@ -724,6 +723,7 @@ export function TheOfficeApp() {
       setShowCreateModal(false)
 
       await loadAllTasksFromSupabase()
+      await loadUserActivity(account)
     } catch (error) {
       console.error("Create task error:", error)
       toast("Error: " + parseContractError(error))
