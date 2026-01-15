@@ -14,7 +14,7 @@ import {
   VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
 } from "@/lib/constants"
-import type { Task, TaskCategory, TaskComplexity, PaymentMethod, PixKeyType } from "@/lib/types"
+import type { Task, TaskCategory, TaskComplexity } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
@@ -82,6 +82,7 @@ export function TheOfficeApp() {
     USDC: "0.00",
   })
   const [tasks, setTasks] = useState<Task[]>([])
+  const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const [language, setLanguage] = useState<Language>("en")
   const t = useTranslations(language)
   const supabase = createClient()
@@ -146,6 +147,71 @@ export function TheOfficeApp() {
       setLoading(false)
     }
   }, [supabase, toast])
+
+  const loadUserActivity = useCallback(
+    async (userAddress: string) => {
+      if (!userAddress) return
+
+      try {
+        console.log("[balaio] Loading user activity from Supabase for:", userAddress)
+        const normalizedAddress = userAddress.toLowerCase()
+
+        // Fetch tasks created by user
+        const { data: createdTasks, error: createdError } = await supabase
+          .from("tasks")
+          .select("*")
+          .ilike("creator_address", normalizedAddress)
+          .order("created_at", { ascending: false })
+          .limit(10)
+
+        if (createdError) {
+          console.error("[balaio] Error fetching created tasks:", createdError.message)
+        }
+
+        // Fetch tasks where user is worker
+        const { data: workedTasks, error: workedError } = await supabase
+          .from("tasks")
+          .select("*")
+          .ilike("worker_address", normalizedAddress)
+          .order("updated_at", { ascending: false })
+          .limit(10)
+
+        if (workedError) {
+          console.error("[balaio] Error fetching worked tasks:", workedError.message)
+        }
+
+        const mapRowToTask = (row: any): Task => ({
+          id: row.id,
+          title: row.title || `Task ${row.id.substring(0, 8)}...`,
+          description: row.description || "Complete this task and earn rewards",
+          reward: row.reward || "0",
+          totalSlots: String(row.slots || 1),
+          claimedSlots: String(row.claimed_slots || 0),
+          availableSlots: String((row.slots || 1) - (row.claimed_slots || 0)),
+          active: row.status === 0,
+          creator: row.creator_address,
+          createdAt: new Date(row.created_at),
+          token: row.token as TokenSymbol | undefined,
+          tokenAddress: row.token_address || undefined,
+          mySlot: null,
+          status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
+        })
+
+        setUserActivity({
+          created: (createdTasks || []).map(mapRowToTask),
+          worked: (workedTasks || []).map(mapRowToTask),
+        })
+
+        console.log("[balaio] User activity loaded:", {
+          created: createdTasks?.length || 0,
+          worked: workedTasks?.length || 0,
+        })
+      } catch (error) {
+        console.error("[balaio] Error loading user activity:", error)
+      }
+    },
+    [supabase],
+  )
 
   const saveTaskToSupabase = useCallback(
     async (task: Task): Promise<{ success: boolean; error?: string }> => {
@@ -564,61 +630,8 @@ export function TheOfficeApp() {
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
-    paymentMethod: PaymentMethod,
-    fiatAmount: number | null,
   ) => {
     if (!account) return
-
-    // For Pix payments, we don't need blockchain interaction
-    if (paymentMethod === "pix") {
-      try {
-        setLoading(true)
-        toast("Creating Pix task...")
-
-        const newTask: Task = {
-          id: taskId,
-          title: taskTitle || taskId,
-          description: taskDescription || "Complete this task and earn rewards",
-          reward: "0", // No crypto reward for Pix tasks
-          totalSlots: totalSlots,
-          claimedSlots: "0",
-          availableSlots: totalSlots,
-          active: true,
-          creator: account,
-          createdAt: new Date(),
-          token: undefined,
-          tokenAddress: undefined,
-          mySlot: null,
-          category: category,
-          complexity: complexity,
-          validationMethod: validationMethod,
-          deadline: deadline,
-          tags: tags,
-          paymentMethod: "pix",
-          fiatAmount: fiatAmount || 0,
-          pixPaymentConfirmed: false,
-        }
-
-        const saveResult = await saveTaskToSupabase(newTask)
-        if (!saveResult.success) {
-          toast(`Error creating Pix task: ${saveResult.error}`)
-          return
-        }
-        toast("Pix task created successfully!")
-
-        setTasks([newTask, ...tasks])
-        setShowCreateModal(false)
-        await loadAllTasksFromSupabase()
-      } catch (error) {
-        console.error("Create Pix task error:", error)
-        toast("Error creating task: " + (error as Error).message)
-      } finally {
-        setLoading(false)
-      }
-      return
-    }
-
-    // For crypto payments, use the blockchain
     if (!contract) return
 
     const tokenContract = tokenContracts[token]
@@ -743,52 +756,8 @@ export function TheOfficeApp() {
     }
   }
 
-  const submitTask = async (id: string, proof: string, pixKey?: string, pixKeyType?: PixKeyType) => {
+  const submitTask = async (id: string, proof: string) => {
     if (!proof) return
-
-    // Find the task to check if it's a Pix payment
-    const task = tasks.find((t) => t.id === id)
-    const isPixPayment = task?.paymentMethod === "pix"
-
-    // For Pix payments, we only need to update the database
-    if (isPixPayment) {
-      try {
-        setLoading(true)
-        toast("Submitting work...")
-
-        await supabase
-          .from("tasks")
-          .update({
-            submission_link: proof,
-            worker_pix_key: pixKey,
-            worker_pix_key_type: pixKeyType,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", id)
-
-        toast("Work submitted!")
-
-        // Update local state
-        const updatedTask = {
-          ...task!,
-          workerPixKey: pixKey,
-          workerPixKeyType: pixKeyType,
-          mySlot: { claimed: true, submitted: true, approved: false, withdrawn: false },
-        }
-        setTasks(tasks.map((t) => (t.id === id ? updatedTask : t)))
-        setSelectedTask(updatedTask)
-
-        await loadAllTasksFromSupabase()
-      } catch (error) {
-        console.error(error)
-        toast("Error: " + (error as Error).message)
-      } finally {
-        setLoading(false)
-      }
-      return
-    }
-
-    // For crypto payments, use the blockchain
     if (!contract) return
 
     try {
@@ -871,43 +840,6 @@ export function TheOfficeApp() {
     }
   }
 
-  const confirmPixPayment = async (id: string) => {
-    try {
-      setLoading(true)
-      toast("Confirming Pix payment...")
-
-      await supabase
-        .from("tasks")
-        .update({
-          pix_payment_confirmed: true,
-          pix_payment_confirmed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", id)
-
-      toast("Payment confirmed!")
-
-      // Update local state
-      const task = tasks.find((t) => t.id === id)
-      if (task) {
-        const updatedTask = {
-          ...task,
-          pixPaymentConfirmed: true,
-          pixPaymentConfirmedAt: new Date(),
-        }
-        setTasks(tasks.map((t) => (t.id === id ? updatedTask : t)))
-        setSelectedTask(updatedTask)
-      }
-
-      setShowTaskModal(false)
-    } catch (error) {
-      console.error(error)
-      toast("Error: " + (error as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const logout = () => {
     setAccount("")
     setContract(null)
@@ -932,6 +864,12 @@ export function TheOfficeApp() {
       loadAllTasksFromSupabase()
     }
   }, [contract, account, loadAllTasksFromSupabase])
+
+  useEffect(() => {
+    if (account) {
+      loadUserActivity(account)
+    }
+  }, [account, loadUserActivity])
 
   return (
     <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
@@ -1023,6 +961,7 @@ export function TheOfficeApp() {
             account={account}
             balance={displayBalance}
             tasks={tasks}
+            userActivity={userActivity}
             onNavigateToBlog={() => setCurrentPage("blog")}
             language={language}
           />
@@ -1089,7 +1028,6 @@ export function TheOfficeApp() {
         onSubmitTask={submitTask}
         onApproveTask={approveTaskSubmission}
         onClaimReward={claimReward}
-        onConfirmPixPayment={confirmPixPayment}
         language={language}
       />
 
