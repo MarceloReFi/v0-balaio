@@ -4,7 +4,7 @@ import { useState } from "react"
 import { X, ChevronDown, Calendar } from "lucide-react"
 import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/constants"
 import { useTranslations, type Language } from "@/lib/translations"
-import type { TaskCategory, TaskComplexity } from "@/lib/types"
+import type { TaskCategory, TaskComplexity, TaskVisibility } from "@/lib/types"
 
 interface CreateTaskModalProps {
   open: boolean
@@ -21,6 +21,7 @@ interface CreateTaskModalProps {
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
+    visibility: TaskVisibility,
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
@@ -49,6 +50,7 @@ export function CreateTaskModal({
   const [showComplexityDropdown, setShowComplexityDropdown] = useState(false)
   const [deadline, setDeadline] = useState<string>("")
   const [tagsInput, setTagsInput] = useState("")
+  const [visibility, setVisibility] = useState<TaskVisibility>("public")
 
   if (!open) return null
 
@@ -71,6 +73,7 @@ export function CreateTaskModal({
       "url",
       parsedDeadline,
       parsedTags,
+      visibility,
     )
     setTaskId("")
     setTaskTitle("")
@@ -82,6 +85,7 @@ export function CreateTaskModal({
     setComplexity("medium")
     setDeadline("")
     setTagsInput("")
+    setVisibility("public")
   }
 
   const totalCost =
@@ -152,6 +156,42 @@ export function CreateTaskModal({
               rows={3}
               className="w-full p-2.5 border-2 border-gray-300 font-mono"
             />
+          </div>
+
+          {/* Visibility Toggle */}
+          <div>
+            <label className="block font-bold mb-2 text-xs">
+              {language === "en" ? "VISIBILITY" : "VISIBILIDADE"}
+            </label>
+            <div className="flex border-2 border-black">
+              <button
+                type="button"
+                onClick={() => setVisibility("public")}
+                className={`flex-1 py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
+                  visibility === "public"
+                    ? "bg-[#B8D962] text-black"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                🌐 {language === "en" ? "Public" : "Publica"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibility("private")}
+                className={`flex-1 py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 border-l-2 border-black transition-colors ${
+                  visibility === "private"
+                    ? "bg-[#C36DF0] text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                🔒 {language === "en" ? "Private" : "Privada"}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {visibility === "public"
+                ? (language === "en" ? "Anyone can see and claim this task" : "Qualquer pessoa pode ver e reivindicar esta tarefa")
+                : (language === "en" ? "Only people with the task ID can access" : "Apenas pessoas com o ID da tarefa podem acessar")}
+            </p>
           </div>
 
           {/* Category Dropdown */}
