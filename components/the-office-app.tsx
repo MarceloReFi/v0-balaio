@@ -241,14 +241,8 @@ export function TheOfficeApp() {
             validation_method: task.validationMethod || null,
             deadline: task.deadline ? task.deadline.toISOString() : null,
             tags: task.tags || [],
-            visibility: task.visibility || "public",
-            // Pix payment fields
-            payment_method: task.paymentMethod || "crypto",
-            fiat_amount: task.fiatAmount || null,
-            worker_pix_key: task.workerPixKey || null,
-            worker_pix_key_type: task.workerPixKeyType || null,
-            pix_payment_confirmed: task.pixPaymentConfirmed || false,
-            pix_payment_confirmed_at: task.pixPaymentConfirmedAt ? task.pixPaymentConfirmedAt.toISOString() : null,
+            // Note: visibility field requires migration 004 to be run first
+            // visibility: task.visibility || "public",
           },
           { onConflict: "id" },
         )
