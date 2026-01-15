@@ -82,6 +82,7 @@ export function TheOfficeApp() {
     USDC: "0.00",
   })
   const [tasks, setTasks] = useState<Task[]>([])
+  const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const [language, setLanguage] = useState<Language>("en")
   const t = useTranslations(language)
   const supabase = createClient()
@@ -146,6 +147,71 @@ export function TheOfficeApp() {
       setLoading(false)
     }
   }, [supabase, toast])
+
+  const loadUserActivity = useCallback(
+    async (userAddress: string) => {
+      if (!userAddress) return
+
+      try {
+        console.log("[balaio] Loading user activity from Supabase for:", userAddress)
+        const normalizedAddress = userAddress.toLowerCase()
+
+        // Fetch tasks created by user
+        const { data: createdTasks, error: createdError } = await supabase
+          .from("tasks")
+          .select("*")
+          .ilike("creator_address", normalizedAddress)
+          .order("created_at", { ascending: false })
+          .limit(10)
+
+        if (createdError) {
+          console.error("[balaio] Error fetching created tasks:", createdError.message)
+        }
+
+        // Fetch tasks where user is worker
+        const { data: workedTasks, error: workedError } = await supabase
+          .from("tasks")
+          .select("*")
+          .ilike("worker_address", normalizedAddress)
+          .order("updated_at", { ascending: false })
+          .limit(10)
+
+        if (workedError) {
+          console.error("[balaio] Error fetching worked tasks:", workedError.message)
+        }
+
+        const mapRowToTask = (row: any): Task => ({
+          id: row.id,
+          title: row.title || `Task ${row.id.substring(0, 8)}...`,
+          description: row.description || "Complete this task and earn rewards",
+          reward: row.reward || "0",
+          totalSlots: String(row.slots || 1),
+          claimedSlots: String(row.claimed_slots || 0),
+          availableSlots: String((row.slots || 1) - (row.claimed_slots || 0)),
+          active: row.status === 0,
+          creator: row.creator_address,
+          createdAt: new Date(row.created_at),
+          token: row.token as TokenSymbol | undefined,
+          tokenAddress: row.token_address || undefined,
+          mySlot: null,
+          status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
+        })
+
+        setUserActivity({
+          created: (createdTasks || []).map(mapRowToTask),
+          worked: (workedTasks || []).map(mapRowToTask),
+        })
+
+        console.log("[balaio] User activity loaded:", {
+          created: createdTasks?.length || 0,
+          worked: workedTasks?.length || 0,
+        })
+      } catch (error) {
+        console.error("[balaio] Error loading user activity:", error)
+      }
+    },
+    [supabase],
+  )
 
   const saveTaskToSupabase = useCallback(
     async (task: Task): Promise<{ success: boolean; error?: string }> => {
@@ -799,6 +865,12 @@ export function TheOfficeApp() {
     }
   }, [contract, account, loadAllTasksFromSupabase])
 
+  useEffect(() => {
+    if (account) {
+      loadUserActivity(account)
+    }
+  }, [account, loadUserActivity])
+
   return (
     <div className="min-h-screen bg-[#F5F1E8] flex flex-col">
       {/* Header */}
@@ -889,6 +961,7 @@ export function TheOfficeApp() {
             account={account}
             balance={displayBalance}
             tasks={tasks}
+            userActivity={userActivity}
             onNavigateToBlog={() => setCurrentPage("blog")}
             language={language}
           />

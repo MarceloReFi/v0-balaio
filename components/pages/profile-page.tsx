@@ -8,11 +8,12 @@ interface ProfilePageProps {
   account: string
   balance: string
   tasks: Task[]
+  userActivity: { created: Task[]; worked: Task[] }
   onNavigateToBlog: () => void
   language: Language
 }
 
-export function ProfilePage({ account, balance, tasks, onNavigateToBlog, language }: ProfilePageProps) {
+export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, language }: ProfilePageProps) {
   const t = useTranslations(language)
   const completedTasks = tasks.filter((t) => t.mySlot?.approved)
   const totalEarned = completedTasks.reduce((sum, task) => {
@@ -49,38 +50,102 @@ export function ProfilePage({ account, balance, tasks, onNavigateToBlog, languag
 
       <div className="bg-white border-2 border-black p-4 mb-5">
         <h3 className="font-bold mb-3 flex items-center gap-2">📊 {t.recentActivity}</h3>
-        <div className="space-y-2">
-          {tasks
-            .filter((t) => t.mySlot)
-            .slice(0, 3)
-            .map((task) => (
-              <div key={task.id} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                <span className="text-xs">{task.title}</span>
-                <span
-                  className={`text-xs font-bold ${
-                    task.mySlot?.approved
-                      ? "text-[#636D4F]"
+
+        {/* Tasks Created by User */}
+        {userActivity.created.length > 0 && (
+          <div className="mb-4">
+            <div className="text-xs font-bold text-[#3A4571] mb-2 flex items-center gap-1">
+              ✨ {language === "en" ? "Tasks You Created" : "Tarefas que Você Criou"}
+            </div>
+            <div className="space-y-2">
+              {userActivity.created.slice(0, 3).map((task) => (
+                <div key={`created-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
+                  <span className="text-xs truncate max-w-[60%]">{task.title}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">
+                      {task.claimedSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
+                    </span>
+                    <span className={`text-xs font-bold px-1.5 py-0.5 border ${task.active ? "bg-[#B8D962] border-black" : "bg-gray-200 border-gray-400"}`}>
+                      {task.active ? (language === "en" ? "Active" : "Ativa") : (language === "en" ? "Closed" : "Fechada")}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tasks User Worked On */}
+        {userActivity.worked.length > 0 && (
+          <div className="mb-4">
+            <div className="text-xs font-bold text-[#636D4F] mb-2 flex items-center gap-1">
+              💼 {language === "en" ? "Tasks You Worked On" : "Tarefas em que Você Trabalhou"}
+            </div>
+            <div className="space-y-2">
+              {userActivity.worked.slice(0, 3).map((task) => (
+                <div key={`worked-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
+                  <span className="text-xs truncate max-w-[60%]">{task.title}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold">
+                      {task.reward} {task.token || "cUSD"}
+                    </span>
+                    <span
+                      className={`text-xs font-bold px-1.5 py-0.5 border ${
+                        task.status === "completed"
+                          ? "bg-[#636D4F] text-white border-black"
+                          : task.status === "submitted"
+                            ? "bg-[#FFF244] border-black"
+                            : "bg-white border-gray-400"
+                      }`}
+                    >
+                      {task.status === "completed"
+                        ? language === "en" ? "Completed" : "Concluída"
+                        : task.status === "submitted"
+                          ? language === "en" ? "Pending" : "Pendente"
+                          : language === "en" ? "In Progress" : "Em Progresso"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Legacy fallback from local tasks */}
+        {userActivity.created.length === 0 && userActivity.worked.length === 0 && (
+          <div className="space-y-2">
+            {tasks
+              .filter((t) => t.mySlot)
+              .slice(0, 3)
+              .map((task) => (
+                <div key={task.id} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
+                  <span className="text-xs">{task.title}</span>
+                  <span
+                    className={`text-xs font-bold ${
+                      task.mySlot?.approved
+                        ? "text-[#636D4F]"
+                        : task.mySlot?.submitted
+                          ? "text-[#FFF244]"
+                          : "text-gray-600"
+                    }`}
+                  >
+                    {task.mySlot?.approved
+                      ? t.approved
                       : task.mySlot?.submitted
-                        ? "text-[#FFF244]"
-                        : "text-gray-600"
-                  }`}
-                >
-                  {task.mySlot?.approved
-                    ? t.approved
-                    : task.mySlot?.submitted
-                      ? t.submitted
-                      : language === "en"
-                        ? "In Progress"
-                        : "Em Progresso"}
-                </span>
-              </div>
-            ))}
-          {tasks.filter((t) => t.mySlot).length === 0 && (
-            <p className="text-xs text-gray-500">
-              {language === "en" ? "No recent activity" : "Nenhuma atividade recente"}
-            </p>
-          )}
-        </div>
+                        ? t.submitted
+                        : language === "en"
+                          ? "In Progress"
+                          : "Em Progresso"}
+                  </span>
+                </div>
+              ))}
+            {tasks.filter((t) => t.mySlot).length === 0 && (
+              <p className="text-xs text-gray-500">
+                {language === "en" ? "No recent activity" : "Nenhuma atividade recente"}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-white border-2 border-black p-4 mb-5">
