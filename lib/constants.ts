@@ -7,6 +7,7 @@ export const CELO_CHAIN_ID = "0xa4ec"
 export const VALORA_DEEP_LINK_BASE = "celo://wallet/dappkit"
 
 export type TokenSymbol =
+  | "CELO"
   | "cUSD"
   | "cEUR"
   | "cREAL"
@@ -34,6 +35,13 @@ export interface TokenConfig {
 }
 
 export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
+  // Native CELO token (wrapped as ERC20)
+  CELO: {
+    symbol: "CELO",
+    address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
+    decimals: 18,
+    name: "Celo Native Token",
+  },
   // Mento Stablecoins (all 18 decimals)
   cUSD: {
     symbol: "cUSD",
