@@ -9,6 +9,7 @@ export interface TaskSlot {
 
 export type TaskCategory = "development" | "design" | "content" | "research" | "community" | "other"
 export type TaskComplexity = "easy" | "medium" | "hard"
+export type TaskVisibility = "public" | "private"
 export type PaymentMethod = "crypto" | "pix"
 export type PixKeyType = "cpf" | "email" | "phone" | "random"
 
@@ -31,6 +32,7 @@ export interface Task {
   validationMethod?: string
   deadline?: Date | null
   tags?: string[]
+  visibility?: TaskVisibility
   // Pix payment fields
   paymentMethod?: PaymentMethod
   fiatAmount?: number
