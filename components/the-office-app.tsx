@@ -69,6 +69,7 @@ export function TheOfficeApp() {
   const [account, setAccount] = useState<string>("")
   const [contract, setContract] = useState<ethers.Contract | null>(null)
   const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
+    CELO: null,
     cUSD: null,
     USDC: null,
   })
@@ -79,6 +80,7 @@ export function TheOfficeApp() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
   const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>({
+    CELO: "0.00",
     cUSD: "0.00",
     USDC: "0.00",
   })
@@ -859,7 +861,7 @@ export function TheOfficeApp() {
     setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
   }
 
-  const displayBalance = `${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
+  const displayBalance = `${tokenBalances.CELO} CELO | ${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
 
   useEffect(() => {
     loadAllTasksFromSupabase()
