@@ -26,6 +26,7 @@ export type TokenSymbol =
   | "USDC"
   | "CRECY"
   | "G$"
+  | "GPBRV"
 
 export interface TokenConfig {
   symbol: TokenSymbol
@@ -152,6 +153,13 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     address: "0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A",
     decimals: 18,
     name: "GoodDollar",
+  },
+  // GPBRV Token
+  GPBRV: {
+    symbol: "GPBRV",
+    address: "0x6EC3D6e693526108990C6d5cbD2195e051321D32",
+    decimals: 18,
+    name: "GPBRV",
   },
 }
 
