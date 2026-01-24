@@ -26,7 +26,6 @@ export function HomePage({
 }: HomePageProps) {
   const t = useTranslations(language)
 
-  // Get latest 4 tasks for display
   const latestTasks = tasks.slice(0, 4)
 
   const getStatusBadge = (status: string) => {
@@ -70,7 +69,6 @@ export function HomePage({
     return "Just now"
   }
 
-  // Color-coded circle based on slot availability
   const getSlotStatusColor = (task: Task) => {
     const available = Number(task.availableSlots)
     const total = Number(task.totalSlots)
@@ -80,7 +78,6 @@ export function HomePage({
     return "bg-yellow-500"
   }
 
-  // Deadline color coding
   const getDeadlineInfo = (deadline: Date | null | undefined) => {
     if (!deadline) return null
 

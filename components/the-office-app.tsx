@@ -37,13 +37,11 @@ declare global {
   }
 }
 
-// Helper to detect mobile devices
 const isMobileDevice = () => {
   if (typeof window === "undefined") return false
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 }
 
-// Helper to check if we're inside a known mobile wallet's in-app browser
 const isInMobileWalletBrowser = () => {
   if (typeof window === "undefined" || !window.ethereum) return false
 
@@ -54,12 +52,9 @@ const isInMobileWalletBrowser = () => {
     isCelo?: boolean
   }
 
-  // Check for specific mobile wallet identifiers
-  // Valora, MetaMask Mobile, and MiniPay all have specific flags
   return !!(ethereum.isValora || ethereum.isMiniPay || (ethereum.isMetaMask && isMobileDevice()) || ethereum.isCelo)
 }
 
-// Helper to check if any ethereum provider exists
 const hasEthereumProvider = () => {
   if (typeof window === "undefined") return false
   return !!window.ethereum
@@ -116,7 +111,6 @@ export function TheOfficeApp() {
         const loadedTasks: Task[] = []
 
         for (const row of data) {
-          // Fetch mySlot data from blockchain if contract and account are available
           let mySlot = null
           if (contract && account) {
             try {
@@ -147,13 +141,11 @@ export function TheOfficeApp() {
             tokenAddress: row.token_address || undefined,
             mySlot,
             visibility: (row.visibility || "public") as "public" | "private",
-            // Task metadata
             category: row.category || undefined,
             complexity: row.complexity || undefined,
             validationMethod: row.validation_method || undefined,
             deadline: row.deadline ? new Date(row.deadline) : null,
             tags: row.tags || [],
-            // Pix payment fields
             paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
             fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
             workerPixKey: row.worker_pix_key || undefined,
@@ -186,7 +178,6 @@ export function TheOfficeApp() {
         console.log("[balaio] Loading user activity from Supabase for:", userAddress)
         const normalizedAddress = userAddress.toLowerCase()
 
-        // Fetch tasks created by user
         const { data: createdTasks, error: createdError } = await supabase
           .from("tasks")
           .select("*")
@@ -198,7 +189,6 @@ export function TheOfficeApp() {
           console.error("[balaio] Error fetching created tasks:", createdError.message)
         }
 
-        // Fetch tasks where user is worker
         const { data: workedTasks, error: workedError } = await supabase
           .from("tasks")
           .select("*")
@@ -226,7 +216,6 @@ export function TheOfficeApp() {
           mySlot: null,
           visibility: (row.visibility || "public") as "public" | "private",
           status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
-          // Task metadata
           category: row.category || undefined,
           complexity: row.complexity || undefined,
           validationMethod: row.validation_method || undefined,
@@ -308,7 +297,6 @@ export function TheOfficeApp() {
 
       console.log("[balaio] Loading", taskIds.size, "tasks from storage")
 
-      // Fetch metadata from Supabase for all task IDs
       const taskIdsArray = Array.from(taskIds)
       let metadataMap: Record<string, any> = {}
 
@@ -342,7 +330,6 @@ export function TheOfficeApp() {
 
           const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
-          // Fetch user's slot data for this task
           let mySlot = null
           try {
             const slotData = await contract.getTaskSlot(taskId, account)
@@ -353,10 +340,8 @@ export function TheOfficeApp() {
               withdrawn: slotData.withdrawn,
             }
           } catch {
-            // User has no slot for this task
           }
 
-          // Get metadata from Supabase
           const metadata = metadataMap[taskId]
 
           loadedTasks.push({
@@ -373,7 +358,6 @@ export function TheOfficeApp() {
             status: taskData[7] ? "open" : "closed",
             createdAt: new Date(Number(taskData[8]) * 1000),
             mySlot,
-            // Metadata from Supabase
             category: metadata?.category || undefined,
             complexity: metadata?.complexity || undefined,
             validationMethod: metadata?.validation_method || undefined,
@@ -743,7 +727,6 @@ export function TheOfficeApp() {
           return
         }
       } catch {
-        // Task doesn't exist, which is good
       }
 
       toast(`Checking ${token} allowance...`)
