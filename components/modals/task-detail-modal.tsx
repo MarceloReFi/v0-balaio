@@ -5,13 +5,11 @@ import { X, User, Tag, Folder } from "lucide-react"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 
-// Helper to truncate address
 function truncateAddress(address: string): string {
   if (!address) return ""
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-// Category display names
 const categoryLabels: Record<string, { en: string; pt: string }> = {
   development: { en: "Development", pt: "Desenvolvimento" },
   design: { en: "Design", pt: "Design" },
@@ -59,7 +57,6 @@ export function TaskDetailModal({
   const canClaimReward = task.mySlot?.approved && !task.mySlot?.withdrawn
   const isCompleted = task.mySlot?.withdrawn
 
-  // Color-coded circle based on slot availability
   const getSlotStatusColor = () => {
     const available = Number(task.availableSlots)
     const total = Number(task.totalSlots)
@@ -69,7 +66,6 @@ export function TaskDetailModal({
     return "bg-yellow-500"
   }
 
-  // Deadline color coding
   const getDeadlineInfo = () => {
     if (!task.deadline) return null
 
@@ -102,7 +98,6 @@ export function TaskDetailModal({
 
         <p className="text-sm mb-4 text-gray-700">{task.description}</p>
 
-        {/* Link to full description if available */}
         {task.validationMethod && task.validationMethod.startsWith('http') && (
           <a
             href={task.validationMethod}
@@ -113,9 +108,7 @@ export function TaskDetailModal({
             🔗 {language === "en" ? "View full task details" : "Ver detalhes completos da tarefa"}
           </a>
         )}
-        {/* Task metadata: Creator, Category, Tags */}
         <div className="space-y-2 mb-4">
-          {/* Creator address */}
           <div className="flex items-center gap-2 text-sm">
             <User size={14} className="text-gray-500" />
             <span className="text-gray-500">{language === "en" ? "Creator:" : "Criador:"}</span>
@@ -124,7 +117,6 @@ export function TaskDetailModal({
             </span>
           </div>
 
-          {/* Category */}
           {task.category && (
             <div className="flex items-center gap-2 text-sm">
               <Folder size={14} className="text-gray-500" />
@@ -135,7 +127,6 @@ export function TaskDetailModal({
             </div>
           )}
 
-          {/* Tags */}
           {task.tags && task.tags.length > 0 && (
             <div className="flex items-start gap-2 text-sm">
               <Tag size={14} className="text-gray-500 mt-0.5" />
@@ -189,7 +180,6 @@ export function TaskDetailModal({
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex flex-col gap-2.5">
           {canClaim && (
             <button
