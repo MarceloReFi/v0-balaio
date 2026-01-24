@@ -41,6 +41,36 @@ export function TasksPage({
     return { text: t.open.toUpperCase(), color: "bg-[#7A8770]" }
   }
 
+  // Color-coded circle based on slot availability
+  const getSlotStatusColor = (task: Task) => {
+    const available = Number(task.availableSlots)
+    const total = Number(task.totalSlots)
+
+    if (!task.active || available === 0) return "bg-red-500" // No slots or closed
+    if (available === total) return "bg-green-500" // Fully open
+    return "bg-yellow-500" // Partially claimed
+  }
+
+  // Deadline color coding
+  const getDeadlineInfo = (deadline: Date | null | undefined) => {
+    if (!deadline) return null
+
+    const now = new Date()
+    const deadlineDate = new Date(deadline)
+    const diffMs = deadlineDate.getTime() - now.getTime()
+    const diffDays = diffMs / (1000 * 60 * 60 * 24)
+
+    if (diffMs < 0) return { color: "text-red-600", text: language === "en" ? "Expired" : "Expirado" }
+    if (diffDays <= 1) return { color: "text-yellow-600", text: language === "en" ? "1 day left" : "1 dia restante" }
+    if (diffDays <= 7) return { color: "text-green-600", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
+    return { color: "text-green-600", text: deadlineDate.toLocaleDateString() }
+  }
+
+  // Shorten address for display
+  const shortenAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
+  }
+
   const getTimeAgo = (date: Date) => {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
     const days = Math.floor(seconds / 86400)
@@ -158,10 +188,23 @@ export function TasksPage({
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
-                    <h3 className="font-bold text-base mb-1">{task.title}</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`w-3 h-3 rounded-full ${getSlotStatusColor(task)}`} title={
+                        !task.active || Number(task.availableSlots) === 0
+                          ? (language === "en" ? "No slots available" : "Sem vagas")
+                          : Number(task.availableSlots) === Number(task.totalSlots)
+                            ? (language === "en" ? "Open" : "Aberto")
+                            : (language === "en" ? "Slots available" : "Vagas disponíveis")
+                      }></span>
+                      <h3 className="font-bold text-base">{task.title}</h3>
+                    </div>
                     <p className="text-xs text-gray-600 mb-2">{task.description}</p>
 
-                    <div className="flex gap-3 text-xs mb-2">
+                    <div className="text-xs text-gray-500 mb-2">
+                      {language === "en" ? "Creator:" : "Criador:"} {shortenAddress(task.creator)}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3 text-xs mb-2">
                       <span>
                         💰 {task.reward} {task.token}
                       </span>
@@ -169,13 +212,34 @@ export function TasksPage({
                         👥 {task.availableSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
                       </span>
                       <span>⏰ {getTimeAgo(task.createdAt)}</span>
+                      {task.deadline && (() => {
+                        const deadlineInfo = getDeadlineInfo(task.deadline)
+                        return deadlineInfo ? (
+                          <span className={deadlineInfo.color}>
+                            📅 {deadlineInfo.text}
+                          </span>
+                        ) : null
+                      })()}
                     </div>
 
-                    <span
-                      className={`inline-block px-3 py-1 text-xs font-bold rounded-full text-white ${status.color}`}
-                    >
-                      {status.text}
-                    </span>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span
+                        className={`inline-block px-3 py-1 text-xs font-bold rounded-full text-white ${status.color}`}
+                      >
+                        {status.text}
+                      </span>
+                      {task.validationMethod && (
+                        <a
+                          href={task.validationMethod.startsWith('http') ? task.validationMethod : undefined}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className={`text-xs ${task.validationMethod.startsWith('http') ? 'text-blue-600 hover:underline' : 'text-gray-500'}`}
+                        >
+                          🔗 {language === "en" ? "Details" : "Detalhes"}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
