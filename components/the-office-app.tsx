@@ -262,7 +262,7 @@ export function TheOfficeApp() {
   )
 
   const loadAllTasksFromBlockchain = useCallback(async () => {
-    if (!contract) return
+    if (!contract || !account) return
 
     try {
       setLoading(true)
@@ -292,6 +292,20 @@ export function TheOfficeApp() {
 
           const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
+          // Fetch user's slot data for this task
+          let mySlot = null
+          try {
+            const slotData = await contract.getTaskSlot(taskId, account)
+            mySlot = {
+              claimed: slotData.claimed,
+              submitted: slotData.submitted,
+              approved: slotData.approved,
+              withdrawn: slotData.withdrawn,
+            }
+          } catch {
+            // User has no slot for this task
+          }
+
           loadedTasks.push({
             id: taskData[0],
             title: `Task ${taskData[0].substring(0, 8)}...`,
@@ -305,6 +319,7 @@ export function TheOfficeApp() {
             creator: taskData[1],
             status: taskData[7] ? "open" : "closed",
             createdAt: new Date(Number(taskData[8]) * 1000),
+            mySlot,
           })
         } catch (err) {
           console.error("[balaio] Error loading task", taskId, ":", err)
@@ -318,7 +333,7 @@ export function TheOfficeApp() {
       console.error("[balaio] Error loading tasks:", error)
       setLoading(false)
     }
-  }, [contract])
+  }, [contract, account])
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return
