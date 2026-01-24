@@ -59,11 +59,42 @@ export function TaskDetailModal({
   const canClaimReward = task.mySlot?.approved && !task.mySlot?.withdrawn
   const isCompleted = task.mySlot?.withdrawn
 
+  // Color-coded circle based on slot availability
+  const getSlotStatusColor = () => {
+    const available = Number(task.availableSlots)
+    const total = Number(task.totalSlots)
+
+    if (!task.active || available === 0) return "bg-red-500"
+    if (available === total) return "bg-green-500"
+    return "bg-yellow-500"
+  }
+
+  // Deadline color coding
+  const getDeadlineInfo = () => {
+    if (!task.deadline) return null
+
+    const now = new Date()
+    const deadlineDate = new Date(task.deadline)
+    const diffMs = deadlineDate.getTime() - now.getTime()
+    const diffDays = diffMs / (1000 * 60 * 60 * 24)
+
+    if (diffMs < 0) return { color: "text-red-600", text: language === "en" ? "Expired" : "Expirado" }
+    if (diffDays <= 1) return { color: "text-yellow-600", text: language === "en" ? "1 day left" : "1 dia restante" }
+    if (diffDays <= 7) return { color: "text-green-600", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
+    return { color: "text-green-600", text: deadlineDate.toLocaleDateString() }
+  }
+
+  const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
+  const deadlineInfo = getDeadlineInfo()
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white border-2 border-black p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-lg">{task.title}</h2>
+          <div className="flex items-center gap-2">
+            <span className={`w-3 h-3 rounded-full ${getSlotStatusColor()}`}></span>
+            <h2 className="font-bold text-lg">{task.title}</h2>
+          </div>
           <button onClick={onClose} className="hover:opacity-70">
             <X size={24} />
           </button>
@@ -71,6 +102,17 @@ export function TaskDetailModal({
 
         <p className="text-sm mb-4 text-gray-700">{task.description}</p>
 
+        {/* Link to full description if available */}
+        {task.validationMethod && task.validationMethod.startsWith('http') && (
+          <a
+            href={task.validationMethod}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-blue-600 hover:underline mb-4 block"
+          >
+            🔗 {language === "en" ? "View full task details" : "Ver detalhes completos da tarefa"}
+          </a>
+        )}
         {/* Task metadata: Creator, Category, Tags */}
         <div className="space-y-2 mb-4">
           {/* Creator address */}
@@ -119,12 +161,32 @@ export function TaskDetailModal({
               {task.reward} {task.token}
             </span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between mb-2">
             <span className="text-xs">{language === "en" ? "Available Slots:" : "Vagas Disponiveis:"}</span>
             <span className="font-bold">
               {task.availableSlots}/{task.totalSlots}
             </span>
           </div>
+          <div className="flex justify-between mb-2">
+            <span className="text-xs">{language === "en" ? "Creator:" : "Criador:"}</span>
+            <span className="font-mono text-xs" title={task.creator}>
+              {shortenAddress(task.creator)}
+            </span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="text-xs">{language === "en" ? "Created:" : "Criado:"}</span>
+            <span className="text-xs">
+              {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "-"}
+            </span>
+          </div>
+          {task.deadline && (
+            <div className="flex justify-between">
+              <span className="text-xs">{language === "en" ? "Deadline:" : "Prazo:"}</span>
+              <span className={`text-xs font-bold ${deadlineInfo?.color || ''}`}>
+                {deadlineInfo?.text || new Date(task.deadline).toLocaleDateString()}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
