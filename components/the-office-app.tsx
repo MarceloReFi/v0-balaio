@@ -128,6 +128,12 @@ export function TheOfficeApp() {
           tokenAddress: row.token_address || undefined,
           mySlot: null,
           visibility: (row.visibility || "public") as "public" | "private",
+          // Task metadata
+          category: row.category || undefined,
+          complexity: row.complexity || undefined,
+          validationMethod: row.validation_method || undefined,
+          deadline: row.deadline ? new Date(row.deadline) : null,
+          tags: row.tags || [],
           // Pix payment fields
           paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
           fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
@@ -200,6 +206,12 @@ export function TheOfficeApp() {
           mySlot: null,
           visibility: (row.visibility || "public") as "public" | "private",
           status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
+          // Task metadata
+          category: row.category || undefined,
+          complexity: row.complexity || undefined,
+          validationMethod: row.validation_method || undefined,
+          deadline: row.deadline ? new Date(row.deadline) : null,
+          tags: row.tags || [],
         })
 
         setUserActivity({
