@@ -113,35 +113,55 @@ export function TheOfficeApp() {
       }
 
       if (data && data.length > 0) {
-        const loadedTasks: Task[] = data.map((row) => ({
-          id: row.id,
-          title: row.title || `Task ${row.id.substring(0, 8)}...`,
-          description: row.description || "Complete this task and earn rewards",
-          reward: row.reward || "0",
-          totalSlots: String(row.slots || 1),
-          claimedSlots: String(row.claimed_slots || 0),
-          availableSlots: String((row.slots || 1) - (row.claimed_slots || 0)),
-          active: row.status === 0,
-          creator: row.creator_address,
-          createdAt: new Date(row.created_at),
-          token: row.token as TokenSymbol | undefined,
-          tokenAddress: row.token_address || undefined,
-          mySlot: null,
-          visibility: (row.visibility || "public") as "public" | "private",
-          // Task metadata
-          category: row.category || undefined,
-          complexity: row.complexity || undefined,
-          validationMethod: row.validation_method || undefined,
-          deadline: row.deadline ? new Date(row.deadline) : null,
-          tags: row.tags || [],
-          // Pix payment fields
-          paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
-          fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
-          workerPixKey: row.worker_pix_key || undefined,
-          workerPixKeyType: row.worker_pix_key_type as "cpf" | "email" | "phone" | "random" | undefined,
-          pixPaymentConfirmed: row.pix_payment_confirmed || false,
-          pixPaymentConfirmedAt: row.pix_payment_confirmed_at ? new Date(row.pix_payment_confirmed_at) : undefined,
-        }))
+        const loadedTasks: Task[] = []
+
+        for (const row of data) {
+          // Fetch mySlot data from blockchain if contract and account are available
+          let mySlot = null
+          if (contract && account) {
+            try {
+              const slotData = await contract.getTaskSlot(row.id, account)
+              mySlot = {
+                claimed: slotData.claimed,
+                submitted: slotData.submitted,
+                approved: slotData.approved,
+                withdrawn: slotData.withdrawn,
+              }
+            } catch {
+              // User has no slot for this task or task doesn't exist on blockchain
+            }
+          }
+
+          loadedTasks.push({
+            id: row.id,
+            title: row.title || `Task ${row.id.substring(0, 8)}...`,
+            description: row.description || "Complete this task and earn rewards",
+            reward: row.reward || "0",
+            totalSlots: String(row.slots || 1),
+            claimedSlots: String(row.claimed_slots || 0),
+            availableSlots: String((row.slots || 1) - (row.claimed_slots || 0)),
+            active: row.status === 0,
+            creator: row.creator_address,
+            createdAt: new Date(row.created_at),
+            token: row.token as TokenSymbol | undefined,
+            tokenAddress: row.token_address || undefined,
+            mySlot,
+            visibility: (row.visibility || "public") as "public" | "private",
+            // Task metadata
+            category: row.category || undefined,
+            complexity: row.complexity || undefined,
+            validationMethod: row.validation_method || undefined,
+            deadline: row.deadline ? new Date(row.deadline) : null,
+            tags: row.tags || [],
+            // Pix payment fields
+            paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
+            fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
+            workerPixKey: row.worker_pix_key || undefined,
+            workerPixKeyType: row.worker_pix_key_type as "cpf" | "email" | "phone" | "random" | undefined,
+            pixPaymentConfirmed: row.pix_payment_confirmed || false,
+            pixPaymentConfirmedAt: row.pix_payment_confirmed_at ? new Date(row.pix_payment_confirmed_at) : undefined,
+          })
+        }
 
         console.log("[balaio] Loaded", loadedTasks.length, "tasks from Supabase")
         setTasks(loadedTasks)
@@ -156,7 +176,7 @@ export function TheOfficeApp() {
       toast("Error loading tasks")
       setLoading(false)
     }
-  }, [supabase, toast])
+  }, [supabase, toast, contract, account])
 
   const loadUserActivity = useCallback(
     async (userAddress: string) => {
