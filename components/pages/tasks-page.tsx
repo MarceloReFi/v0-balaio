@@ -41,17 +41,15 @@ export function TasksPage({
     return { text: t.open.toUpperCase(), color: "bg-[#7A8770]" }
   }
 
-  // Color-coded circle based on slot availability
   const getSlotStatusColor = (task: Task) => {
     const available = Number(task.availableSlots)
     const total = Number(task.totalSlots)
 
-    if (!task.active || available === 0) return "bg-red-500" // No slots or closed
-    if (available === total) return "bg-green-500" // Fully open
-    return "bg-yellow-500" // Partially claimed
+    if (!task.active || available === 0) return "bg-red-500"
+    if (available === total) return "bg-green-500"
+    return "bg-yellow-500"
   }
 
-  // Deadline color coding
   const getDeadlineInfo = (deadline: Date | null | undefined) => {
     if (!deadline) return null
 
@@ -66,7 +64,6 @@ export function TasksPage({
     return { color: "text-green-600", text: deadlineDate.toLocaleDateString() }
   }
 
-  // Shorten address for display
   const shortenAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
