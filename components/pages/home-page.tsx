@@ -58,16 +58,43 @@ export function HomePage({
     }
   }
 
-  const getTimeAgo = (timestamp?: number) => {
+  const getTimeAgo = (timestamp?: number | Date) => {
     if (!timestamp) return ""
+    const time = timestamp instanceof Date ? timestamp.getTime() : timestamp
     const now = Date.now()
-    const diff = now - timestamp
+    const diff = now - time
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
     if (days > 0) return `${days}d ago`
     const hours = Math.floor(diff / (1000 * 60 * 60))
     if (hours > 0) return `${hours}h ago`
     return "Just now"
   }
+
+  // Color-coded circle based on slot availability
+  const getSlotStatusColor = (task: Task) => {
+    const available = Number(task.availableSlots)
+    const total = Number(task.totalSlots)
+
+    if (!task.active || available === 0) return "bg-red-500"
+    if (available === total) return "bg-green-500"
+    return "bg-yellow-500"
+  }
+
+  // Deadline color coding
+  const getDeadlineInfo = (deadline: Date | null | undefined) => {
+    if (!deadline) return null
+
+    const now = new Date()
+    const deadlineDate = new Date(deadline)
+    const diffMs = deadlineDate.getTime() - now.getTime()
+    const diffDays = diffMs / (1000 * 60 * 60 * 24)
+
+    if (diffMs < 0) return { color: "text-red-600", text: language === "en" ? "Expired" : "Expirado" }
+    if (diffDays <= 1) return { color: "text-yellow-600", text: language === "en" ? "1 day" : "1 dia" }
+    return { color: "text-green-600", text: `${Math.ceil(diffDays)}d` }
+  }
+
+  const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
 
   const opportunities = [
     {
@@ -132,47 +159,62 @@ export function HomePage({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {latestTasks.map((task) => (
-              <div key={task.id} className="bg-white border-2 border-black p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm mb-1">{task.title}</h4>
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">{task.description}</p>
+            {latestTasks.map((task) => {
+              const deadlineInfo = getDeadlineInfo(task.deadline)
+              return (
+                <div key={task.id} className="bg-white border-2 border-black p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`w-2.5 h-2.5 rounded-full ${getSlotStatusColor(task)}`}></span>
+                        <h4 className="font-bold text-sm">{task.title}</h4>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{task.description}</p>
 
-                    <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
-                      <span className="flex items-center gap-1">
-                        💰 {task.reward} {task.token || "cUSD"}
-                      </span>
-                      <span className="flex items-center gap-1">👥 {task.slots || 1} slots</span>
-                      <span className="flex items-center gap-1">⏰ {getTimeAgo(task.createdAt)}</span>
-                      {getStatusBadge(task.status)}
+                      <div className="text-xs text-gray-500 mb-1">
+                        {language === "en" ? "By:" : "Por:"} {shortenAddress(task.creator)}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+                        <span className="flex items-center gap-1">
+                          💰 {task.reward} {task.token || "cUSD"}
+                        </span>
+                        <span className="flex items-center gap-1">👥 {task.availableSlots || task.totalSlots || 1} slots</span>
+                        <span className="flex items-center gap-1">⏰ {getTimeAgo(task.createdAt)}</span>
+                        {deadlineInfo && (
+                          <span className={`flex items-center gap-1 ${deadlineInfo.color}`}>
+                            📅 {deadlineInfo.text}
+                          </span>
+                        )}
+                        {getStatusBadge(task.status || "open")}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col gap-1">
-                    {onViewTask && (
-                      <button
-                        onClick={() => onViewTask(task)}
-                        className="bg-[#636D4F] text-white px-3 py-1.5 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
-                      >
-                        View
-                      </button>
-                    )}
-                    {task.status === "open" &&
-                      account &&
-                      task.creator?.toLowerCase() !== account?.toLowerCase() &&
-                      onClaimTask && (
+                    <div className="flex flex-col gap-1">
+                      {onViewTask && (
                         <button
-                          onClick={() => onClaimTask(task)}
-                          className="bg-[#D96E5F] text-white px-3 py-1.5 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                          onClick={() => onViewTask(task)}
+                          className="bg-[#636D4F] text-white px-3 py-1.5 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
                         >
-                          Claim
+                          View
                         </button>
                       )}
+                      {(task.status === "open" || (!task.status && task.active && Number(task.availableSlots) > 0)) &&
+                        account &&
+                        task.creator?.toLowerCase() !== account?.toLowerCase() &&
+                        onClaimTask && (
+                          <button
+                            onClick={() => onClaimTask(task)}
+                            className="bg-[#D96E5F] text-white px-3 py-1.5 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                          >
+                            Claim
+                          </button>
+                        )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
