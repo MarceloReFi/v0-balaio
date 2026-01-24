@@ -288,6 +288,24 @@ export function TheOfficeApp() {
 
       console.log("[balaio] Loading", taskIds.size, "tasks from storage")
 
+      // Fetch metadata from Supabase for all task IDs
+      const taskIdsArray = Array.from(taskIds)
+      let metadataMap: Record<string, any> = {}
+
+      if (taskIdsArray.length > 0) {
+        const { data: metadataRows } = await supabase
+          .from("tasks")
+          .select("*")
+          .in("id", taskIdsArray)
+
+        if (metadataRows) {
+          metadataMap = metadataRows.reduce((acc, row) => {
+            acc[row.id] = row
+            return acc
+          }, {} as Record<string, any>)
+        }
+      }
+
       const loadedTasks: Task[] = []
       for (const taskId of taskIds) {
         try {
@@ -318,10 +336,13 @@ export function TheOfficeApp() {
             // User has no slot for this task
           }
 
+          // Get metadata from Supabase
+          const metadata = metadataMap[taskId]
+
           loadedTasks.push({
             id: taskData[0],
-            title: `Task ${taskData[0].substring(0, 8)}...`,
-            description: "View details for more information",
+            title: metadata?.title || `Task ${taskData[0].substring(0, 8)}...`,
+            description: metadata?.description || "View details for more information",
             reward: Number(ethers.formatUnits(taskData[4], tokenConfig.decimals)),
             totalSlots: Number(taskData[6]),
             claimedSlots: Number(taskData[6]),
@@ -332,6 +353,13 @@ export function TheOfficeApp() {
             status: taskData[7] ? "open" : "closed",
             createdAt: new Date(Number(taskData[8]) * 1000),
             mySlot,
+            // Metadata from Supabase
+            category: metadata?.category || undefined,
+            complexity: metadata?.complexity || undefined,
+            validationMethod: metadata?.validation_method || undefined,
+            deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
+            tags: metadata?.tags || [],
+            visibility: metadata?.visibility || "public",
           })
         } catch (err) {
           console.error("[balaio] Error loading task", taskId, ":", err)
@@ -345,7 +373,7 @@ export function TheOfficeApp() {
       console.error("[balaio] Error loading tasks:", error)
       setLoading(false)
     }
-  }, [contract, account])
+  }, [contract, account, supabase])
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return
