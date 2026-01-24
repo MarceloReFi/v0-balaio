@@ -12,7 +12,7 @@ Balaio is a decentralized task management platform where users can create, claim
 
 Your project is live at:
 
-**[https://vercel.com/marceloallamistakeos-projects/v0-balaio-q9](https://vercel.com/marceloallamistakeos-projects/v0-balaio-q9)**
+**https://www.usebalaio.com/**
 
 ## Features
 
