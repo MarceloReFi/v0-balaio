@@ -158,13 +158,13 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
   GPBRV: {
     symbol: "GPBRV",
     address: "0x6EC3D6e693526108990C6d5cbD2195e051321D32",
-    decimals: 0,
+    decimals: 6,
     name: "GPBRV",
   },
   GPBR: {
     symbol: "GPBR",
     address: "0xd832B2F117db51021Ad0387c17182796DBEB69df",
-    decimals: 0,
+    decimals: 6,
     name: "GPBR",
   },
 }
