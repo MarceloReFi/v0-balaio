@@ -155,18 +155,16 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     decimals: 18,
     name: "GoodDollar",
   },
-  // GPBRV Token
   GPBRV: {
     symbol: "GPBRV",
     address: "0x6EC3D6e693526108990C6d5cbD2195e051321D32",
-    decimals: 18,
+    decimals: 0,
     name: "GPBRV",
   },
-  // GPBR Token
   GPBR: {
     symbol: "GPBR",
     address: "0xd832B2F117db51021Ad0387c17182796DBEB69df",
-    decimals: 18,
+    decimals: 0,
     name: "GPBR",
   },
 }
