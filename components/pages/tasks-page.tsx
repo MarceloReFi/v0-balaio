@@ -33,12 +33,12 @@ export function TasksPage({
   const [loading, setLoading] = useState(false)
 
   const getStatusBadge = (task: Task) => {
-    if (!task.mySlot) return { text: t.open.toUpperCase(), color: "bg-[#7A8770]" }
-    if (task.mySlot.withdrawn) return { text: t.completed.toUpperCase(), color: "bg-gray-700" }
-    if (task.mySlot.approved) return { text: t.approved.toUpperCase(), color: "bg-[#7A8770]" }
-    if (task.mySlot.submitted) return { text: t.submitted.toUpperCase(), color: "bg-[#F2E885] text-black" }
-    if (task.mySlot.claimed) return { text: t.claimed.toUpperCase(), color: "bg-[#B88FD8]" }
-    return { text: t.open.toUpperCase(), color: "bg-[#7A8770]" }
+    if (!task.mySlot) return { text: t.open.toUpperCase(), color: "bg-[#99FF99] text-[#111111]" }
+    if (task.mySlot.withdrawn) return { text: t.completed.toUpperCase(), color: "bg-[#666666] text-white" }
+    if (task.mySlot.approved) return { text: t.approved.toUpperCase(), color: "bg-[#99FF99] text-[#111111]" }
+    if (task.mySlot.submitted) return { text: t.submitted.toUpperCase(), color: "bg-[#FFFF66] text-[#111111]" }
+    if (task.mySlot.claimed) return { text: t.claimed.toUpperCase(), color: "bg-[#FF99CC] text-[#111111]" }
+    return { text: t.open.toUpperCase(), color: "bg-[#99FF99] text-[#111111]" }
   }
 
   const getSlotStatusColor = (task: Task) => {
@@ -46,8 +46,8 @@ export function TasksPage({
     const total = Number(task.totalSlots)
 
     if (!task.active || available === 0) return "bg-red-500"
-    if (available === total) return "bg-green-500"
-    return "bg-yellow-500"
+    if (available === total) return "bg-[#99FF99]"
+    return "bg-[#FFFF66]"
   }
 
   const getDeadlineInfo = (deadline: Date | null | undefined) => {
@@ -59,9 +59,9 @@ export function TasksPage({
     const diffDays = diffMs / (1000 * 60 * 60 * 24)
 
     if (diffMs < 0) return { color: "text-red-600", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-yellow-600", text: language === "en" ? "1 day left" : "1 dia restante" }
-    if (diffDays <= 7) return { color: "text-green-600", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
-    return { color: "text-green-600", text: deadlineDate.toLocaleDateString() }
+    if (diffDays <= 1) return { color: "text-[#111111]", text: language === "en" ? "1 day left" : "1 dia restante" }
+    if (diffDays <= 7) return { color: "text-[#111111]", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
+    return { color: "text-[#111111]", text: deadlineDate.toLocaleDateString() }
   }
 
   const shortenAddress = (address: string) => {
@@ -112,12 +112,12 @@ export function TasksPage({
                   : "Busque IDs de tarefas para visualizar e reivindicar trabalho disponível"
               }
             >
-              <HelpCircle size={16} className="text-gray-600" />
+              <HelpCircle size={16} className="text-[#666666]" />
             </Tooltip>
           </h2>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="bg-[#B88FD8] text-white px-4 py-2 font-bold border-2 border-black hover:shadow-md text-sm"
+            className="bg-[#FF99CC] text-[#111111] px-4 py-2 font-bold border-2 border-[#111111] rounded-xl hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow text-sm"
           >
             + {t.create}
           </button>
@@ -129,10 +129,10 @@ export function TasksPage({
           <button
             key={filter}
             onClick={() => setTaskFilter(filter)}
-            className={`px-4 py-2 font-bold border-2 text-xs ${
+            className={`px-4 py-2 font-bold border-2 text-xs rounded-xl ${
               taskFilter === filter
-                ? "bg-[#3A4571] text-white border-[#3A4571]"
-                : "bg-white text-[#3A4571] border-[#3A4571]"
+                ? "bg-[#111111] text-white border-[#111111]"
+                : "bg-white text-[#111111] border-[#111111]"
             }`}
           >
             {filter === "all" ? t.allTasks : filter === "open" ? t.openTasks : filter === "created" ? t.createdTasks : t.claimedTasks}
@@ -141,7 +141,7 @@ export function TasksPage({
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="bg-white text-[#3A4571] px-4 py-2 font-bold border-2 border-[#3A4571] text-xs disabled:opacity-70"
+          className="bg-white text-[#111111] px-4 py-2 font-bold border-2 border-[#111111] rounded-xl text-xs disabled:opacity-70"
         >
           🔄 {language === "en" ? "Refresh" : "Atualizar"}
         </button>
@@ -153,22 +153,22 @@ export function TasksPage({
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           placeholder={t.searchTask}
-          className="flex-1 px-3 py-2.5 border-2 border-gray-300 bg-white font-mono text-sm"
+          className="flex-1 px-3 py-2.5 border-2 border-[#111111] rounded-xl bg-white font-mono text-sm"
         />
         <button
           onClick={handleSearch}
           disabled={loading}
-          className="bg-white text-[#3A4571] px-5 py-2.5 font-bold border-2 border-[#3A4571] hover:bg-gray-50"
+          className="bg-white text-[#111111] px-5 py-2.5 font-bold border-2 border-[#111111] rounded-xl hover:bg-gray-50"
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
         </button>
       </div>
 
       {filteredTasks.length === 0 ? (
-        <div className="bg-white border-2 border-black p-10 text-center">
+        <div className="bg-white border-2 border-[#111111] rounded-xl p-10 text-center shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
           <div className="text-4xl mb-3">🔍</div>
           <p className="font-bold mb-1">{t.noTasks}</p>
-          <p className="text-xs text-gray-600">{t.noTasksDesc}</p>
+          <p className="text-xs text-[#666666]">{t.noTasksDesc}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -181,7 +181,7 @@ export function TasksPage({
                   setSelectedTask(task)
                   setShowTaskModal(true)
                 }}
-                className="bg-white border-2 border-black p-5 cursor-pointer hover:shadow-md transition-shadow"
+                className="bg-white border-2 border-[#111111] rounded-xl p-5 cursor-pointer hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
@@ -195,9 +195,9 @@ export function TasksPage({
                       }></span>
                       <h3 className="font-bold text-base">{task.title}</h3>
                     </div>
-                    <p className="text-xs text-gray-600 mb-2">{task.description}</p>
+                    <p className="text-xs text-[#666666] mb-2">{task.description}</p>
 
-                    <div className="text-xs text-gray-500 mb-2">
+                    <div className="text-xs text-[#666666] mb-2">
                       {language === "en" ? "Creator:" : "Criador:"} {shortenAddress(task.creator)}
                     </div>
 
@@ -221,7 +221,7 @@ export function TasksPage({
 
                     <div className="flex flex-wrap gap-2 items-center">
                       <span
-                        className={`inline-block px-3 py-1 text-xs font-bold rounded-full text-white ${status.color}`}
+                        className={`inline-block px-3 py-1 text-xs font-bold rounded-lg border-2 border-[#111111] ${status.color}`}
                       >
                         {status.text}
                       </span>
@@ -231,7 +231,7 @@ export function TasksPage({
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className={`text-xs ${task.validationMethod.startsWith('http') ? 'text-blue-600 hover:underline' : 'text-gray-500'}`}
+                          className={`text-xs ${task.validationMethod.startsWith('http') ? 'text-[#111111] hover:underline' : 'text-[#666666]'}`}
                         >
                           🔗 {language === "en" ? "Details" : "Detalhes"}
                         </a>
