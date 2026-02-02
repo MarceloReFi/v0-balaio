@@ -25,7 +25,7 @@ export function Tooltip({ children, text }: TooltipProps) {
         {children}
       </button>
       {show && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 bg-gray-700 text-white px-3 py-2 rounded text-xs whitespace-nowrap z-50 mb-2">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 bg-[#111111] text-white px-3 py-2 rounded-lg text-xs whitespace-nowrap z-50 mb-2 border-2 border-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
           {text}
         </div>
       )}
