@@ -118,7 +118,7 @@ export function CreateTaskModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-black p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white border-2 border-[#111111] rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg">{t.createNewTask}</h2>
           <button onClick={onClose} className="hover:opacity-70">
@@ -133,7 +133,7 @@ export function CreateTaskModal({
               value={taskId}
               onChange={(e) => setTaskId(e.target.value)}
               placeholder="unique-task-id"
-              className="w-full p-2.5 border-2 border-gray-300 font-mono"
+              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
             />
           </div>
 
@@ -143,7 +143,7 @@ export function CreateTaskModal({
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="Task title"
-              className="w-full p-2.5 border-2 border-gray-300 font-mono"
+              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
             />
           </div>
 
@@ -154,7 +154,7 @@ export function CreateTaskModal({
               onChange={(e) => setTaskDescription(e.target.value)}
               placeholder="Task description"
               rows={3}
-              className="w-full p-2.5 border-2 border-gray-300 font-mono"
+              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
             />
           </div>
 
@@ -163,14 +163,14 @@ export function CreateTaskModal({
             <label className="block font-bold mb-2 text-xs">
               {language === "en" ? "VISIBILITY" : "VISIBILIDADE"}
             </label>
-            <div className="flex border-2 border-black">
+            <div className="flex border-2 border-[#111111] rounded-xl overflow-hidden">
               <button
                 type="button"
                 onClick={() => setVisibility("public")}
                 className={`flex-1 py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
                   visibility === "public"
-                    ? "bg-[#B8D962] text-black"
-                    : "bg-white text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#99FF99] text-[#111111]"
+                    : "bg-white text-[#666666] hover:bg-gray-100"
                 }`}
               >
                 🌐 {language === "en" ? "Public" : "Publica"}
@@ -178,16 +178,16 @@ export function CreateTaskModal({
               <button
                 type="button"
                 onClick={() => setVisibility("private")}
-                className={`flex-1 py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 border-l-2 border-black transition-colors ${
+                className={`flex-1 py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 border-l-2 border-[#111111] transition-colors ${
                   visibility === "private"
-                    ? "bg-[#C36DF0] text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-100"
+                    ? "bg-[#FF99CC] text-[#111111]"
+                    : "bg-white text-[#666666] hover:bg-gray-100"
                 }`}
               >
                 🔒 {language === "en" ? "Private" : "Privada"}
               </button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-[#666666] mt-1">
               {visibility === "public"
                 ? (language === "en" ? "Anyone can see and claim this task" : "Qualquer pessoa pode ver e reivindicar esta tarefa")
                 : (language === "en" ? "Only people with the task ID can access" : "Apenas pessoas com o ID da tarefa podem acessar")}
@@ -201,14 +201,14 @@ export function CreateTaskModal({
               <button
                 type="button"
                 onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                className="w-full p-2.5 border-2 border-gray-300 font-mono flex items-center justify-between bg-white"
+                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono flex items-center justify-between bg-white"
               >
                 <span>{getCategoryLabel(category)}</span>
                 <ChevronDown size={18} className={`transition-transform ${showCategoryDropdown ? "rotate-180" : ""}`} />
               </button>
 
               {showCategoryDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border-2 border-black border-t-0 z-10">
+                <div className="absolute top-full left-0 right-0 bg-white border-2 border-[#111111] border-t-0 rounded-b-xl z-10 overflow-hidden">
                   {categoryOptions.map((opt) => (
                     <button
                       key={opt.value}
@@ -218,7 +218,7 @@ export function CreateTaskModal({
                         setShowCategoryDropdown(false)
                       }}
                       className={`w-full p-2.5 text-left hover:bg-gray-100 ${
-                        category === opt.value ? "bg-[#F2E885]" : ""
+                        category === opt.value ? "bg-[#FFFF66]" : ""
                       }`}
                     >
                       {opt.label}
@@ -236,7 +236,7 @@ export function CreateTaskModal({
               <button
                 type="button"
                 onClick={() => setShowComplexityDropdown(!showComplexityDropdown)}
-                className="w-full p-2.5 border-2 border-gray-300 font-mono flex items-center justify-between bg-white"
+                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono flex items-center justify-between bg-white"
               >
                 <span>{getComplexityLabel(complexity)}</span>
                 <ChevronDown
@@ -246,7 +246,7 @@ export function CreateTaskModal({
               </button>
 
               {showComplexityDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border-2 border-black border-t-0 z-10">
+                <div className="absolute top-full left-0 right-0 bg-white border-2 border-[#111111] border-t-0 rounded-b-xl z-10 overflow-hidden">
                   {complexityOptions.map((opt) => (
                     <button
                       key={opt.value}
@@ -256,7 +256,7 @@ export function CreateTaskModal({
                         setShowComplexityDropdown(false)
                       }}
                       className={`w-full p-2.5 text-left hover:bg-gray-100 ${
-                        complexity === opt.value ? "bg-[#F2E885]" : ""
+                        complexity === opt.value ? "bg-[#FFFF66]" : ""
                       }`}
                     >
                       {opt.label}
@@ -270,7 +270,7 @@ export function CreateTaskModal({
           {/* Validation Method (fixed to URL) */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.validationMethod}</label>
-            <div className="w-full p-2.5 border-2 border-gray-300 font-mono bg-gray-50 text-gray-600">
+            <div className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono bg-gray-50 text-[#666666]">
               {t.validationUrl}
             </div>
           </div>
@@ -284,9 +284,9 @@ export function CreateTaskModal({
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
                 min={new Date().toISOString().split("T")[0]}
-                className="w-full p-2.5 border-2 border-gray-300 font-mono pr-10"
+                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono pr-10"
               />
-              <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+              <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#666666] pointer-events-none" size={18} />
             </div>
           </div>
 
@@ -297,7 +297,7 @@ export function CreateTaskModal({
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder={t.tagsPlaceholder}
-              className="w-full p-2.5 border-2 border-gray-300 font-mono"
+              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
             />
           </div>
 
@@ -308,11 +308,11 @@ export function CreateTaskModal({
               <button
                 type="button"
                 onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-                className="w-full p-2.5 border-2 border-gray-300 font-mono flex items-center justify-between bg-white"
+                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono flex items-center justify-between bg-white"
               >
                 <span className="flex items-center gap-2">
                   <span className="font-bold">{selectedToken}</span>
-                  <span className="text-gray-500 text-sm">
+                  <span className="text-[#666666] text-sm">
                     (Balance: {tokenBalances[selectedToken]} {selectedToken})
                   </span>
                 </span>
@@ -320,7 +320,7 @@ export function CreateTaskModal({
               </button>
 
               {showTokenDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border-2 border-black border-t-0 z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 bg-white border-2 border-[#111111] border-t-0 rounded-b-xl z-10 max-h-48 overflow-y-auto">
                   {tokenOptions.map((token) => (
                     <button
                       key={token.symbol}
@@ -330,14 +330,14 @@ export function CreateTaskModal({
                         setShowTokenDropdown(false)
                       }}
                       className={`w-full p-2.5 text-left hover:bg-gray-100 flex items-center justify-between ${
-                        selectedToken === token.symbol ? "bg-[#F2E885]" : ""
+                        selectedToken === token.symbol ? "bg-[#FFFF66]" : ""
                       }`}
                     >
                       <span>
                         <span className="font-bold">{token.symbol}</span>
-                        <span className="text-gray-500 text-sm ml-2">({token.name})</span>
+                        <span className="text-[#666666] text-sm ml-2">({token.name})</span>
                       </span>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-[#666666]">
                         {tokenBalances[token.symbol]} {token.symbol}
                       </span>
                     </button>
@@ -356,7 +356,7 @@ export function CreateTaskModal({
               value={rewardPerSlot}
               onChange={(e) => setRewardPerSlot(e.target.value)}
               placeholder="10"
-              className="w-full p-2.5 border-2 border-gray-300 font-mono"
+              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
             />
           </div>
 
@@ -367,15 +367,15 @@ export function CreateTaskModal({
               value={totalSlots}
               onChange={(e) => setTotalSlots(e.target.value)}
               placeholder="5"
-              className="w-full p-2.5 border-2 border-gray-300 font-mono"
+              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
             />
           </div>
 
           {/* Total Cost */}
           {totalCost && (
-            <div className="bg-[#F2E885] border-2 border-black p-3">
-              <div className="font-bold text-xs">{t.totalCostBrl}</div>
-              <div className="text-lg font-bold">
+            <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-3">
+              <div className="font-bold text-xs text-[#111111]">{t.totalCostBrl}</div>
+              <div className="text-lg font-bold text-[#111111]">
                 {totalCost} {selectedToken}
               </div>
             </div>
@@ -384,7 +384,7 @@ export function CreateTaskModal({
           <button
             onClick={handleCreate}
             disabled={loading || !taskId || !taskTitle || !totalSlots || !rewardPerSlot}
-            className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-50"
+            className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-50 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
           >
             {loading ? (language === "en" ? "CREATING..." : "CRIANDO...") : t.createTaskButton}
           </button>
