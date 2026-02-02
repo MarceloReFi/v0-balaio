@@ -23,38 +23,38 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
 
   return (
     <div className="p-5 pb-24">
-      <div className="bg-[#C36DF0] border-2 border-black p-5 mb-5 text-white">
+      <div className="bg-[#FF99CC] border-2 border-[#111111] rounded-xl p-5 mb-5 text-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <div className="flex items-center gap-4 mb-4">
-          <div className="w-15 h-15 bg-[#D96E5F] border-2 border-black flex items-center justify-center text-xl font-bold">
-            TO
+          <div className="w-15 h-15 bg-[#FFFF66] border-2 border-[#111111] rounded-xl flex items-center justify-center text-xl font-bold">
+            🧺
           </div>
           <div>
             <div className="text-xs opacity-80">{language === "en" ? "WALLET ADDRESS" : "ENDEREÇO DA CARTEIRA"}</div>
-            <div className="font-bold text-sm">
+            <div className="font-bold text-sm font-mono">
               {account?.slice(0, 8)}...{account?.slice(-6)}
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2.5">
-          <div className="bg-white border-2 border-black text-center p-3">
-            <div className="text-xl font-bold text-[#2B325C]">{completedTasks.length}</div>
-            <div className="text-xs text-gray-600">{t.tasksCompleted}</div>
+          <div className="bg-white border-2 border-[#111111] rounded-xl text-center p-3">
+            <div className="text-xl font-bold text-[#111111]">{completedTasks.length}</div>
+            <div className="text-xs text-[#666666]">{t.tasksCompleted}</div>
           </div>
-          <div className="bg-white border-2 border-black text-center p-3">
-            <div className="text-xl font-bold text-[#636D4F]">{totalEarned.toFixed(2)}</div>
-            <div className="text-xs text-gray-600">{t.totalEarned}</div>
+          <div className="bg-white border-2 border-[#111111] rounded-xl text-center p-3">
+            <div className="text-xl font-bold text-[#99FF99]">{totalEarned.toFixed(2)}</div>
+            <div className="text-xs text-[#666666]">{t.totalEarned}</div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border-2 border-black p-4 mb-5">
+      <div className="bg-white border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <h3 className="font-bold mb-3 flex items-center gap-2">📊 {t.recentActivity}</h3>
 
         {/* Tasks Created by User */}
         {userActivity.created.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs font-bold text-[#3A4571] mb-2 flex items-center gap-1">
+            <div className="text-xs font-bold text-[#111111] mb-2 flex items-center gap-1">
               ✨ {language === "en" ? "Tasks You Created" : "Tarefas que Você Criou"}
             </div>
             <div className="space-y-2">
@@ -62,10 +62,10 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                 <div key={`created-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
                   <span className="text-xs truncate max-w-[60%]">{task.title}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-[#666666]">
                       {task.claimedSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
                     </span>
-                    <span className={`text-xs font-bold px-1.5 py-0.5 border ${task.active ? "bg-[#B8D962] border-black" : "bg-gray-200 border-gray-400"}`}>
+                    <span className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${task.active ? "bg-[#99FF99] border-[#111111]" : "bg-gray-200 border-[#666666]"}`}>
                       {task.active ? (language === "en" ? "Active" : "Ativa") : (language === "en" ? "Closed" : "Fechada")}
                     </span>
                   </div>
@@ -78,7 +78,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         {/* Tasks User Worked On */}
         {userActivity.worked.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs font-bold text-[#636D4F] mb-2 flex items-center gap-1">
+            <div className="text-xs font-bold text-[#99FF99] mb-2 flex items-center gap-1">
               💼 {language === "en" ? "Tasks You Worked On" : "Tarefas em que Você Trabalhou"}
             </div>
             <div className="space-y-2">
@@ -90,12 +90,12 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                       {task.reward} {task.token || "cUSD"}
                     </span>
                     <span
-                      className={`text-xs font-bold px-1.5 py-0.5 border ${
+                      className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
                         task.status === "completed"
-                          ? "bg-[#636D4F] text-white border-black"
+                          ? "bg-[#666666] text-white border-[#111111]"
                           : task.status === "submitted"
-                            ? "bg-[#FFF244] border-black"
-                            : "bg-white border-gray-400"
+                            ? "bg-[#FFFF66] border-[#111111]"
+                            : "bg-white border-[#666666]"
                       }`}
                     >
                       {task.status === "completed"
@@ -123,10 +123,10 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                   <span
                     className={`text-xs font-bold ${
                       task.mySlot?.approved
-                        ? "text-[#636D4F]"
+                        ? "text-[#99FF99]"
                         : task.mySlot?.submitted
-                          ? "text-[#FFF244]"
-                          : "text-gray-600"
+                          ? "text-[#FFFF66]"
+                          : "text-[#666666]"
                     }`}
                   >
                     {task.mySlot?.approved
@@ -140,7 +140,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                 </div>
               ))}
             {tasks.filter((t) => t.mySlot).length === 0 && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[#666666]">
                 {language === "en" ? "No recent activity" : "Nenhuma atividade recente"}
               </p>
             )}
@@ -148,43 +148,43 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         )}
       </div>
 
-      <div className="bg-white border-2 border-black p-4 mb-5">
+      <div className="bg-white border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <h3 className="font-bold mb-3 flex items-center gap-2">💡 {t.levelUpSkills}</h3>
         <div className="flex items-start gap-3 mb-3">
-          <div className="w-20 h-20 bg-gray-200 border-2 border-black flex items-center justify-center text-2xl">
+          <div className="w-20 h-20 bg-[#FFFF66] border-2 border-[#111111] rounded-xl flex items-center justify-center text-2xl">
             🎓
           </div>
           <div className="flex-1">
             <h4 className="font-bold text-sm mb-1">
               {language === "en" ? "The Future of Learn2Earn in Web3" : "O Futuro do Learn2Earn na Web3"}
             </h4>
-            <p className="text-xs text-gray-600 mb-2">{t.visitBlogDesc}</p>
+            <p className="text-xs text-[#666666] mb-2">{t.visitBlogDesc}</p>
             <button
               onClick={onNavigateToBlog}
-              className="bg-[#636D4F] text-white px-4 py-2 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow inline-flex items-center gap-1"
+              className="bg-[#111111] text-white px-4 py-2 text-xs font-bold border-2 border-[#111111] rounded-xl hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow inline-flex items-center gap-1"
             >
-              📖 {t.readMore}
+              📖 {t.readMore} →
             </button>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border-2 border-black p-4">
+      <div className="bg-white border-2 border-[#111111] rounded-xl p-4 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <h3 className="font-bold mb-3 flex items-center gap-2">
           <Settings size={18} />
           {t.settings}
         </h3>
         <div className="space-y-2">
-          <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm flex items-center justify-between">
+          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm flex items-center justify-between">
             <span>{t.notificationSettings}</span>
           </button>
-          <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm flex items-center justify-between">
+          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm flex items-center justify-between">
             <span>{t.securitySettings}</span>
           </button>
-          <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm">
+          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm">
             {t.exportData}
           </button>
-          <button className="w-full text-left p-3 border border-gray-200 hover:bg-gray-50 text-sm flex items-center justify-between">
+          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm flex items-center justify-between">
             <span>{t.adminSettings}</span>
           </button>
         </div>
