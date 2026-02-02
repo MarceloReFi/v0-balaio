@@ -31,26 +31,26 @@ export function HomePage({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "open":
-        return <span className="bg-[#B8D962] text-black px-2 py-0.5 text-xs font-bold border border-black">Active</span>
+        return <span className="bg-[#99FF99] text-[#111111] px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Active</span>
       case "claimed":
         return (
-          <span className="bg-white text-gray-600 px-2 py-0.5 text-xs font-bold border border-gray-400">Claimed</span>
+          <span className="bg-white text-[#666666] px-2 py-0.5 text-xs font-bold border-2 border-[#666666] rounded-lg">Claimed</span>
         )
       case "submitted":
         return (
-          <span className="bg-[#FFF244] text-black px-2 py-0.5 text-xs font-bold border border-black">Pending</span>
+          <span className="bg-[#FFFF66] text-[#111111] px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Pending</span>
         )
       case "approved":
         return (
-          <span className="bg-[#636D4F] text-white px-2 py-0.5 text-xs font-bold border border-black">Approved</span>
+          <span className="bg-[#99FF99] text-[#111111] px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Approved</span>
         )
       case "completed":
         return (
-          <span className="bg-[#3A4571] text-white px-2 py-0.5 text-xs font-bold border border-black">Completed</span>
+          <span className="bg-[#666666] text-white px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Completed</span>
         )
       default:
         return (
-          <span className="bg-gray-200 text-gray-600 px-2 py-0.5 text-xs font-bold border border-gray-400">
+          <span className="bg-gray-200 text-[#666666] px-2 py-0.5 text-xs font-bold border-2 border-[#666666] rounded-lg">
             {status}
           </span>
         )
@@ -74,8 +74,8 @@ export function HomePage({
     const total = Number(task.totalSlots)
 
     if (!task.active || available === 0) return "bg-red-500"
-    if (available === total) return "bg-green-500"
-    return "bg-yellow-500"
+    if (available === total) return "bg-[#99FF99]"
+    return "bg-[#FFFF66]"
   }
 
   const getDeadlineInfo = (deadline: Date | null | undefined) => {
@@ -87,8 +87,8 @@ export function HomePage({
     const diffDays = diffMs / (1000 * 60 * 60 * 24)
 
     if (diffMs < 0) return { color: "text-red-600", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-yellow-600", text: language === "en" ? "1 day" : "1 dia" }
-    return { color: "text-green-600", text: `${Math.ceil(diffDays)}d` }
+    if (diffDays <= 1) return { color: "text-[#FFFF66]", text: language === "en" ? "1 day" : "1 dia" }
+    return { color: "text-[#99FF99]", text: `${Math.ceil(diffDays)}d` }
   }
 
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -143,12 +143,12 @@ export function HomePage({
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-bold flex items-center gap-2">
-              <span className="text-gray-500">📋</span> {language === "en" ? "Latest Tasks" : "Últimas Tarefas"}
+              <span className="text-[#666666]">📋</span> {language === "en" ? "Latest Tasks" : "Últimas Tarefas"}
             </h3>
             {onNavigateToTasks && (
               <button
                 onClick={onNavigateToTasks}
-                className="bg-white border-2 border-black px-3 py-1.5 text-sm font-bold hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                className="bg-white border-2 border-[#111111] rounded-xl px-3 py-1.5 text-sm font-bold hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
               >
                 + More
               </button>
@@ -159,16 +159,16 @@ export function HomePage({
             {latestTasks.map((task) => {
               const deadlineInfo = getDeadlineInfo(task.deadline)
               return (
-                <div key={task.id} className="bg-white border-2 border-black p-4">
+                <div key={task.id} className="bg-white border-2 border-[#111111] rounded-xl p-4 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`w-2.5 h-2.5 rounded-full ${getSlotStatusColor(task)}`}></span>
                         <h4 className="font-bold text-sm">{task.title}</h4>
                       </div>
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{task.description}</p>
+                      <p className="text-xs text-[#666666] mb-2 line-clamp-2">{task.description}</p>
 
-                      <div className="text-xs text-gray-500 mb-1">
+                      <div className="text-xs text-[#666666] mb-1">
                         {language === "en" ? "By:" : "Por:"} {shortenAddress(task.creator)}
                       </div>
 
@@ -191,7 +191,7 @@ export function HomePage({
                       {onViewTask && (
                         <button
                           onClick={() => onViewTask(task)}
-                          className="bg-[#636D4F] text-white px-3 py-1.5 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                          className="bg-[#111111] text-white px-3 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
                         >
                           View
                         </button>
@@ -202,7 +202,7 @@ export function HomePage({
                         onClaimTask && (
                           <button
                             onClick={() => onClaimTask(task)}
-                            className="bg-[#D96E5F] text-white px-3 py-1.5 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                            className="bg-[#FF99CC] text-[#111111] px-3 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
                           >
                             Claim
                           </button>
@@ -219,22 +219,22 @@ export function HomePage({
       {/* Opportunities Section */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
-          
-          <button className="bg-white border-2 border-black px-3 py-1.5 text-sm font-bold hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow">
+
+          <button className="bg-white border-2 border-[#111111] rounded-xl px-3 py-1.5 text-sm font-bold hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow">
             + More
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {opportunities.map((opp, index) => (
-            <div key={index} className="bg-white border-2 border-black p-4">
+            <div key={index} className="bg-white border-2 border-[#111111] rounded-xl p-4 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
               <div className="flex items-start justify-between mb-2">
                 <h4 className="font-bold text-sm flex-1">{opp.title}</h4>
                 <a
                   href={opp.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-[#D96E5F] text-white px-3 py-1.5 text-xs font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                  className="bg-[#FF99CC] text-[#111111] px-3 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
                 >
                   Apply
                 </a>
@@ -242,21 +242,21 @@ export function HomePage({
 
               <div className="mb-2">
                 <span
-                  className={`px-2 py-0.5 text-xs font-bold border-2 border-black ${
+                  className={`px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg ${
                     opp.type.includes("Grant") || opp.type.includes("Subsídio")
-                      ? "bg-[#D96E5F] text-white"
+                      ? "bg-[#FF99CC] text-[#111111]"
                       : opp.type.includes("Rewards") || opp.type.includes("Recompensas")
-                        ? "bg-[#C36DF0] text-white"
+                        ? "bg-[#99FF99] text-[#111111]"
                         : opp.type.includes("Accelerator") || opp.type.includes("Aceleradora")
-                          ? "bg-[#FFF244] text-black"
-                          : "bg-[#636D4F] text-white"
+                          ? "bg-[#FFFF66] text-[#111111]"
+                          : "bg-[#111111] text-white"
                   }`}
                 >
                   {opp.type}
                 </span>
               </div>
 
-              <p className="text-xs text-gray-600 mb-3">{opp.description}</p>
+              <p className="text-xs text-[#666666] mb-3">{opp.description}</p>
 
               <div className="flex flex-wrap items-center gap-2 text-xs mb-3">
                 <span className="flex items-center gap-1">🏢 {opp.provider}</span>
@@ -269,7 +269,7 @@ export function HomePage({
 
               <div className="flex flex-wrap gap-1">
                 {opp.tags.map((tag) => (
-                  <span key={tag} className="bg-white border border-black px-2 py-0.5 text-xs">
+                  <span key={tag} className="bg-white border-2 border-[#111111] rounded-lg px-2 py-0.5 text-xs">
                     {tag}
                   </span>
                 ))}
@@ -280,26 +280,26 @@ export function HomePage({
       </div>
 
       {/* Discover Features Section */}
-      <div className="bg-[#636D4F] border-2 border-black p-6 relative overflow-hidden">
+      <div className="bg-[#99FF99] border-2 border-[#111111] rounded-xl p-6 relative overflow-hidden shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">
           <img src="/logo.png" alt="Balaio" className="w-32 h-32 object-contain" />
         </div>
 
         <div className="text-center relative z-10">
-          
-          <h3 className="text-white font-bold text-lg mb-2">
+
+          <h3 className="text-[#111111] font-bold text-lg mb-2">
             {language === "en" ? "Discover All Features" : "Descubra Todas as Funcionalidades"}
           </h3>
-          <p className="text-white/80 text-sm mb-4">
+          <p className="text-[#111111]/80 text-sm mb-4">
             {language === "en"
               ? "Smart task creation, mobile-first design, and comprehensive tools for every user type"
               : "Criação inteligente de tarefas, design mobile-first e ferramentas completas para todos os tipos de usuário"}
           </p>
           <button
             onClick={onNavigateToFeatures}
-            className="bg-[#FFF244] text-black px-4 py-2 text-sm font-bold border-2 border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+            className="bg-[#111111] text-white px-4 py-2 text-sm font-bold border-2 border-[#111111] rounded-xl hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
           >
-            📋 {language === "en" ? "Explore Features" : "Explorar Funcionalidades"}
+            📋 {language === "en" ? "Explore Features →" : "Explorar Funcionalidades →"}
           </button>
         </div>
       </div>

@@ -62,8 +62,8 @@ export function TaskDetailModal({
     const total = Number(task.totalSlots)
 
     if (!task.active || available === 0) return "bg-red-500"
-    if (available === total) return "bg-green-500"
-    return "bg-yellow-500"
+    if (available === total) return "bg-[#99FF99]"
+    return "bg-[#FFFF66]"
   }
 
   const getDeadlineInfo = () => {
@@ -75,9 +75,9 @@ export function TaskDetailModal({
     const diffDays = diffMs / (1000 * 60 * 60 * 24)
 
     if (diffMs < 0) return { color: "text-red-600", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-yellow-600", text: language === "en" ? "1 day left" : "1 dia restante" }
-    if (diffDays <= 7) return { color: "text-green-600", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
-    return { color: "text-green-600", text: deadlineDate.toLocaleDateString() }
+    if (diffDays <= 1) return { color: "text-[#111111]", text: language === "en" ? "1 day left" : "1 dia restante" }
+    if (diffDays <= 7) return { color: "text-[#111111]", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
+    return { color: "text-[#111111]", text: deadlineDate.toLocaleDateString() }
   }
 
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -85,7 +85,7 @@ export function TaskDetailModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-black p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white border-2 border-[#111111] rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <span className={`w-3 h-3 rounded-full ${getSlotStatusColor()}`}></span>
@@ -96,32 +96,32 @@ export function TaskDetailModal({
           </button>
         </div>
 
-        <p className="text-sm mb-4 text-gray-700">{task.description}</p>
+        <p className="text-sm mb-4 text-[#666666]">{task.description}</p>
 
         {task.validationMethod && task.validationMethod.startsWith('http') && (
           <a
             href={task.validationMethod}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-blue-600 hover:underline mb-4 block"
+            className="text-sm text-[#111111] hover:underline mb-4 block"
           >
-            🔗 {language === "en" ? "View full task details" : "Ver detalhes completos da tarefa"}
+            🔗 {language === "en" ? "View full task details →" : "Ver detalhes completos da tarefa →"}
           </a>
         )}
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm">
-            <User size={14} className="text-gray-500" />
-            <span className="text-gray-500">{language === "en" ? "Creator:" : "Criador:"}</span>
-            <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
+            <User size={14} className="text-[#666666]" />
+            <span className="text-[#666666]">{language === "en" ? "Creator:" : "Criador:"}</span>
+            <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded-lg border border-[#111111]">
               {truncateAddress(task.creator)}
             </span>
           </div>
 
           {task.category && (
             <div className="flex items-center gap-2 text-sm">
-              <Folder size={14} className="text-gray-500" />
-              <span className="text-gray-500">{language === "en" ? "Category:" : "Categoria:"}</span>
-              <span className="bg-[#3A4571] text-white text-xs px-2 py-0.5 rounded">
+              <Folder size={14} className="text-[#666666]" />
+              <span className="text-[#666666]">{language === "en" ? "Category:" : "Categoria:"}</span>
+              <span className="bg-[#111111] text-white text-xs px-2 py-0.5 rounded-lg">
                 {categoryLabels[task.category]?.[language === "en" ? "en" : "pt"] || task.category}
               </span>
             </div>
@@ -129,13 +129,13 @@ export function TaskDetailModal({
 
           {task.tags && task.tags.length > 0 && (
             <div className="flex items-start gap-2 text-sm">
-              <Tag size={14} className="text-gray-500 mt-0.5" />
-              <span className="text-gray-500">{language === "en" ? "Tags:" : "Tags:"}</span>
+              <Tag size={14} className="text-[#666666] mt-0.5" />
+              <span className="text-[#666666]">{language === "en" ? "Tags:" : "Tags:"}</span>
               <div className="flex flex-wrap gap-1">
                 {task.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded"
+                    className="bg-white text-[#111111] text-xs px-2 py-0.5 rounded-lg border-2 border-[#111111]"
                   >
                     {tag}
                   </span>
@@ -145,7 +145,7 @@ export function TaskDetailModal({
           )}
         </div>
 
-        <div className="bg-gray-50 border-2 border-gray-300 p-3 mb-4">
+        <div className="bg-white border-2 border-[#111111] rounded-xl p-3 mb-4">
           <div className="flex justify-between mb-2">
             <span className="text-xs">{t.reward}:</span>
             <span className="font-bold">
@@ -185,7 +185,7 @@ export function TaskDetailModal({
             <button
               onClick={() => onClaimTask(task.id)}
               disabled={loading}
-              className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-70"
+              className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-70 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
             >
               {loading
                 ? language === "en"
@@ -203,7 +203,7 @@ export function TaskDetailModal({
                 placeholder={
                   language === "en" ? "Proof URL (IPFS, Google Drive, etc.)" : "URL da Prova (IPFS, Google Drive, etc.)"
                 }
-                className="w-full p-2.5 border-2 border-gray-300 font-mono"
+                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
               />
               <button
                 onClick={() => {
@@ -211,7 +211,7 @@ export function TaskDetailModal({
                   setProofUrl("")
                 }}
                 disabled={loading || !proofUrl}
-                className="bg-[#3A4571] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-70"
+                className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-70 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
               >
                 {loading
                   ? language === "en"
@@ -223,7 +223,7 @@ export function TaskDetailModal({
           )}
 
           {isPending && (
-            <div className="bg-[#F2E885] border-2 border-black p-3 text-center font-bold">
+            <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-3 text-center font-bold text-[#111111]">
               {language === "en" ? "Waiting for approval..." : "Aguardando aprovacao..."}
             </div>
           )}
@@ -232,20 +232,20 @@ export function TaskDetailModal({
             <button
               onClick={() => onClaimReward(task.id)}
               disabled={loading}
-              className="bg-[#7A8770] text-white px-6 py-3 font-bold border-2 border-black w-full disabled:opacity-70"
+              className="bg-[#99FF99] text-[#111111] px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-70 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
             >
               {loading ? (language === "en" ? "CLAIMING..." : "REIVINDICANDO...") : `${t.claimReward.toUpperCase()}`}
             </button>
           )}
 
           {isCompleted && (
-            <div className="bg-[#7A8770] border-2 border-black p-3 text-center font-bold text-white">
+            <div className="bg-[#99FF99] border-2 border-[#111111] rounded-xl p-3 text-center font-bold text-[#111111]">
               {language === "en" ? "Reward claimed!" : "Recompensa reivindicada!"}
             </div>
           )}
 
           {isCreator && (
-            <div className="mt-4 p-3 bg-gray-50 border-2 border-gray-300">
+            <div className="mt-4 p-3 bg-white border-2 border-[#111111] rounded-xl">
               <div className="font-bold mb-2 text-xs">
                 {language === "en" ? "TASK CREATOR ACTIONS" : "ACOES DO CRIADOR"}
               </div>
@@ -253,7 +253,7 @@ export function TaskDetailModal({
                 value={approveAddress}
                 onChange={(e) => setApproveAddress(e.target.value)}
                 placeholder={language === "en" ? "Claimant address (0x...)" : "Endereco do reivindicante (0x...)"}
-                className="w-full p-2 border-2 border-gray-300 mb-2 font-mono text-xs"
+                className="w-full p-2 border-2 border-[#111111] rounded-xl mb-2 font-mono text-xs"
               />
               <button
                 onClick={() => {
@@ -263,7 +263,7 @@ export function TaskDetailModal({
                   }
                 }}
                 disabled={loading}
-                className="bg-white text-[#3A4571] px-4 py-2 font-bold border-2 border-[#3A4571] w-full text-xs disabled:opacity-70"
+                className="bg-[#FF99CC] text-[#111111] px-4 py-2 font-bold border-2 border-[#111111] rounded-xl w-full text-xs disabled:opacity-70 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
               >
                 {t.approve.toUpperCase()} {language === "en" ? "SUBMISSION" : "ENVIO"}
               </button>
