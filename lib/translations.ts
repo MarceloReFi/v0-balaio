@@ -68,6 +68,10 @@ export const translations = {
     submissionLinkLabel: "Submission",
     noClaimsYet: "No claims yet",
     pendingReview: "Pending Review",
+    dbUpdateNoticeTitle: "Task Tracking Updated",
+    dbUpdateNoticeBody:
+      "We've upgraded how task claims are tracked. Claims made before this update may not appear here yet. To recover an older claim, simply open the task from the Tasks page and re-click Claim — your existing blockchain slot will be recognized and synced automatically.",
+    dbUpdateNoticeDismiss: "Got it",
     levelUpSkills: "Level Up Your Skills",
     visitBlog: "Balaio Blog",
     visitBlogDesc: "Exploring how blockchain technology is revolutionizing education...",
@@ -225,6 +229,10 @@ export const translations = {
     submissionLinkLabel: "Envio",
     noClaimsYet: "Nenhuma reivindicação ainda",
     pendingReview: "Aguardando Revisão",
+    dbUpdateNoticeTitle: "Rastreamento de Tarefas Atualizado",
+    dbUpdateNoticeBody:
+      "Atualizamos como as reivindicações de tarefas são rastreadas. Reivindicações feitas antes desta atualização podem não aparecer aqui ainda. Para recuperar uma reivindicação antiga, basta abrir a tarefa na página de Tarefas e clicar em Reivindicar novamente — seu slot existente na blockchain será reconhecido e sincronizado automaticamente.",
+    dbUpdateNoticeDismiss: "Entendi",
     levelUpSkills: "Evolua Suas Habilidades",
     visitBlog: "Blog Balaio",
     visitBlogDesc: "Explorando como a tecnologia blockchain está revolucionando a educação...",

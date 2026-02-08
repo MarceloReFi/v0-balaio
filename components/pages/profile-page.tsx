@@ -1,8 +1,11 @@
 "use client"
 
-import { Settings } from "lucide-react"
+import { useState } from "react"
+import { Settings, X } from "lucide-react"
 import type { Task, TaskClaim } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
+
+const DB_NOTICE_KEY = "balaio_db_update_notice_dismissed"
 
 interface ProfilePageProps {
   account: string
@@ -26,11 +29,20 @@ const formatTimestamp = (date: Date | null | undefined): string => {
 
 export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, language }: ProfilePageProps) {
   const t = useTranslations(language)
+  const [noticeDismissed, setNoticeDismissed] = useState(() => {
+    if (typeof window === "undefined") return false
+    return localStorage.getItem(DB_NOTICE_KEY) === "true"
+  })
   const completedTasks = tasks.filter((t) => t.mySlot?.approved)
   const totalEarned = completedTasks.reduce((sum, task) => {
     const reward = Number.parseFloat(task.reward) || 0
     return sum + reward
   }, 0)
+
+  const dismissNotice = () => {
+    localStorage.setItem(DB_NOTICE_KEY, "true")
+    setNoticeDismissed(true)
+  }
 
   return (
     <div className="p-5 pb-24">
@@ -58,6 +70,27 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
           </div>
         </div>
       </div>
+
+      {/* Database update notice */}
+      {!noticeDismissed && (
+        <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] relative">
+          <button
+            onClick={dismissNotice}
+            className="absolute top-2 right-2 p-1 hover:opacity-70"
+            aria-label="Dismiss"
+          >
+            <X size={16} />
+          </button>
+          <h4 className="font-bold text-sm mb-1 pr-6">{t.dbUpdateNoticeTitle}</h4>
+          <p className="text-xs text-[#333333] leading-relaxed">{t.dbUpdateNoticeBody}</p>
+          <button
+            onClick={dismissNotice}
+            className="mt-3 bg-[#111111] text-white px-4 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+          >
+            {t.dbUpdateNoticeDismiss}
+          </button>
+        </div>
+      )}
 
       <div className="bg-white border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <h3 className="font-bold mb-3 flex items-center gap-2">📊 {t.recentActivity}</h3>
