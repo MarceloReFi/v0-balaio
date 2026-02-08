@@ -221,6 +221,10 @@ export function TheOfficeApp() {
           validationMethod: row.validation_method || undefined,
           deadline: row.deadline ? new Date(row.deadline) : null,
           tags: row.tags || [],
+          claimedAt: row.claimed_at ? new Date(row.claimed_at) : undefined,
+          submittedAt: row.submitted_at ? new Date(row.submitted_at) : undefined,
+          approvedAt: row.approved_at ? new Date(row.approved_at) : undefined,
+          workerAddress: row.worker_address || undefined,
         })
 
         setUserActivity({
@@ -1037,6 +1041,7 @@ export function TheOfficeApp() {
             tasks={tasks}
             userActivity={userActivity}
             onNavigateToBlog={() => setCurrentPage("blog")}
+            onApproveTask={approveTaskSubmission}
             language={language}
           />
         )}

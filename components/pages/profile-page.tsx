@@ -10,10 +10,18 @@ interface ProfilePageProps {
   tasks: Task[]
   userActivity: { created: Task[]; worked: Task[] }
   onNavigateToBlog: () => void
+  onApproveTask: (id: string, claimant: string) => void
   language: Language
 }
 
-export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, language }: ProfilePageProps) {
+const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`
+const formatDate = (date: Date | string | undefined) => {
+  if (!date) return null
+  const d = typeof date === "string" ? new Date(date) : date
+  return d.toLocaleDateString()
+}
+
+export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, language }: ProfilePageProps) {
   const t = useTranslations(language)
   const completedTasks = tasks.filter((t) => t.mySlot?.approved)
   const totalEarned = completedTasks.reduce((sum, task) => {
@@ -59,16 +67,43 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
             </div>
             <div className="space-y-2">
               {userActivity.created.slice(0, 3).map((task) => (
-                <div key={`created-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs truncate max-w-[60%]">{task.title}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#666666]">
-                      {task.claimedSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
-                    </span>
-                    <span className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${task.active ? "bg-[#99FF99] border-[#111111]" : "bg-gray-200 border-[#666666]"}`}>
-                      {task.active ? (language === "en" ? "Active" : "Ativa") : (language === "en" ? "Closed" : "Fechada")}
-                    </span>
+                <div key={`created-${task.id}`} className="text-sm border-b border-gray-200 pb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs truncate max-w-[60%]">{task.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[#666666]">
+                        {task.claimedSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
+                      </span>
+                      <span className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${task.active ? "bg-[#99FF99] border-[#111111]" : "bg-gray-200 border-[#666666]"}`}>
+                        {task.active ? (language === "en" ? "Active" : "Ativa") : (language === "en" ? "Closed" : "Fechada")}
+                      </span>
+                    </div>
                   </div>
+                  {task.workerAddress && (
+                    <div className="mt-1 flex items-center justify-between">
+                      <div className="text-xs text-[#666666]">
+                        <span>{t.claimedBy} {formatAddress(task.workerAddress)}</span>
+                        {task.claimedAt && <span> · {t.claimedOn} {formatDate(task.claimedAt)}</span>}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {task.approvedAt ? (
+                          <span className="text-xs font-bold px-1.5 py-0.5 border-2 border-[#111111] rounded-lg bg-[#99FF99]">{t.approved}</span>
+                        ) : task.submittedAt ? (
+                          <>
+                            <span className="text-xs font-bold px-1.5 py-0.5 border-2 border-[#111111] rounded-lg bg-[#FFFF66]">{t.awaitingApproval}</span>
+                            <button
+                              onClick={() => onApproveTask(task.id, task.workerAddress!)}
+                              className="text-xs font-bold px-1.5 py-0.5 border-2 border-[#111111] rounded-lg bg-[#99FF99] hover:opacity-80"
+                            >
+                              {t.approveSubmission}
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-xs font-bold px-1.5 py-0.5 border-2 border-[#666666] rounded-lg bg-white">{t.claimed}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -83,28 +118,37 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
             </div>
             <div className="space-y-2">
               {userActivity.worked.slice(0, 3).map((task) => (
-                <div key={`worked-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs truncate max-w-[60%]">{task.title}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold">
-                      {task.reward} {task.token || "cUSD"}
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
-                        task.status === "completed"
-                          ? "bg-[#666666] text-white border-[#111111]"
-                          : task.status === "submitted"
-                            ? "bg-[#FFFF66] border-[#111111]"
-                            : "bg-white border-[#666666]"
-                      }`}
-                    >
-                      {task.status === "completed"
-                        ? language === "en" ? "Completed" : "Concluída"
-                        : task.status === "submitted"
-                          ? language === "en" ? "Pending" : "Pendente"
-                          : language === "en" ? "In Progress" : "Em Progresso"}
-                    </span>
+                <div key={`worked-${task.id}`} className="text-sm border-b border-gray-200 pb-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs truncate max-w-[60%]">{task.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold">
+                        {task.reward} {task.token || "cUSD"}
+                      </span>
+                      <span
+                        className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
+                          task.approvedAt
+                            ? "bg-[#99FF99] border-[#111111]"
+                            : task.submittedAt
+                              ? "bg-[#FFFF66] border-[#111111]"
+                              : "bg-white border-[#666666]"
+                        }`}
+                      >
+                        {task.approvedAt
+                          ? t.approved
+                          : task.submittedAt
+                            ? t.awaitingApproval
+                            : t.claimed}
+                      </span>
+                    </div>
                   </div>
+                  {(task.submittedAt || task.approvedAt) && (
+                    <div className="mt-1 text-xs text-[#666666]">
+                      {task.approvedAt
+                        ? `${t.approvedOn} ${formatDate(task.approvedAt)}`
+                        : `${t.submittedOn} ${formatDate(task.submittedAt)}`}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
