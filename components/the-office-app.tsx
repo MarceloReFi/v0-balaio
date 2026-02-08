@@ -146,6 +146,10 @@ export function TheOfficeApp() {
             validationMethod: row.validation_method || undefined,
             deadline: row.deadline ? new Date(row.deadline) : null,
             tags: row.tags || [],
+            workerAddress: row.worker_address || undefined,
+            claimedAt: row.claimed_at ? new Date(row.claimed_at) : null,
+            submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
+            approvedAt: row.approved_at ? new Date(row.approved_at) : null,
             paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
             fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
             workerPixKey: row.worker_pix_key || undefined,
@@ -221,6 +225,10 @@ export function TheOfficeApp() {
           validationMethod: row.validation_method || undefined,
           deadline: row.deadline ? new Date(row.deadline) : null,
           tags: row.tags || [],
+          workerAddress: row.worker_address || undefined,
+          claimedAt: row.claimed_at ? new Date(row.claimed_at) : null,
+          submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
+          approvedAt: row.approved_at ? new Date(row.approved_at) : null,
         })
 
         setUserActivity({
@@ -807,6 +815,13 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         await saveTaskToSupabase(updated)
+        await supabase
+          .from("tasks")
+          .update({
+            worker_address: account.toLowerCase(),
+            claimed_at: new Date().toISOString(),
+          })
+          .eq("id", id)
       }
     } catch (error) {
       console.error(error)
@@ -835,7 +850,11 @@ export function TheOfficeApp() {
         setSelectedTask(updated)
         await supabase
           .from("tasks")
-          .update({ submission_link: proof, updated_at: new Date().toISOString() })
+          .update({
+            submission_link: proof,
+            submitted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", id)
       }
     } catch (error) {
@@ -863,6 +882,10 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         await saveTaskToSupabase(updated)
+        await supabase
+          .from("tasks")
+          .update({ approved_at: new Date().toISOString() })
+          .eq("id", id)
       }
     } catch (error) {
       console.error(error)
@@ -1027,6 +1050,7 @@ export function TheOfficeApp() {
             tasks={tasks}
             userActivity={userActivity}
             onNavigateToBlog={() => setCurrentPage("blog")}
+            onApproveTask={approveTaskSubmission}
             language={language}
           />
         )}
