@@ -14,7 +14,7 @@ import {
   VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
 } from "@/lib/constants"
-import type { Task, TaskCategory, TaskComplexity, TaskVisibility } from "@/lib/types"
+import type { Task, TaskClaim, TaskCategory, TaskComplexity, TaskVisibility } from "@/lib/types"
 import { Toast } from "@/components/ui/toast-custom"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
@@ -193,18 +193,76 @@ export function TheOfficeApp() {
           console.error("[balaio] Error fetching created tasks:", createdError.message)
         }
 
-        const { data: workedTasks, error: workedError } = await supabase
+        // Fetch claims for all created tasks from task_claims table
+        const createdTaskIds = (createdTasks || []).map((t: any) => t.id)
+        let claimsMap: Record<string, TaskClaim[]> = {}
+
+        if (createdTaskIds.length > 0) {
+          const { data: claimsData, error: claimsError } = await supabase
+            .from("task_claims")
+            .select("*")
+            .in("task_id", createdTaskIds)
+            .order("claimed_at", { ascending: false })
+
+          if (claimsError) {
+            console.error("[balaio] Error fetching task claims:", claimsError.message)
+          }
+
+          if (claimsData) {
+            for (const claim of claimsData) {
+              const taskId = claim.task_id
+              if (!claimsMap[taskId]) claimsMap[taskId] = []
+              claimsMap[taskId].push({
+                id: claim.id,
+                taskId: claim.task_id,
+                workerAddress: claim.worker_address,
+                claimedAt: new Date(claim.claimed_at),
+                submittedAt: claim.submitted_at ? new Date(claim.submitted_at) : null,
+                approvedAt: claim.approved_at ? new Date(claim.approved_at) : null,
+                submissionLink: claim.submission_link || null,
+              })
+            }
+          }
+        }
+
+        // Also fetch worked tasks from task_claims (not just tasks table)
+        const { data: workedClaims, error: workedClaimsError } = await supabase
+          .from("task_claims")
+          .select("*")
+          .ilike("worker_address", normalizedAddress)
+          .order("claimed_at", { ascending: false })
+          .limit(10)
+
+        if (workedClaimsError) {
+          console.error("[balaio] Error fetching worked claims:", workedClaimsError.message)
+        }
+
+        // Get task details for worked claims
+        const workedTaskIds = (workedClaims || []).map((c: any) => c.task_id)
+        let workedTasksData: any[] = []
+
+        if (workedTaskIds.length > 0) {
+          const { data: wtData } = await supabase
+            .from("tasks")
+            .select("*")
+            .in("id", workedTaskIds)
+
+          workedTasksData = wtData || []
+        }
+
+        // Fallback: also check tasks.worker_address for legacy data
+        const { data: legacyWorkedTasks, error: legacyError } = await supabase
           .from("tasks")
           .select("*")
           .ilike("worker_address", normalizedAddress)
           .order("updated_at", { ascending: false })
           .limit(10)
 
-        if (workedError) {
-          console.error("[balaio] Error fetching worked tasks:", workedError.message)
+        if (legacyError) {
+          console.error("[balaio] Error fetching legacy worked tasks:", legacyError.message)
         }
 
-        const mapRowToTask = (row: any): Task => ({
+        const mapRowToTask = (row: any, claims?: TaskClaim[]): Task => ({
           id: row.id,
           title: row.title || `Task ${row.id.substring(0, 8)}...`,
           description: row.description || "Complete this task and earn rewards",
@@ -229,16 +287,49 @@ export function TheOfficeApp() {
           claimedAt: row.claimed_at ? new Date(row.claimed_at) : null,
           submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
           approvedAt: row.approved_at ? new Date(row.approved_at) : null,
+          claims: claims || undefined,
         })
 
+        // Build worked tasks from claims + task data, with legacy fallback
+        const workedTaskMap = new Map<string, any>()
+        for (const row of workedTasksData) {
+          workedTaskMap.set(row.id, row)
+        }
+
+        const workedTasksList: Task[] = []
+        const seenWorkedIds = new Set<string>()
+
+        // First: tasks from task_claims
+        for (const claim of (workedClaims || [])) {
+          const taskRow = workedTaskMap.get(claim.task_id)
+          if (taskRow && !seenWorkedIds.has(taskRow.id)) {
+            seenWorkedIds.add(taskRow.id)
+            workedTasksList.push({
+              ...mapRowToTask(taskRow),
+              claimedAt: claim.claimed_at ? new Date(claim.claimed_at) : null,
+              submittedAt: claim.submitted_at ? new Date(claim.submitted_at) : null,
+              approvedAt: claim.approved_at ? new Date(claim.approved_at) : null,
+            })
+          }
+        }
+
+        // Then: legacy fallback from tasks.worker_address
+        for (const row of (legacyWorkedTasks || [])) {
+          if (!seenWorkedIds.has(row.id)) {
+            seenWorkedIds.add(row.id)
+            workedTasksList.push(mapRowToTask(row))
+          }
+        }
+
         setUserActivity({
-          created: (createdTasks || []).map(mapRowToTask),
-          worked: (workedTasks || []).map(mapRowToTask),
+          created: (createdTasks || []).map((row: any) => mapRowToTask(row, claimsMap[row.id] || [])),
+          worked: workedTasksList,
         })
 
         console.log("[balaio] User activity loaded:", {
           created: createdTasks?.length || 0,
-          worked: workedTasks?.length || 0,
+          worked: workedTasksList.length,
+          claimsLoaded: Object.keys(claimsMap).length,
         })
       } catch (error) {
         console.error("[balaio] Error loading user activity:", error)
@@ -815,6 +906,16 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         await saveTaskToSupabase(updated)
+        // Track claim in task_claims table
+        await supabase.from("task_claims").upsert(
+          {
+            task_id: id,
+            worker_address: account.toLowerCase(),
+            claimed_at: new Date().toISOString(),
+          },
+          { onConflict: "task_id,worker_address" },
+        )
+        // Also update tasks table for backward compat
         await supabase
           .from("tasks")
           .update({
@@ -823,6 +924,7 @@ export function TheOfficeApp() {
           })
           .eq("id", id)
       }
+      if (account) await loadUserActivity(account)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -848,15 +950,27 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
+        const now = new Date().toISOString()
+        // Update task_claims with submission
+        await supabase
+          .from("task_claims")
+          .update({
+            submission_link: proof,
+            submitted_at: now,
+          })
+          .eq("task_id", id)
+          .eq("worker_address", account.toLowerCase())
+        // Also update tasks table for backward compat
         await supabase
           .from("tasks")
           .update({
             submission_link: proof,
-            submitted_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            submitted_at: now,
+            updated_at: now,
           })
           .eq("id", id)
       }
+      if (account) await loadUserActivity(account)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -882,11 +996,20 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         await saveTaskToSupabase(updated)
+        const now = new Date().toISOString()
+        // Update task_claims with approval
+        await supabase
+          .from("task_claims")
+          .update({ approved_at: now })
+          .eq("task_id", id)
+          .eq("worker_address", claimant.toLowerCase())
+        // Also update tasks table for backward compat
         await supabase
           .from("tasks")
-          .update({ approved_at: new Date().toISOString() })
+          .update({ approved_at: now })
           .eq("id", id)
       }
+      if (account) await loadUserActivity(account)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
