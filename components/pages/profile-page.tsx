@@ -10,10 +10,21 @@ interface ProfilePageProps {
   tasks: Task[]
   userActivity: { created: Task[]; worked: Task[] }
   onNavigateToBlog: () => void
+  onApproveTask: (taskId: string, claimant: string) => Promise<void>
   language: Language
 }
 
-export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, language }: ProfilePageProps) {
+const formatTimestamp = (date: Date | null | undefined): string => {
+  if (!date) return "-"
+  return new Date(date).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, language }: ProfilePageProps) {
   const t = useTranslations(language)
   const completedTasks = tasks.filter((t) => t.mySlot?.approved)
   const totalEarned = completedTasks.reduce((sum, task) => {
@@ -55,20 +66,42 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         {userActivity.created.length > 0 && (
           <div className="mb-4">
             <div className="text-xs font-bold text-[#111111] mb-2 flex items-center gap-1">
-              ✨ {language === "en" ? "Tasks You Created" : "Tarefas que Você Criou"}
+              ✨ {t.tasksYouCreated}
             </div>
-            <div className="space-y-2">
-              {userActivity.created.slice(0, 3).map((task) => (
-                <div key={`created-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs truncate max-w-[60%]">{task.title}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#666666]">
-                      {task.claimedSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}
-                    </span>
+            <div className="space-y-3">
+              {userActivity.created.slice(0, 5).map((task) => (
+                <div key={`created-${task.id}`} className="border-2 border-gray-200 rounded-lg p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold truncate max-w-[60%]">{task.title}</span>
                     <span className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${task.active ? "bg-[#99FF99] border-[#111111]" : "bg-gray-200 border-[#666666]"}`}>
-                      {task.active ? (language === "en" ? "Active" : "Ativa") : (language === "en" ? "Closed" : "Fechada")}
+                      {task.active ? t.open : t.completed}
                     </span>
                   </div>
+                  {task.workerAddress && (
+                    <div className="text-xs text-[#666666] mb-1">
+                      {t.workerAddressLabel}: <span className="font-mono">{task.workerAddress.slice(0, 6)}...{task.workerAddress.slice(-4)}</span>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#666666]">
+                    {task.claimedAt && <span>{t.claimedAtLabel}: {formatTimestamp(task.claimedAt)}</span>}
+                    {task.submittedAt && <span>{t.submittedAtLabel}: {formatTimestamp(task.submittedAt)}</span>}
+                    {task.approvedAt && <span>{t.approvedAtLabel}: {formatTimestamp(task.approvedAt)}</span>}
+                  </div>
+                  {task.submittedAt && !task.approvedAt && task.workerAddress && (
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => onApproveTask(task.id, task.workerAddress!)}
+                        className="bg-[#99FF99] text-[#111111] px-3 py-1 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+                      >
+                        {t.approveSubmission}
+                      </button>
+                      <button
+                        className="bg-[#FF6666] text-white px-3 py-1 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+                      >
+                        {t.rejectSubmission}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -79,30 +112,34 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         {userActivity.worked.length > 0 && (
           <div className="mb-4">
             <div className="text-xs font-bold text-[#99FF99] mb-2 flex items-center gap-1">
-              💼 {language === "en" ? "Tasks You Worked On" : "Tarefas em que Você Trabalhou"}
+              💼 {t.tasksYouWorkedOn}
             </div>
             <div className="space-y-2">
-              {userActivity.worked.slice(0, 3).map((task) => (
+              {userActivity.worked.slice(0, 5).map((task) => (
                 <div key={`worked-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs truncate max-w-[60%]">{task.title}</span>
+                  <span className="text-xs truncate max-w-[50%]">{task.title}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold">
                       {task.reward} {task.token || "cUSD"}
                     </span>
                     <span
                       className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
-                        task.status === "completed"
-                          ? "bg-[#666666] text-white border-[#111111]"
-                          : task.status === "submitted"
+                        task.approvedAt
+                          ? "bg-[#99FF99] border-[#111111]"
+                          : task.submittedAt
                             ? "bg-[#FFFF66] border-[#111111]"
-                            : "bg-white border-[#666666]"
+                            : task.claimedAt
+                              ? "bg-white border-[#666666]"
+                              : "bg-gray-100 border-[#666666]"
                       }`}
                     >
-                      {task.status === "completed"
-                        ? language === "en" ? "Completed" : "Concluída"
-                        : task.status === "submitted"
-                          ? language === "en" ? "Pending" : "Pendente"
-                          : language === "en" ? "In Progress" : "Em Progresso"}
+                      {task.approvedAt
+                        ? t.approved
+                        : task.submittedAt
+                          ? t.submitted
+                          : task.claimedAt
+                            ? t.claimed
+                            : t.open}
                     </span>
                   </div>
                 </div>

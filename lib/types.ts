@@ -33,6 +33,11 @@ export interface Task {
   deadline?: Date | null
   tags?: string[]
   visibility?: TaskVisibility
+  // Task tracking fields
+  workerAddress?: string
+  claimedAt?: Date | null
+  submittedAt?: Date | null
+  approvedAt?: Date | null
   // Pix payment fields
   paymentMethod?: PaymentMethod
   fiatAmount?: number
