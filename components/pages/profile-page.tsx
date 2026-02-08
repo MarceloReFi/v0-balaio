@@ -39,6 +39,13 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
     return sum + reward
   }, 0)
 
+  // Merge blockchain-sourced worked tasks (from mySlot) with Supabase-sourced ones
+  const workedTaskIds = new Set(userActivity.worked.map((t) => t.id))
+  const blockchainWorkedTasks = tasks.filter(
+    (t) => t.mySlot?.claimed && !workedTaskIds.has(t.id) && t.creator.toLowerCase() !== account.toLowerCase(),
+  )
+  const allWorkedTasks = [...userActivity.worked, ...blockchainWorkedTasks]
+
   const dismissNotice = () => {
     localStorage.setItem(DB_NOTICE_KEY, "true")
     setNoticeDismissed(true)
@@ -188,79 +195,55 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         )}
 
         {/* Tasks User Worked On */}
-        {userActivity.worked.length > 0 && (
+        {allWorkedTasks.length > 0 && (
           <div className="mb-4">
             <div className="text-xs font-bold text-[#99FF99] mb-2 flex items-center gap-1">
               💼 {t.tasksYouWorkedOn}
             </div>
             <div className="space-y-2">
-              {userActivity.worked.slice(0, 5).map((task) => (
-                <div key={`worked-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs truncate max-w-[50%]">{task.title}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold">
-                      {task.reward} {task.token || "cUSD"}
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
-                        task.approvedAt
-                          ? "bg-[#99FF99] border-[#111111]"
-                          : task.submittedAt
-                            ? "bg-[#FFFF66] border-[#111111]"
-                            : task.claimedAt
-                              ? "bg-white border-[#666666]"
-                              : "bg-gray-100 border-[#666666]"
-                      }`}
-                    >
-                      {task.approvedAt
-                        ? t.approved
-                        : task.submittedAt
-                          ? t.submitted
-                          : task.claimedAt
-                            ? t.claimed
-                            : t.open}
-                    </span>
+              {allWorkedTasks.slice(0, 10).map((task) => {
+                const isApproved = task.approvedAt || task.mySlot?.approved
+                const isSubmitted = task.submittedAt || task.mySlot?.submitted
+                const isClaimed = task.claimedAt || task.mySlot?.claimed
+                return (
+                  <div key={`worked-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
+                    <span className="text-xs truncate max-w-[50%]">{task.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold">
+                        {task.reward} {task.token || "cUSD"}
+                      </span>
+                      <span
+                        className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
+                          isApproved
+                            ? "bg-[#99FF99] border-[#111111]"
+                            : isSubmitted
+                              ? "bg-[#FFFF66] border-[#111111]"
+                              : isClaimed
+                                ? "bg-white border-[#666666]"
+                                : "bg-gray-100 border-[#666666]"
+                        }`}
+                      >
+                        {isApproved
+                          ? t.approved
+                          : isSubmitted
+                            ? t.submitted
+                            : isClaimed
+                              ? t.claimed
+                              : t.open}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
 
-        {/* Legacy fallback from local tasks */}
-        {userActivity.created.length === 0 && userActivity.worked.length === 0 && (
-          <div className="space-y-2">
-            {tasks
-              .filter((t) => t.mySlot)
-              .slice(0, 3)
-              .map((task) => (
-                <div key={task.id} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs">{task.title}</span>
-                  <span
-                    className={`text-xs font-bold ${
-                      task.mySlot?.approved
-                        ? "text-[#99FF99]"
-                        : task.mySlot?.submitted
-                          ? "text-[#FFFF66]"
-                          : "text-[#666666]"
-                    }`}
-                  >
-                    {task.mySlot?.approved
-                      ? t.approved
-                      : task.mySlot?.submitted
-                        ? t.submitted
-                        : language === "en"
-                          ? "In Progress"
-                          : "Em Progresso"}
-                  </span>
-                </div>
-              ))}
-            {tasks.filter((t) => t.mySlot).length === 0 && (
-              <p className="text-xs text-[#666666]">
-                {language === "en" ? "No recent activity" : "Nenhuma atividade recente"}
-              </p>
-            )}
-          </div>
+        {/* Empty state */}
+        {userActivity.created.length === 0 && allWorkedTasks.length === 0 && (
+          <p className="text-xs text-[#666666]">
+            {language === "en" ? "No recent activity" : "Nenhuma atividade recente"}
+          </p>
         )}
       </div>
 
