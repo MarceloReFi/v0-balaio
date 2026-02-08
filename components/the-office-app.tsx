@@ -802,6 +802,11 @@ export function TheOfficeApp() {
 
       toast("Task claimed!")
 
+      await supabase
+        .from("tasks")
+        .update({ worker_address: account, claimed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", id)
+
       const updated = await getTask(id)
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
@@ -835,7 +840,7 @@ export function TheOfficeApp() {
         setSelectedTask(updated)
         await supabase
           .from("tasks")
-          .update({ submission_link: proof, updated_at: new Date().toISOString() })
+          .update({ submission_link: proof, submitted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq("id", id)
       }
     } catch (error) {
@@ -857,6 +862,11 @@ export function TheOfficeApp() {
       await tx.wait()
 
       toast("Submission approved!")
+
+      await supabase
+        .from("tasks")
+        .update({ approved_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", id)
 
       const updated = await getTask(id)
       if (updated) {
