@@ -94,6 +94,14 @@ export const translations = {
     submitted: "Submitted",
     approved: "Approved",
     completed: "Completed",
+    claimedBy: "Claimed by",
+    claimedOn: "Claimed on",
+    submittedOn: "Submitted on",
+    approvedOn: "Approved on",
+    approveSubmission: "Approve",
+    rejectSubmission: "Reject",
+    awaitingApproval: "Awaiting Approval",
+    rejectedSubmission: "Rejected",
 
     // Create Task Modal
     createNewTask: "Create New Task",
@@ -240,6 +248,14 @@ export const translations = {
     submitted: "Enviado",
     approved: "Aprovado",
     completed: "Concluído",
+    claimedBy: "Reivindicado por",
+    claimedOn: "Reivindicado em",
+    submittedOn: "Enviado em",
+    approvedOn: "Aprovado em",
+    approveSubmission: "Aprovar",
+    rejectSubmission: "Rejeitar",
+    awaitingApproval: "Aguardando Aprovação",
+    rejectedSubmission: "Rejeitado",
 
     // Create Task Modal
     createNewTask: "Criar Nova Tarefa",
