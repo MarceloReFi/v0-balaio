@@ -13,6 +13,16 @@ export type TaskVisibility = "public" | "private"
 export type PaymentMethod = "crypto" | "pix"
 export type PixKeyType = "cpf" | "email" | "phone" | "random"
 
+export interface TaskClaim {
+  id: string
+  taskId: string
+  workerAddress: string
+  claimedAt: Date
+  submittedAt?: Date | null
+  approvedAt?: Date | null
+  submissionLink?: string | null
+}
+
 export interface Task {
   id: string
   title: string
@@ -38,6 +48,7 @@ export interface Task {
   claimedAt?: Date | null
   submittedAt?: Date | null
   approvedAt?: Date | null
+  claims?: TaskClaim[]
   // Pix payment fields
   paymentMethod?: PaymentMethod
   fiatAmount?: number
