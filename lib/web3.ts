@@ -1,10 +1,4 @@
 export const CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
-export const CELO_RPC = "https://forno.celo.org"
-export const CELO_CHAIN_ID = "0xa4ec"
-
-// Valora deep link for opening dApps in Valora's browser
-// Format: celo://wallet/dappkit?dappName=&url=
-export const VALORA_DEEP_LINK_BASE = "celo://wallet/dappkit"
 
 export type TokenSymbol =
   | "CELO"
@@ -37,14 +31,12 @@ export interface TokenConfig {
 }
 
 export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
-  // Native CELO token (wrapped as ERC20)
   CELO: {
     symbol: "CELO",
     address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
     decimals: 18,
     name: "Celo Native Token",
   },
-  // Mento Stablecoins (all 18 decimals)
   cUSD: {
     symbol: "cUSD",
     address: "0x765DE816845861e75A25fCA122bb6898B8B1282a",
@@ -77,13 +69,13 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
   },
   cCOP: {
     symbol: "cCOP",
-    address: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA", // Fixed address - was incorrectly too long
+    address: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA",
     decimals: 18,
     name: "Celo Colombian Peso",
   },
   cCAD: {
     symbol: "cCAD",
-    address: "0xff4Ab19391af240c311c54200a492233052B6325", // Fixed checksum address
+    address: "0xff4Ab19391af240c311c54200a492233052B6325",
     decimals: 18,
     name: "Celo Canadian Dollar",
   },
@@ -107,7 +99,7 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
   },
   cCHF: {
     symbol: "cCHF",
-    address: "0xb55a79F398E759E43C95b979163f30eC87Ee131D", // Kept same as it matches Mento docs
+    address: "0xb55a79F398E759E43C95b979163f30eC87Ee131D",
     decimals: 18,
     name: "Celo Swiss Franc",
   },
@@ -135,7 +127,6 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     decimals: 18,
     name: "Celo British Pound",
   },
-  // Circle USDC (6 decimals)
   USDC: {
     symbol: "USDC",
     address: "0xcebA9300f2b948710d2653dD7B07f33A8B32118C",
@@ -148,7 +139,6 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     decimals: 18,
     name: "CRECY",
   },
-  // GoodDollar UBI Token
   "G$": {
     symbol: "G$",
     address: "0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A",
