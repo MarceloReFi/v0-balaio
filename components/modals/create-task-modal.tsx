@@ -54,7 +54,7 @@ export function CreateTaskModal({
 
   if (!open) return null
 
-  const handleCreate = () => {
+  const submitTaskForm = () => {
     const parsedDeadline = deadline ? new Date(deadline) : null
     const parsedTags = tagsInput
       .split(",")
@@ -158,7 +158,6 @@ export function CreateTaskModal({
             />
           </div>
 
-          {/* Visibility Toggle */}
           <div>
             <label className="block font-bold mb-2 text-xs">
               {language === "en" ? "VISIBILITY" : "VISIBILIDADE"}
@@ -194,7 +193,6 @@ export function CreateTaskModal({
             </p>
           </div>
 
-          {/* Category Dropdown */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.category}</label>
             <div className="relative">
@@ -229,7 +227,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Complexity Dropdown */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.complexity}</label>
             <div className="relative">
@@ -267,7 +264,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Validation Method (fixed to URL) */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.validationMethod}</label>
             <div className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono bg-gray-50 text-[#666666]">
@@ -275,7 +271,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Deadline Calendar */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.deadline}</label>
             <div className="relative">
@@ -290,7 +285,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Tags */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.tags}</label>
             <input
@@ -301,7 +295,6 @@ export function CreateTaskModal({
             />
           </div>
 
-          {/* Token Selection */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.selectToken}</label>
             <div className="relative">
@@ -371,7 +364,6 @@ export function CreateTaskModal({
             />
           </div>
 
-          {/* Total Cost */}
           {totalCost && (
             <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-3">
               <div className="font-bold text-xs text-[#111111]">{t.totalCostBrl}</div>
@@ -382,7 +374,7 @@ export function CreateTaskModal({
           )}
 
           <button
-            onClick={handleCreate}
+            onClick={submitTaskForm}
             disabled={loading || !taskId || !taskTitle || !totalSlots || !rewardPerSlot}
             className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-50 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
           >
