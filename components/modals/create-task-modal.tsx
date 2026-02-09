@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { X, ChevronDown, Calendar } from "lucide-react"
-import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/constants"
+import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Task } from "@/lib/types"
 
