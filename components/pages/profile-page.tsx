@@ -131,8 +131,8 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                         {claims.map((claim) => (
                           <div key={claim.id} className="bg-gray-50 border border-gray-200 rounded-lg p-2.5">
                             <div className="flex items-center justify-between mb-1">
-                              <div className="text-xs font-mono font-bold text-[#111111]">
-                                {t.workerAddressLabel}: {claim.workerAddress.slice(0, 6)}...{claim.workerAddress.slice(-4)}
+                              <div className="text-xs font-mono font-bold text-[#111111] break-all">
+                                {t.workerAddressLabel}: {claim.workerAddress}
                               </div>
                               <span
                                 className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
