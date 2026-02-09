@@ -1,4 +1,4 @@
-import type { TokenSymbol } from "./constants"
+import type { TokenSymbol } from "./web3"
 
 export interface TaskSlot {
   claimed: boolean

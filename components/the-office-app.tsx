@@ -7,13 +7,11 @@ import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
   ERC20_ABI,
-  CELO_CHAIN_ID,
-  CELO_RPC,
   CUSTOM_ERRORS,
   SUPPORTED_TOKENS,
-  VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
-} from "@/lib/constants"
+} from "@/lib/web3"
+import { CELO_CHAIN_ID, CELO_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
 import type { Task, TaskClaim } from "@/lib/types"
 import { Toast } from "@/components/ui/toast"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
