@@ -65,7 +65,7 @@ export function TasksPage({
   }
 
   const shortenAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
+    return address
   }
 
   const getTimeAgo = (date: Date) => {
@@ -197,7 +197,7 @@ export function TasksPage({
                     </div>
                     <p className="text-xs text-[#666666] mb-2">{task.description}</p>
 
-                    <div className="text-xs text-[#666666] mb-2">
+                    <div className="text-xs text-[#666666] mb-2 break-all">
                       {language === "en" ? "Creator:" : "Criador:"} {shortenAddress(task.creator)}
                     </div>
 

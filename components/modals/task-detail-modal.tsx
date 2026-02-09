@@ -7,7 +7,7 @@ import { useTranslations, type Language } from "@/lib/translations"
 
 function truncateAddress(address: string): string {
   if (!address) return ""
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
+  return address
 }
 
 const categoryLabels: Record<string, { en: string; pt: string }> = {
@@ -80,7 +80,7 @@ export function TaskDetailModal({
     return { color: "text-[#111111]", text: deadlineDate.toLocaleDateString() }
   }
 
-  const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
+  const shortenAddress = (address: string) => address
   const deadlineInfo = getDeadlineInfo()
 
   return (
@@ -112,7 +112,7 @@ export function TaskDetailModal({
           <div className="flex items-center gap-2 text-sm">
             <User size={14} className="text-[#666666]" />
             <span className="text-[#666666]">{language === "en" ? "Creator:" : "Criador:"}</span>
-            <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded-lg border border-[#111111]">
+            <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded-lg border border-[#111111] break-all">
               {truncateAddress(task.creator)}
             </span>
           </div>
@@ -160,7 +160,7 @@ export function TaskDetailModal({
           </div>
           <div className="flex justify-between mb-2">
             <span className="text-xs">{language === "en" ? "Creator:" : "Criador:"}</span>
-            <span className="font-mono text-xs" title={task.creator}>
+            <span className="font-mono text-xs break-all" title={task.creator}>
               {shortenAddress(task.creator)}
             </span>
           </div>

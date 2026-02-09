@@ -91,7 +91,7 @@ export function HomePage({
     return { color: "text-[#99FF99]", text: `${Math.ceil(diffDays)}d` }
   }
 
-  const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
+  const shortenAddress = (address: string) => address
 
   const opportunities = [
     {
@@ -168,7 +168,7 @@ export function HomePage({
                       </div>
                       <p className="text-xs text-[#666666] mb-2 line-clamp-2">{task.description}</p>
 
-                      <div className="text-xs text-[#666666] mb-1">
+                      <div className="text-xs text-[#666666] mb-1 break-all">
                         {language === "en" ? "By:" : "Por:"} {shortenAddress(task.creator)}
                       </div>
 
