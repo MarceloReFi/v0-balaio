@@ -14,7 +14,7 @@ import {
   VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
 } from "@/lib/constants"
-import type { Task, TaskClaim, TaskCategory, TaskComplexity, TaskVisibility } from "@/lib/types"
+import type { Task, TaskClaim } from "@/lib/types"
 import { Toast } from "@/components/ui/toast"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
@@ -75,7 +75,7 @@ function mapDatabaseRowToTask(row: any, mySlot: Task["mySlot"], claims?: TaskCla
   return {
     id: row.id,
     title: row.title || `Task ${row.id.substring(0, 8)}...`,
-    description: row.description || "Complete this task and earn rewards",
+    description: row.description || "",
     reward: row.reward || "0",
     totalSlots: String(row.slots || 1),
     claimedSlots: String(row.claimed_slots || 0),
@@ -86,7 +86,7 @@ function mapDatabaseRowToTask(row: any, mySlot: Task["mySlot"], claims?: TaskCla
     token: row.token as TokenSymbol | undefined,
     tokenAddress: row.token_address || undefined,
     mySlot,
-    visibility: (row.visibility || "public") as TaskVisibility,
+    visibility: (row.visibility || "public") as Task["visibility"],
     status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
     category: row.category || undefined,
     complexity: row.complexity || undefined,
@@ -434,7 +434,7 @@ export function TheOfficeApp() {
           loadedTasks.push({
             id: taskData[0],
             title: metadata?.title || `Task ${taskData[0].substring(0, 8)}...`,
-            description: metadata?.description || "View details for more information",
+            description: metadata?.description || "",
             reward: Number(ethers.formatUnits(taskData[4], tokenConfig.decimals)),
             totalSlots: Number(taskData[6]),
             claimedSlots: Number(taskData[6]),
@@ -659,7 +659,7 @@ export function TheOfficeApp() {
         return {
           id: task.taskId,
           title: task.taskId,
-          description: "Complete this task and earn rewards",
+          description: "",
           reward: ethers.formatUnits(task.rewardPerSlot, tokenConfig.decimals),
           totalSlots: task.totalSlots.toString(),
           claimedSlots: task.claimedSlots.toString(),
@@ -744,12 +744,12 @@ export function TheOfficeApp() {
     rewardPerSlot: string,
     totalSlots: string,
     token: TokenSymbol,
-    category: TaskCategory,
-    complexity: TaskComplexity,
+    category: Task["category"],
+    complexity: Task["complexity"],
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
-    visibility: TaskVisibility,
+    visibility: Task["visibility"],
   ) => {
     if (!account || !contract) return
 
@@ -810,7 +810,7 @@ export function TheOfficeApp() {
       const newTask: Task = {
         id: taskId,
         title: taskTitle || taskId,
-        description: taskDescription || "Complete this task and earn rewards",
+        description: taskDescription,
         reward: rewardPerSlot,
         totalSlots: totalSlots,
         claimedSlots: "0",
