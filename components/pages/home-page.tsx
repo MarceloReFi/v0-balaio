@@ -138,7 +138,6 @@ export function HomePage({
 
   return (
     <div className="p-5 pb-24">
-      {/* Latest Tasks Section */}
       {latestTasks.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
@@ -216,7 +215,6 @@ export function HomePage({
         </div>
       )}
 
-      {/* Opportunities Section */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
 
@@ -279,7 +277,6 @@ export function HomePage({
         </div>
       </div>
 
-      {/* Discover Features Section */}
       <div className="bg-[#99FF99] border-2 border-[#111111] rounded-xl p-6 relative overflow-hidden shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">
           <img src="/logo.png" alt="Balaio" className="w-32 h-32 object-contain" />
