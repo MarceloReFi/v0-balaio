@@ -158,11 +158,11 @@ export function TaskDetailModal({
               {task.availableSlots}/{task.totalSlots}
             </span>
           </div>
-          <div className="flex justify-between mb-2">
+          <div className="mb-2">
             <span className="text-xs">{language === "en" ? "Creator:" : "Criador:"}</span>
-            <span className="font-mono text-xs break-all" title={task.creator}>
+            <div className="font-mono text-xs break-all mt-0.5" title={task.creator}>
               {shortenAddress(task.creator)}
-            </span>
+            </div>
           </div>
           <div className="flex justify-between mb-2">
             <span className="text-xs">{language === "en" ? "Created:" : "Criado:"}</span>
