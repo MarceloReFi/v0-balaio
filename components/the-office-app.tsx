@@ -7,15 +7,13 @@ import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
   ERC20_ABI,
-  CELO_CHAIN_ID,
-  CELO_RPC,
   CUSTOM_ERRORS,
   SUPPORTED_TOKENS,
-  VALORA_DEEP_LINK_BASE,
   type TokenSymbol,
-} from "@/lib/constants"
-import type { Task, TaskClaim, TaskCategory, TaskComplexity, TaskVisibility } from "@/lib/types"
-import { Toast } from "@/components/ui/toast-custom"
+} from "@/lib/web3"
+import { CELO_CHAIN_ID, CELO_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
+import type { Task, TaskClaim } from "@/lib/types"
+import { Toast } from "@/components/ui/toast"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
 import { HomePage } from "@/components/pages/home-page"
@@ -37,6 +35,24 @@ declare global {
   }
 }
 
+interface WalletProvider {
+  isValora?: boolean
+  isMetaMask?: boolean
+  isMiniPay?: boolean
+  isCelo?: boolean
+}
+
+interface WalletError {
+  code?: number
+  message?: string
+  reason?: string
+  data?: string
+}
+
+function isWalletError(error: unknown): error is WalletError {
+  return typeof error === "object" && error !== null
+}
+
 const isMobileDevice = () => {
   if (typeof window === "undefined") return false
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -44,20 +60,79 @@ const isMobileDevice = () => {
 
 const isInMobileWalletBrowser = () => {
   if (typeof window === "undefined" || !window.ethereum) return false
-
-  const ethereum = window.ethereum as {
-    isValora?: boolean
-    isMetaMask?: boolean
-    isMiniPay?: boolean
-    isCelo?: boolean
-  }
-
+  const ethereum = window.ethereum as WalletProvider
   return !!(ethereum.isValora || ethereum.isMiniPay || (ethereum.isMetaMask && isMobileDevice()) || ethereum.isCelo)
 }
 
 const hasEthereumProvider = () => {
   if (typeof window === "undefined") return false
   return !!window.ethereum
+}
+
+function mapDatabaseRowToTask(row: any, mySlot: Task["mySlot"], claims?: TaskClaim[]): Task {
+  return {
+    id: row.id,
+    title: row.title || `Task ${row.id.substring(0, 8)}...`,
+    description: row.description || "",
+    reward: row.reward || "0",
+    totalSlots: String(row.slots || 1),
+    claimedSlots: String(row.claimed_slots || 0),
+    availableSlots: String((row.slots || 1) - (row.claimed_slots || 0)),
+    active: row.status === 0,
+    creator: row.creator_address,
+    createdAt: new Date(row.created_at),
+    token: row.token as TokenSymbol | undefined,
+    tokenAddress: row.token_address || undefined,
+    mySlot,
+    visibility: (row.visibility || "public") as Task["visibility"],
+    status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
+    category: row.category || undefined,
+    complexity: row.complexity || undefined,
+    validationMethod: row.validation_method || undefined,
+    deadline: row.deadline ? new Date(row.deadline) : null,
+    tags: row.tags || [],
+    workerAddress: row.worker_address || undefined,
+    claimedAt: row.claimed_at ? new Date(row.claimed_at) : null,
+    submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
+    approvedAt: row.approved_at ? new Date(row.approved_at) : null,
+    paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
+    fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
+    workerPixKey: row.worker_pix_key || undefined,
+    workerPixKeyType: row.worker_pix_key_type as "cpf" | "email" | "phone" | "random" | undefined,
+    pixPaymentConfirmed: row.pix_payment_confirmed || false,
+    pixPaymentConfirmedAt: row.pix_payment_confirmed_at ? new Date(row.pix_payment_confirmed_at) : undefined,
+    claims: claims || undefined,
+  }
+}
+
+function resolveTokenSymbol(tokenAddress: string): TokenSymbol {
+  const normalized = tokenAddress.toLowerCase()
+  for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
+    if (config.address.toLowerCase() === normalized) {
+      return symbol as TokenSymbol
+    }
+  }
+  return "cUSD"
+}
+
+const WALLET_ERROR_MAP: [((e: WalletError) => boolean), string][] = [
+  [(e) => e.code === 4001 || !!e.message?.includes("cancelled"), "Connection cancelled by user"],
+  [(e) => !!e.message?.includes("User rejected"), "Connection rejected"],
+  [(e) => !!e.reason, ""],
+  [(e) => !!e.message, ""],
+]
+
+function resolveWalletError(error: unknown): string {
+  if (!isWalletError(error)) return "Failed to connect wallet"
+
+  for (const [matcher, message] of WALLET_ERROR_MAP) {
+    if (matcher(error)) {
+      if (!message && error.reason) return "Error: " + error.reason
+      if (!message && error.message) return "Error: " + error.message
+      return message
+    }
+  }
+  return "Failed to connect wallet"
 }
 
 export function TheOfficeApp() {
@@ -93,7 +168,6 @@ export function TheOfficeApp() {
   const loadAllTasksFromSupabase = useCallback(async () => {
     try {
       setLoading(true)
-      console.log("[balaio] Loading tasks from Supabase...")
 
       const { data, error } = await supabase
         .from("tasks")
@@ -101,7 +175,6 @@ export function TheOfficeApp() {
         .order("created_at", { ascending: false })
 
       if (error) {
-        console.error("[balaio] Supabase error:", error.message)
         toast("Error loading tasks from database")
         setLoading(false)
         return
@@ -122,53 +195,20 @@ export function TheOfficeApp() {
                 withdrawn: slotData.withdrawn,
               }
             } catch {
-              // User has no slot for this task or task doesn't exist on blockchain
+              // User has no slot for this task
             }
           }
 
-          loadedTasks.push({
-            id: row.id,
-            title: row.title || `Task ${row.id.substring(0, 8)}...`,
-            description: row.description || "Complete this task and earn rewards",
-            reward: row.reward || "0",
-            totalSlots: String(row.slots || 1),
-            claimedSlots: String(row.claimed_slots || 0),
-            availableSlots: String((row.slots || 1) - (row.claimed_slots || 0)),
-            active: row.status === 0,
-            creator: row.creator_address,
-            createdAt: new Date(row.created_at),
-            token: row.token as TokenSymbol | undefined,
-            tokenAddress: row.token_address || undefined,
-            mySlot,
-            visibility: (row.visibility || "public") as "public" | "private",
-            category: row.category || undefined,
-            complexity: row.complexity || undefined,
-            validationMethod: row.validation_method || undefined,
-            deadline: row.deadline ? new Date(row.deadline) : null,
-            tags: row.tags || [],
-            workerAddress: row.worker_address || undefined,
-            claimedAt: row.claimed_at ? new Date(row.claimed_at) : null,
-            submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
-            approvedAt: row.approved_at ? new Date(row.approved_at) : null,
-            paymentMethod: (row.payment_method || "crypto") as "crypto" | "pix",
-            fiatAmount: row.fiat_amount ? parseFloat(row.fiat_amount) : undefined,
-            workerPixKey: row.worker_pix_key || undefined,
-            workerPixKeyType: row.worker_pix_key_type as "cpf" | "email" | "phone" | "random" | undefined,
-            pixPaymentConfirmed: row.pix_payment_confirmed || false,
-            pixPaymentConfirmedAt: row.pix_payment_confirmed_at ? new Date(row.pix_payment_confirmed_at) : undefined,
-          })
+          loadedTasks.push(mapDatabaseRowToTask(row, mySlot))
         }
 
-        console.log("[balaio] Loaded", loadedTasks.length, "tasks from Supabase")
         setTasks(loadedTasks)
       } else {
-        console.log("[balaio] No tasks found in Supabase")
         setTasks([])
       }
 
       setLoading(false)
-    } catch (error) {
-      console.error("[balaio] Error loading tasks from Supabase:", error)
+    } catch {
       toast("Error loading tasks")
       setLoading(false)
     }
@@ -179,7 +219,6 @@ export function TheOfficeApp() {
       if (!userAddress) return
 
       try {
-        console.log("[balaio] Loading user activity from Supabase for:", userAddress)
         const normalizedAddress = userAddress.toLowerCase()
 
         const { data: createdTasks, error: createdError } = await supabase
@@ -190,10 +229,9 @@ export function TheOfficeApp() {
           .limit(10)
 
         if (createdError) {
-          console.error("[balaio] Error fetching created tasks:", createdError.message)
+          console.error("Error fetching created tasks:", createdError.message)
         }
 
-        // Fetch claims for all created tasks from task_claims table
         const createdTaskIds = (createdTasks || []).map((t: any) => t.id)
         let claimsMap: Record<string, TaskClaim[]> = {}
 
@@ -205,7 +243,7 @@ export function TheOfficeApp() {
             .order("claimed_at", { ascending: false })
 
           if (claimsError) {
-            console.error("[balaio] Error fetching task claims:", claimsError.message)
+            console.error("Error fetching task claims:", claimsError.message)
           }
 
           if (claimsData) {
@@ -225,7 +263,6 @@ export function TheOfficeApp() {
           }
         }
 
-        // Also fetch worked tasks from task_claims (not just tasks table)
         const { data: workedClaims, error: workedClaimsError } = await supabase
           .from("task_claims")
           .select("*")
@@ -234,10 +271,9 @@ export function TheOfficeApp() {
           .limit(10)
 
         if (workedClaimsError) {
-          console.error("[balaio] Error fetching worked claims:", workedClaimsError.message)
+          console.error("Error fetching worked claims:", workedClaimsError.message)
         }
 
-        // Get task details for worked claims
         const workedTaskIds = (workedClaims || []).map((c: any) => c.task_id)
         let workedTasksData: any[] = []
 
@@ -250,7 +286,7 @@ export function TheOfficeApp() {
           workedTasksData = wtData || []
         }
 
-        // Fallback: also check tasks.worker_address for legacy data
+        // Legacy fallback for tasks.worker_address
         const { data: legacyWorkedTasks, error: legacyError } = await supabase
           .from("tasks")
           .select("*")
@@ -259,38 +295,9 @@ export function TheOfficeApp() {
           .limit(10)
 
         if (legacyError) {
-          console.error("[balaio] Error fetching legacy worked tasks:", legacyError.message)
+          console.error("Error fetching legacy worked tasks:", legacyError.message)
         }
 
-        const mapRowToTask = (row: any, claims?: TaskClaim[]): Task => ({
-          id: row.id,
-          title: row.title || `Task ${row.id.substring(0, 8)}...`,
-          description: row.description || "Complete this task and earn rewards",
-          reward: row.reward || "0",
-          totalSlots: String(row.slots || 1),
-          claimedSlots: String(row.claimed_slots || 0),
-          availableSlots: String((row.slots || 1) - (row.claimed_slots || 0)),
-          active: row.status === 0,
-          creator: row.creator_address,
-          createdAt: new Date(row.created_at),
-          token: row.token as TokenSymbol | undefined,
-          tokenAddress: row.token_address || undefined,
-          mySlot: null,
-          visibility: (row.visibility || "public") as "public" | "private",
-          status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
-          category: row.category || undefined,
-          complexity: row.complexity || undefined,
-          validationMethod: row.validation_method || undefined,
-          deadline: row.deadline ? new Date(row.deadline) : null,
-          tags: row.tags || [],
-          workerAddress: row.worker_address || undefined,
-          claimedAt: row.claimed_at ? new Date(row.claimed_at) : null,
-          submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
-          approvedAt: row.approved_at ? new Date(row.approved_at) : null,
-          claims: claims || undefined,
-        })
-
-        // Build worked tasks from claims + task data, with legacy fallback
         const workedTaskMap = new Map<string, any>()
         for (const row of workedTasksData) {
           workedTaskMap.set(row.id, row)
@@ -299,13 +306,12 @@ export function TheOfficeApp() {
         const workedTasksList: Task[] = []
         const seenWorkedIds = new Set<string>()
 
-        // First: tasks from task_claims
         for (const claim of (workedClaims || [])) {
           const taskRow = workedTaskMap.get(claim.task_id)
           if (taskRow && !seenWorkedIds.has(taskRow.id)) {
             seenWorkedIds.add(taskRow.id)
             workedTasksList.push({
-              ...mapRowToTask(taskRow),
+              ...mapDatabaseRowToTask(taskRow, null),
               claimedAt: claim.claimed_at ? new Date(claim.claimed_at) : null,
               submittedAt: claim.submitted_at ? new Date(claim.submitted_at) : null,
               approvedAt: claim.approved_at ? new Date(claim.approved_at) : null,
@@ -313,26 +319,19 @@ export function TheOfficeApp() {
           }
         }
 
-        // Then: legacy fallback from tasks.worker_address
         for (const row of (legacyWorkedTasks || [])) {
           if (!seenWorkedIds.has(row.id)) {
             seenWorkedIds.add(row.id)
-            workedTasksList.push(mapRowToTask(row))
+            workedTasksList.push(mapDatabaseRowToTask(row, null))
           }
         }
 
         setUserActivity({
-          created: (createdTasks || []).map((row: any) => mapRowToTask(row, claimsMap[row.id] || [])),
+          created: (createdTasks || []).map((row: any) => mapDatabaseRowToTask(row, null, claimsMap[row.id] || [])),
           worked: workedTasksList,
         })
-
-        console.log("[balaio] User activity loaded:", {
-          created: createdTasks?.length || 0,
-          worked: workedTasksList.length,
-          claimsLoaded: Object.keys(claimsMap).length,
-        })
       } catch (error) {
-        console.error("[balaio] Error loading user activity:", error)
+        console.error("Error loading user activity:", error)
       }
     },
     [supabase],
@@ -350,11 +349,11 @@ export function TheOfficeApp() {
             token: task.token || null,
             token_address: task.tokenAddress || null,
             creator_address: task.creator,
-            worker_address: (task as any).workerAddress || null,
-            status: (task as any).status || 0,
+            worker_address: task.workerAddress || null,
+            status: 0,
             slots: parseInt(task.totalSlots) || 1,
             claimed_slots: parseInt(task.claimedSlots) || 0,
-            submission_link: (task as any).submissionLink || null,
+            submission_link: null,
             updated_at: new Date().toISOString(),
             category: task.category || null,
             complexity: task.complexity || null,
@@ -367,15 +366,12 @@ export function TheOfficeApp() {
         )
 
         if (error) {
-          console.error("[balaio] Error saving task to Supabase:", error.message)
           return { success: false, error: error.message }
-        } else {
-          console.log("[balaio] Task saved to Supabase:", task.id)
-          return { success: true }
         }
+        return { success: true }
       } catch (error) {
-        console.error("[balaio] Error saving task:", error)
-        return { success: false, error: (error as Error).message }
+        const message = isWalletError(error) ? error.message || "Unknown error" : String(error)
+        return { success: false, error: message }
       }
     },
     [supabase],
@@ -394,8 +390,6 @@ export function TheOfficeApp() {
         JSON.parse(storedTaskIds).forEach((id: string) => taskIds.add(id))
       }
 
-      console.log("[balaio] Loading", taskIds.size, "tasks from storage")
-
       const taskIdsArray = Array.from(taskIds)
       let metadataMap: Record<string, any> = {}
 
@@ -406,10 +400,10 @@ export function TheOfficeApp() {
           .in("id", taskIdsArray)
 
         if (metadataRows) {
-          metadataMap = metadataRows.reduce((acc, row) => {
-            acc[row.id] = row
-            return acc
-          }, {} as Record<string, any>)
+          metadataMap = metadataRows.reduce(
+            (acc: Record<string, any>, row: any) => { acc[row.id] = row; return acc },
+            {},
+          )
         }
       }
 
@@ -418,15 +412,7 @@ export function TheOfficeApp() {
         try {
           const taskData = await contract.getTask(taskId)
           const tokenAddress = taskData[3].toLowerCase()
-          let tokenSymbol: TokenSymbol = "cUSD"
-
-          for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
-            if (config.address.toLowerCase() === tokenAddress) {
-              tokenSymbol = symbol as TokenSymbol
-              break
-            }
-          }
-
+          const tokenSymbol = resolveTokenSymbol(tokenAddress)
           const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
           let mySlot = null
@@ -446,7 +432,7 @@ export function TheOfficeApp() {
           loadedTasks.push({
             id: taskData[0],
             title: metadata?.title || `Task ${taskData[0].substring(0, 8)}...`,
-            description: metadata?.description || "View details for more information",
+            description: metadata?.description || "",
             reward: Number(ethers.formatUnits(taskData[4], tokenConfig.decimals)),
             totalSlots: Number(taskData[6]),
             claimedSlots: Number(taskData[6]),
@@ -465,15 +451,14 @@ export function TheOfficeApp() {
             visibility: metadata?.visibility || "public",
           })
         } catch (err) {
-          console.error("[balaio] Error loading task", taskId, ":", err)
+          console.error("Error loading task", taskId, ":", err)
         }
       }
 
-      console.log("[balaio] Loaded", loadedTasks.length, "tasks")
       setTasks(loadedTasks)
       setLoading(false)
     } catch (error) {
-      console.error("[balaio] Error loading tasks:", error)
+      console.error("Error loading tasks:", error)
       setLoading(false)
     }
   }, [contract, account, supabase])
@@ -481,7 +466,7 @@ export function TheOfficeApp() {
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return
 
-    const handleAccountsChanged = async (accounts: unknown) => {
+    const syncAccounts = async (accounts: unknown) => {
       const accountsArray = accounts as string[]
       if (accountsArray.length === 0) {
         setAccount("")
@@ -496,17 +481,17 @@ export function TheOfficeApp() {
       }
     }
 
-    const handleChainChanged = () => {
+    const onChainChanged = () => {
       toast("Network changed - reloading...")
       setTimeout(() => window.location.reload(), 500)
     }
 
-    window.ethereum.on("accountsChanged", handleAccountsChanged)
-    window.ethereum.on("chainChanged", handleChainChanged)
+    window.ethereum.on("accountsChanged", syncAccounts)
+    window.ethereum.on("chainChanged", onChainChanged)
 
     return () => {
-      window.ethereum?.removeListener("accountsChanged", handleAccountsChanged)
-      window.ethereum?.removeListener("chainChanged", handleChainChanged)
+      window.ethereum?.removeListener("accountsChanged", syncAccounts)
+      window.ethereum?.removeListener("chainChanged", onChainChanged)
     }
   }, [toast])
 
@@ -541,7 +526,6 @@ export function TheOfficeApp() {
     fetchBalances()
   }, [account, tokenContracts])
 
-  // Open Valora app via deep link - this will open the dApp in Valora's in-app browser
   const openInValora = () => {
     const currentUrl = window.location.href
     const dappName = encodeURIComponent("Balaio")
@@ -558,21 +542,16 @@ export function TheOfficeApp() {
       const inMobileWallet = isInMobileWalletBrowser()
       const hasProvider = hasEthereumProvider()
 
-      // On mobile: check if we're in a known wallet browser (Valora, MetaMask Mobile, MiniPay)
-      // If not, redirect to Valora app - this handles the case where a browser has
-      // a generic/broken window.ethereum that doesn't work properly
       if (isMobile && !inMobileWallet) {
         openInValora()
         return
       }
 
-      // On desktop without extension, show install message
       if (!isMobile && !hasProvider) {
         toast("Please install MetaMask or use Valora on mobile")
         return
       }
 
-      // Has proper provider (MetaMask extension, Valora in-app, MiniPay) - connect directly
       toast("Connecting to wallet...")
 
       const accounts = (await window.ethereum!.request({ method: "eth_requestAccounts" })) as string[]
@@ -583,8 +562,9 @@ export function TheOfficeApp() {
           params: [{ chainId: CELO_CHAIN_ID }],
         })
       } catch (switchError: unknown) {
-        const error = switchError as { code?: number }
-        if (error.code === 4902) {
+        if (!isWalletError(switchError)) throw switchError
+
+        if (switchError.code === 4902) {
           await window.ethereum!.request({
             method: "wallet_addEthereumChain",
             params: [
@@ -597,12 +577,10 @@ export function TheOfficeApp() {
               },
             ],
           })
+        } else if (switchError.code === 4001) {
+          toast("Network switch cancelled by user")
+          return
         } else {
-          const switchErr = switchError as { message?: string; code?: number }
-          if (switchErr.code === 4001) {
-            toast("Network switch cancelled by user")
-            return
-          }
           throw switchError
         }
       }
@@ -627,40 +605,32 @@ export function TheOfficeApp() {
       toast("Wallet connected!")
     } catch (error: unknown) {
       console.error("Connect wallet error:", error)
-      const err = error as { message?: string; code?: number; reason?: string }
-      if (err.code === 4001 || err.message?.includes("cancelled")) {
-        toast("Connection cancelled by user")
-      } else if (err.message?.includes("User rejected")) {
-        toast("Connection rejected")
-      } else if (err.reason) {
-        toast("Error: " + err.reason)
-      } else if (err.message) {
-        toast("Error: " + err.message)
-      } else {
-        toast("Failed to connect wallet")
-      }
+      toast(resolveWalletError(error))
     }
   }
 
   const parseContractError = (error: unknown): string => {
-    const err = error as { data?: string; message?: string; reason?: string }
+    if (!isWalletError(error)) return String(error).slice(0, 100)
 
-    if (err.data && CUSTOM_ERRORS[err.data]) {
-      return CUSTOM_ERRORS[err.data]
+    if (error.data && CUSTOM_ERRORS[error.data]) {
+      return CUSTOM_ERRORS[error.data]
     }
 
-    if (err.reason) {
-      return err.reason
+    if (error.reason) {
+      return error.reason
     }
 
-    const message = err.message || String(error)
+    const message = error.message || String(error)
 
-    if (message.includes("insufficient funds")) {
-      return "Insufficient token balance"
+    const CONTRACT_ERROR_PATTERNS: [string, string][] = [
+      ["insufficient funds", "Insufficient token balance"],
+      ["user rejected", "Transaction rejected by user"],
+    ]
+
+    for (const [pattern, msg] of CONTRACT_ERROR_PATTERNS) {
+      if (message.includes(pattern)) return msg
     }
-    if (message.includes("user rejected")) {
-      return "Transaction rejected by user"
-    }
+
     if (message.includes("execution reverted")) {
       const dataMatch = message.match(/data="(0x[a-fA-F0-9]+)"/)
       if (dataMatch && CUSTOM_ERRORS[dataMatch[1]]) {
@@ -672,16 +642,6 @@ export function TheOfficeApp() {
     return message.slice(0, 100)
   }
 
-  const getTokenSymbolFromAddress = (tokenAddress: string): TokenSymbol => {
-    const normalizedAddress = tokenAddress.toLowerCase()
-    for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
-      if (config.address.toLowerCase() === normalizedAddress) {
-        return symbol as TokenSymbol
-      }
-    }
-    return "cUSD" // Default fallback
-  }
-
   const getTask = useCallback(
     async (id: string): Promise<Task | null> => {
       if (!contract || !account) return null
@@ -691,13 +651,13 @@ export function TheOfficeApp() {
         const availableSlots = await contract.getAvailableSlots(id)
         const mySlot = await contract.getTaskSlot(id, account)
 
-        const tokenSymbol = getTokenSymbolFromAddress(task.token)
+        const tokenSymbol = resolveTokenSymbol(task.token)
         const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
         return {
           id: task.taskId,
           title: task.taskId,
-          description: "Complete this task and earn rewards",
+          description: "",
           reward: ethers.formatUnits(task.rewardPerSlot, tokenConfig.decimals),
           totalSlots: task.totalSlots.toString(),
           claimedSlots: task.claimedSlots.toString(),
@@ -782,15 +742,14 @@ export function TheOfficeApp() {
     rewardPerSlot: string,
     totalSlots: string,
     token: TokenSymbol,
-    category: TaskCategory,
-    complexity: TaskComplexity,
+    category: Task["category"],
+    complexity: Task["complexity"],
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
-    visibility: TaskVisibility,
+    visibility: Task["visibility"],
   ) => {
-    if (!account) return
-    if (!contract) return
+    if (!account || !contract) return
 
     const tokenContract = tokenContracts[token]
     const tokenConfig = SUPPORTED_TOKENS[token]
@@ -849,7 +808,7 @@ export function TheOfficeApp() {
       const newTask: Task = {
         id: taskId,
         title: taskTitle || taskId,
-        description: taskDescription || "Complete this task and earn rewards",
+        description: taskDescription,
         reward: rewardPerSlot,
         totalSlots: totalSlots,
         claimedSlots: "0",
@@ -906,7 +865,6 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         await saveTaskToSupabase(updated)
-        // Track claim in task_claims table
         await supabase.from("task_claims").upsert(
           {
             task_id: id,
@@ -915,7 +873,6 @@ export function TheOfficeApp() {
           },
           { onConflict: "task_id,worker_address" },
         )
-        // Also update tasks table for backward compat
         await supabase
           .from("tasks")
           .update({
@@ -934,8 +891,7 @@ export function TheOfficeApp() {
   }
 
   const submitTask = async (id: string, proof: string) => {
-    if (!proof) return
-    if (!contract) return
+    if (!proof || !contract) return
 
     try {
       setLoading(true)
@@ -951,7 +907,6 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
         const now = new Date().toISOString()
-        // Update task_claims with submission
         await supabase
           .from("task_claims")
           .update({
@@ -960,7 +915,6 @@ export function TheOfficeApp() {
           })
           .eq("task_id", id)
           .eq("worker_address", account.toLowerCase())
-        // Also update tasks table for backward compat
         await supabase
           .from("tasks")
           .update({
@@ -997,13 +951,11 @@ export function TheOfficeApp() {
         setSelectedTask(updated)
         await saveTaskToSupabase(updated)
         const now = new Date().toISOString()
-        // Update task_claims with approval
         await supabase
           .from("task_claims")
           .update({ approved_at: now })
           .eq("task_id", id)
           .eq("worker_address", claimant.toLowerCase())
-        // Also update tasks table for backward compat
         await supabase
           .from("tasks")
           .update({ approved_at: now })
@@ -1079,7 +1031,6 @@ export function TheOfficeApp() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
       <header className="sticky top-0 bg-[#111111] px-4 py-3 border-b-2 border-[#111111] z-40">
         <div className="flex items-center justify-between">
           {account && currentPage !== "home" && (
@@ -1096,7 +1047,6 @@ export function TheOfficeApp() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Language toggle button - always visible */}
             <button
               onClick={toggleLanguage}
               className="bg-[#FF99CC] px-2 py-1.5 text-xs border-2 border-[#111111] rounded-lg text-[#111111] font-bold hover:opacity-90 flex items-center gap-1"
@@ -1119,7 +1069,6 @@ export function TheOfficeApp() {
         </div>
       </header>
 
-      {/* Hero Section - Only show when logged in */}
       {account && (
         <div className="bg-[#111111] border-2 border-[#111111] p-8 mb-5 text-center">
           <h2 className="text-2xl font-bold mb-2 text-white text-left">{t.welcome}</h2>
@@ -1133,7 +1082,6 @@ export function TheOfficeApp() {
         </div>
       )}
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto pb-16">
         {!account && <LandingPage onConnect={connectWallet} language={language} />}
         {account && currentPage === "home" && (
@@ -1180,7 +1128,6 @@ export function TheOfficeApp() {
         {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} language={language} />}
       </main>
 
-      {/* CTA Section - Only show when logged in */}
       {account && (
         <div className="bg-white border-2 border-[#111111] p-6 text-center">
           <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
@@ -1194,7 +1141,6 @@ export function TheOfficeApp() {
         </div>
       )}
 
-      {/* Bottom Navigation */}
       {account && (
         <nav className="fixed bottom-0 left-0 right-0 bg-[#111111] border-t-2 border-[#111111] flex z-40">
           {[
@@ -1219,7 +1165,6 @@ export function TheOfficeApp() {
         </nav>
       )}
 
-      {/* Modals */}
       <CreateTaskModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
@@ -1242,7 +1187,6 @@ export function TheOfficeApp() {
         language={language}
       />
 
-      {/* Toast */}
       <Toast message={toastMessage} />
     </div>
   )

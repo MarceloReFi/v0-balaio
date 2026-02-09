@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { X, ChevronDown, Calendar } from "lucide-react"
-import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/constants"
+import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
-import type { TaskCategory, TaskComplexity, TaskVisibility } from "@/lib/types"
+import type { Task } from "@/lib/types"
 
 interface CreateTaskModalProps {
   open: boolean
@@ -16,12 +16,12 @@ interface CreateTaskModalProps {
     rewardPerSlot: string,
     totalSlots: string,
     token: TokenSymbol,
-    category: TaskCategory,
-    complexity: TaskComplexity,
+    category: Task["category"],
+    complexity: Task["complexity"],
     validationMethod: string,
     deadline: Date | null,
     tags: string[],
-    visibility: TaskVisibility,
+    visibility: Task["visibility"],
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
@@ -44,17 +44,17 @@ export function CreateTaskModal({
   const [totalSlots, setTotalSlots] = useState("")
   const [selectedToken, setSelectedToken] = useState<TokenSymbol>("cUSD")
   const [showTokenDropdown, setShowTokenDropdown] = useState(false)
-  const [category, setCategory] = useState<TaskCategory>("other")
+  const [category, setCategory] = useState<NonNullable<Task["category"]>>("other")
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
-  const [complexity, setComplexity] = useState<TaskComplexity>("medium")
+  const [complexity, setComplexity] = useState<NonNullable<Task["complexity"]>>("medium")
   const [showComplexityDropdown, setShowComplexityDropdown] = useState(false)
   const [deadline, setDeadline] = useState<string>("")
   const [tagsInput, setTagsInput] = useState("")
-  const [visibility, setVisibility] = useState<TaskVisibility>("public")
+  const [visibility, setVisibility] = useState<NonNullable<Task["visibility"]>>("public")
 
   if (!open) return null
 
-  const handleCreate = () => {
+  const submitTaskForm = () => {
     const parsedDeadline = deadline ? new Date(deadline) : null
     const parsedTags = tagsInput
       .split(",")
@@ -93,7 +93,7 @@ export function CreateTaskModal({
 
   const tokenOptions = Object.values(SUPPORTED_TOKENS)
 
-  const categoryOptions: { value: TaskCategory; label: string }[] = [
+  const categoryOptions: { value: NonNullable<Task["category"]>; label: string }[] = [
     { value: "development", label: t.categoryDevelopment },
     { value: "design", label: t.categoryDesign },
     { value: "content", label: t.categoryContent },
@@ -102,17 +102,17 @@ export function CreateTaskModal({
     { value: "other", label: t.categoryOther },
   ]
 
-  const complexityOptions: { value: TaskComplexity; label: string }[] = [
+  const complexityOptions: { value: NonNullable<Task["complexity"]>; label: string }[] = [
     { value: "easy", label: t.complexityEasy },
     { value: "medium", label: t.complexityMedium },
     { value: "hard", label: t.complexityHard },
   ]
 
-  const getCategoryLabel = (cat: TaskCategory) => {
+  const getCategoryLabel = (cat: NonNullable<Task["category"]>) => {
     return categoryOptions.find((c) => c.value === cat)?.label || cat
   }
 
-  const getComplexityLabel = (comp: TaskComplexity) => {
+  const getComplexityLabel = (comp: NonNullable<Task["complexity"]>) => {
     return complexityOptions.find((c) => c.value === comp)?.label || comp
   }
 
@@ -158,7 +158,6 @@ export function CreateTaskModal({
             />
           </div>
 
-          {/* Visibility Toggle */}
           <div>
             <label className="block font-bold mb-2 text-xs">
               {language === "en" ? "VISIBILITY" : "VISIBILIDADE"}
@@ -194,7 +193,6 @@ export function CreateTaskModal({
             </p>
           </div>
 
-          {/* Category Dropdown */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.category}</label>
             <div className="relative">
@@ -229,7 +227,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Complexity Dropdown */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.complexity}</label>
             <div className="relative">
@@ -267,7 +264,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Validation Method (fixed to URL) */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.validationMethod}</label>
             <div className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono bg-gray-50 text-[#666666]">
@@ -275,7 +271,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Deadline Calendar */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.deadline}</label>
             <div className="relative">
@@ -290,7 +285,6 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          {/* Tags */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.tags}</label>
             <input
@@ -301,7 +295,6 @@ export function CreateTaskModal({
             />
           </div>
 
-          {/* Token Selection */}
           <div>
             <label className="block font-bold mb-2 text-xs">{t.selectToken}</label>
             <div className="relative">
@@ -371,7 +364,6 @@ export function CreateTaskModal({
             />
           </div>
 
-          {/* Total Cost */}
           {totalCost && (
             <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-3">
               <div className="font-bold text-xs text-[#111111]">{t.totalCostBrl}</div>
@@ -382,7 +374,7 @@ export function CreateTaskModal({
           )}
 
           <button
-            onClick={handleCreate}
+            onClick={submitTaskForm}
             disabled={loading || !taskId || !taskTitle || !totalSlots || !rewardPerSlot}
             className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-50 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
           >

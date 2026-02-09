@@ -1,4 +1,4 @@
-import type { TokenSymbol } from "./constants"
+import type { TokenSymbol } from "./web3"
 
 export interface TaskSlot {
   claimed: boolean
@@ -7,9 +7,6 @@ export interface TaskSlot {
   withdrawn: boolean
 }
 
-export type TaskCategory = "development" | "design" | "content" | "research" | "community" | "other"
-export type TaskComplexity = "easy" | "medium" | "hard"
-export type TaskVisibility = "public" | "private"
 export type PaymentMethod = "crypto" | "pix"
 export type PixKeyType = "cpf" | "email" | "phone" | "random"
 
@@ -37,19 +34,17 @@ export interface Task {
   mySlot: TaskSlot | null
   token?: TokenSymbol
   tokenAddress?: string
-  category?: TaskCategory
-  complexity?: TaskComplexity
+  category?: "development" | "design" | "content" | "research" | "community" | "other"
+  complexity?: "easy" | "medium" | "hard"
   validationMethod?: string
   deadline?: Date | null
   tags?: string[]
-  visibility?: TaskVisibility
-  // Task tracking fields
+  visibility?: "public" | "private"
   workerAddress?: string
   claimedAt?: Date | null
   submittedAt?: Date | null
   approvedAt?: Date | null
   claims?: TaskClaim[]
-  // Pix payment fields
   paymentMethod?: PaymentMethod
   fiatAmount?: number
   workerPixKey?: string

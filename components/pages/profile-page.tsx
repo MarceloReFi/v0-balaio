@@ -61,7 +61,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
           <div>
             <div className="text-xs opacity-80">{language === "en" ? "WALLET ADDRESS" : "ENDEREÇO DA CARTEIRA"}</div>
             <div className="font-bold text-sm font-mono">
-              {account?.slice(0, 8)}...{account?.slice(-6)}
+              {account.slice(0, 8)}...{account.slice(-6)}
             </div>
           </div>
         </div>
@@ -78,7 +78,6 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         </div>
       </div>
 
-      {/* Database update notice */}
       {!noticeDismissed && (
         <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] relative">
           <button
@@ -102,7 +101,6 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
       <div className="bg-white border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <h3 className="font-bold mb-3 flex items-center gap-2">📊 {t.recentActivity}</h3>
 
-        {/* Tasks Created by User */}
         {userActivity.created.length > 0 && (
           <div className="mb-4">
             <div className="text-xs font-bold text-[#111111] mb-2 flex items-center gap-1">
@@ -125,7 +123,6 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                       {" · "}{task.reward} {task.token || "cUSD"}
                     </div>
 
-                    {/* Claims list */}
                     {hasClaims ? (
                       <div className="space-y-2 mt-2">
                         {claims.map((claim) => (

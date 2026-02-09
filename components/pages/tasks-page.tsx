@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Search, HelpCircle, Loader2 } from "lucide-react"
-import { Tooltip, TooltipProvider } from "@/components/ui/tooltip-custom"
+import { Tooltip, TooltipProvider } from "@/components/ui/tooltip"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 
@@ -86,14 +86,14 @@ export function TasksPage({
     return true
   })
 
-  const handleSearch = async () => {
+  const searchTasks = async () => {
     if (!searchQuery) return
     setLoading(true)
     await searchTask(searchQuery)
     setLoading(false)
   }
 
-  const handleRefresh = async () => {
+  const refreshTasks = async () => {
     setLoading(true)
     await loadMyTasks()
     setLoading(false)
@@ -139,7 +139,7 @@ export function TasksPage({
           </button>
         ))}
         <button
-          onClick={handleRefresh}
+          onClick={refreshTasks}
           disabled={loading}
           className="bg-white text-[#111111] px-4 py-2 font-bold border-2 border-[#111111] rounded-xl text-xs disabled:opacity-70"
         >
@@ -151,12 +151,12 @@ export function TasksPage({
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          onKeyDown={(e) => e.key === "Enter" && searchTasks()}
           placeholder={t.searchTask}
           className="flex-1 px-3 py-2.5 border-2 border-[#111111] rounded-xl bg-white font-mono text-sm"
         />
         <button
-          onClick={handleSearch}
+          onClick={searchTasks}
           disabled={loading}
           className="bg-white text-[#111111] px-5 py-2.5 font-bold border-2 border-[#111111] rounded-xl hover:bg-gray-50"
         >
