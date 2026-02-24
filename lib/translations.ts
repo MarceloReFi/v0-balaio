@@ -19,17 +19,17 @@ export const translations = {
     subtitle: "Web3 Tasks - A simple task-management dapp for the Celo ecosystem.",
     connectWallet: "Connect Wallet",
     heroDesc:
-      "Join a decentralized platform where learning meets earning. Complete tasks, build skills, and earn rewards on the Celo blockchain.",
+      "Create and complete tasks on Celo. Post work, claim it, submit proof, get paid.",
     cta1: "Start Learning",
     cta2: "Explore Tasks",
     opportunities: "Opportunities",
     knowMore: "Apply",
     latestTasks: "Latest Tasks",
     discoverFeatures: "Discover All Features",
-    discoverFeaturesDesc: "Smart task creation, mobile-first design, and comprehensive tools for every user type",
+    discoverFeaturesDesc: "Create tasks with escrow, claim work, submit proof, get paid on Celo.",
     exploreFeatures: "Explore Features",
     getStarted: "Ready to Start?",
-    getStartedDesc: "Connect your Celo wallet and start your Learn2Earn journey today!",
+    getStartedDesc: "Connect your Celo wallet and start earning with tasks today.",
 
     // Opportunities
     celoPublicGoods: "Celo Public Goods",
@@ -190,7 +190,7 @@ export const translations = {
       "Criação inteligente de tarefas, design mobile-first e ferramentas completas para todos os tipos de usuário",
     exploreFeatures: "Explorar Funcionalidades",
     getStarted: "Pronto para Começar?",
-    getStartedDesc: "Conecte sua carteira Celo e comece sua jornada Learn2Earn hoje!",
+    getStartedDesc: "Conecte sua carteira Celo e comece a ganhar com tarefas hoje.",
 
     // Opportunities
     celoPublicGoods: "Bens Públicos Celo",
