@@ -14,6 +14,10 @@ interface ProfilePageProps {
   userActivity: { created: Task[]; worked: Task[] }
   onNavigateToBlog: () => void
   onApproveTask: (taskId: string, claimant: string) => Promise<void>
+  onWithdrawClaim: (taskId: string) => Promise<void>
+  onAuthorizeWithdraw: (taskId: string) => Promise<void>
+  onWithdraw: (taskId: string, creatorAddress: string) => Promise<void>
+  onClaimTokens: (taskId: string) => Promise<void>
   language: Language
 }
 
@@ -27,7 +31,7 @@ const formatTimestamp = (date: Date | null | undefined): string => {
   })
 }
 
-export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, language }: ProfilePageProps) {
+export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, onWithdrawClaim, onAuthorizeWithdraw, onWithdraw, onClaimTokens, language }: ProfilePageProps) {
   const t = useTranslations(language)
   const [noticeDismissed, setNoticeDismissed] = useState(() => {
     if (typeof window === "undefined") return false
@@ -42,6 +46,18 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
   const dismissNotice = () => {
     localStorage.setItem(DB_NOTICE_KEY, "true")
     setNoticeDismissed(true)
+  }
+
+  const getCreatorSlot = (taskId: string) =>
+    tasks.find((t) => t.id === taskId)?.mySlot ?? null
+
+  const getWithdrawStep = (taskId: string) => {
+    const slot = getCreatorSlot(taskId)
+    if (!slot || !slot.claimed) return "cancel"
+    if (slot.claimed && !slot.submitted) return "authorize"
+    if (slot.submitted && !slot.approved) return "withdraw"
+    if (slot.approved && !slot.withdrawn) return "claim"
+    return "done"
   }
 
   return (
@@ -177,6 +193,51 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                     ) : (
                       <div className="text-xs text-[#666666] italic mt-1">{t.noClaimsYet}</div>
                     )}
+                    {(() => {
+                      const step = getWithdrawStep(task.id)
+                      if (step === "done") return (
+                        <div className="mt-2 pt-2 border-t border-gray-100 text-xs font-bold text-[#666666]">
+                          ✅ {t.tokensWithdrawn}
+                        </div>
+                      )
+                      const stepConfig = {
+                        cancel: {
+                          label: t.cancelTask,
+                          style: "bg-[#FFFF66] text-[#111111]",
+                          action: () => onWithdrawClaim(task.id),
+                        },
+                        authorize: {
+                          label: t.authorizeWithdraw,
+                          style: "bg-[#FF99CC] text-[#111111]",
+                          action: () => onAuthorizeWithdraw(task.id),
+                        },
+                        withdraw: {
+                          label: t.withdrawFunds,
+                          style: "bg-[#FF99CC] text-[#111111]",
+                          action: () => onWithdraw(task.id, account),
+                        },
+                        claim: {
+                          label: t.claimTokens,
+                          style: "bg-[#99FF99] text-[#111111]",
+                          action: () => onClaimTokens(task.id),
+                        },
+                      }[step]
+                      return (
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          {step !== "cancel" && (
+                            <div className="text-xs text-[#666666] mb-1">
+                              🔄 {t.withdrawInProgress}
+                            </div>
+                          )}
+                          <button
+                            onClick={stepConfig.action}
+                            className={`${stepConfig.style} px-3 py-1 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow`}
+                          >
+                            {stepConfig.label}
+                          </button>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )
               })}
