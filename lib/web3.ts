@@ -1,3 +1,5 @@
+// Public contract address on Celo Mainnet. Verified on Celoscan.
+// To deploy your own instance, see docs/smart-contracts.md
 export const CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
 
 export type TokenSymbol =

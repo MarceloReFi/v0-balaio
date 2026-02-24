@@ -300,7 +300,7 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
           <div className="bg-white border-2 border-[#111111] rounded-xl p-6 mb-6 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
             <p className="text-sm md:text-base mb-6">
               {language === "en"
-                ? "Balaio lets your project share tasks onchain, verify work, and pay contributors onchain with full transparency."
+                ? "Balaio lets your project publish tasks onchain, verify work, and pay contributors directly."
                 : "O Balaio permite que seu projeto compartilhe tarefas onchain, verifique trabalhos e pague colaboradores onchain com total transparência."}
             </p>
 
@@ -316,7 +316,7 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 text-[#99FF99] flex-shrink-0 mt-0.5" />
-                <span>{language === "en" ? "Review and approve work: Track submissions, request edits, and approve at scale." : "Revise e aprove trabalhos: Acompanhe envios, solicite edições e aprove em escala."}</span>
+                <span>{language === "en" ? "Review and approve work: Track submissions, request edits, and pay at your own pace." : "Revise e aprove trabalhos: Acompanhe envios, solicite edições e aprove em escala."}</span>
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 text-[#99FF99] flex-shrink-0 mt-0.5" />
@@ -474,7 +474,7 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-4 h-4 text-[#99FF99] flex-shrink-0 mt-0.5" />
-                <span>{language === "en" ? "Support you with local onboarding and product feedback loops" : "Apoiamos com onboarding local e ciclos de feedback do produto"}</span>
+                <span>{language === "en" ? "Support local onboarding and collect product feedback" : "Apoiamos com onboarding local e ciclos de feedback do produto"}</span>
               </li>
             </ul>
 
@@ -498,7 +498,7 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
               className="bg-[#FFFF66] text-[#111111] px-6 py-3 font-bold border-2 border-[#111111] rounded-xl hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow inline-flex items-center gap-2"
             >
               <Handshake className="w-5 h-5" />
-              {language === "en" ? "Explore partnership opportunities →" : "Explore oportunidades de parceria →"}
+              {language === "en" ? "Work with us →" : "Fale com a gente →"}
             </a>
           </div>
         </div>
@@ -513,8 +513,8 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
           </h2>
           <p className="text-white/80 mb-6">
             {language === "en"
-              ? "Connect your wallet and start your journey with Balaio today."
-              : "Conecte sua carteira e comece sua jornada com o Balaio hoje."}
+              ? "Connect your wallet and start using Balaio today."
+              : "Conecte sua carteira e comece a usar o Balaio hoje."}
           </p>
           <button
             onClick={onConnect}
