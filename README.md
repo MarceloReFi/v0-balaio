@@ -41,9 +41,9 @@ No private keys are needed to run the frontend. The contract address is public a
 
 ## Docs
 
-- [Architecture](docs/architecture.md)
-- [Smart Contracts](docs/smart-contracts.md)
-- [Contributing](CONTRIBUTING.md)
+- [Architecture](https://github.com/MarceloReFi/v0-balaio/blob/main/architecture.md)
+- [Smart Contracts](https://github.com/MarceloReFi/v0-balaio/blob/main/smart-contracts.md)
+- [Contributing](https://github.com/MarceloReFi/v0-balaio/blob/main/contributing.md)
 
 ## License
 
