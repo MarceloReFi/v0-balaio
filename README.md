@@ -1,22 +1,50 @@
-# Balaio - Web3 Task Management on Celo
+# Balaio
 
-A simple task-management dapp for the Celo ecosystem.
+Task coordination on Celo. Create tasks with escrowed rewards, claim them, submit proof, get paid onchain.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/marceloallamistakeos-projects/v0-balaio-q9)
+Live at [usebalaio.com](https://www.usebalaio.com)
 
-## Overview
+## What it does
 
-Balaio is a decentralized task management platform where users can create, claim, and complete tasks to earn rewards on the Celo blockchain.
+- Task creators post work with token rewards locked in a smart contract
+- Workers claim tasks, submit proof links, and receive payment on approval
+- Supports multiple workers per task (slot-based)
+- Off-chain metadata stored in Supabase; on-chain state lives on Celo Mainnet
 
-## Deployment
+## Stack
 
-Your project is live at:
+| Layer | Tech |
+|---|---|
+| Frontend | Next.js 16, React, TypeScript, Tailwind |
+| Blockchain | Celo Mainnet, ethers.js |
+| Off-chain storage | Supabase (Postgres) |
+| Wallets | MetaMask, Valora, MiniPay |
+| Deploy | Vercel |
 
-**https://www.usebalaio.com/**
+## Getting started
+```bash
+git clone https://github.com/your-org/balaio
+cd balaio
+npm install
+cp .env.example .env.local
+# fill in NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+npm run dev
+```
 
-## Features
+## Environment variables
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
 
-- Create tasks with rewards in cUSD or USDC
-- Claim and complete tasks to earn tokens
-- Mobile-first responsive design
-- Multi-language support (English and Portuguese)
+No private keys are needed to run the frontend. The contract address is public and can be found in `lib/web3.ts`.
+
+## Docs
+
+- [Architecture](docs/architecture.md)
+- [Smart Contracts](docs/smart-contracts.md)
+- [Contributing](CONTRIBUTING.md)
+
+## License
+
+MIT
