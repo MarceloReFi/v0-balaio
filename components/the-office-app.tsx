@@ -1122,6 +1122,10 @@ export function TheOfficeApp() {
             userActivity={userActivity}
             onNavigateToBlog={() => setCurrentPage("blog")}
             onApproveTask={approveTaskSubmission}
+            onWithdrawClaim={claimTask}
+            onAuthorizeWithdraw={(id) => submitTask(id, "Withdraw Funds")}
+            onWithdraw={approveTaskSubmission}
+            onClaimTokens={claimReward}
             language={language}
           />
         )}
