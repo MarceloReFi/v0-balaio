@@ -14,6 +14,7 @@ import {
 import { CELO_CHAIN_ID, CELO_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
 import type { Task, TaskClaim } from "@/lib/types"
 import { Toast } from "@/components/ui/toast"
+import { WalletSelector } from "@/components/wallet-selector"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
 import { HomePage } from "@/components/pages/home-page"
@@ -147,6 +148,7 @@ export function TheOfficeApp() {
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
+  const [showWalletSelector, setShowWalletSelector] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
   const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>({
@@ -536,7 +538,8 @@ export function TheOfficeApp() {
     window.location.href = deepLink
   }
 
-  const connectWallet = async () => {
+  const connectBrowserWallet = async () => {
+    setShowWalletSelector(false)
     try {
       const isMobile = isMobileDevice()
       const inMobileWallet = isInMobileWalletBrowser()
@@ -606,6 +609,80 @@ export function TheOfficeApp() {
     } catch (error: unknown) {
       console.error("Connect wallet error:", error)
       toast(resolveWalletError(error))
+    }
+  }
+
+  const connectWallet = async () => {
+    setShowWalletSelector(true)
+  }
+
+  const connectWalletConnect = async () => {
+    setShowWalletSelector(false)
+    try {
+      toast("Opening WalletConnect...")
+
+      const { initWalletConnect } = await import("@/lib/walletconnect")
+      const wcProvider = await initWalletConnect()
+
+      await wcProvider.connect()
+
+      const accounts = wcProvider.accounts
+      if (!accounts || accounts.length === 0) {
+        toast("No accounts found")
+        return
+      }
+
+      try {
+        await wcProvider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: CELO_CHAIN_ID }],
+        })
+      } catch (switchError: any) {
+        if (switchError.code === 4902) {
+          await wcProvider.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: CELO_CHAIN_ID,
+              chainName: "Celo Mainnet",
+              nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
+              rpcUrls: [CELO_RPC],
+              blockExplorerUrls: ["https://celoscan.io"],
+            }],
+          })
+        }
+      }
+
+      const provider = new ethers.BrowserProvider(wcProvider)
+      const signer = await provider.getSigner()
+      const address = await signer.getAddress()
+
+      setAccount(address)
+
+      const balaioContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+      setContract(balaioContract)
+
+      const newTokenContracts: Record<TokenSymbol, ethers.Contract | null> = {
+        CELO: null,
+        cUSD: null,
+        USDC: null,
+      }
+
+      for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
+        if (symbol !== "CELO") {
+          newTokenContracts[symbol as TokenSymbol] = new ethers.Contract(
+            config.address,
+            ERC20_ABI,
+            signer,
+          )
+        }
+      }
+
+      setTokenContracts(newTokenContracts)
+      setCurrentPage("tasks")
+      toast("Connected via WalletConnect!")
+    } catch (error) {
+      console.error("WalletConnect error:", error)
+      toast("Failed to connect via WalletConnect")
     }
   }
 
