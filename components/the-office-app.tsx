@@ -24,6 +24,7 @@ import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
+import { initWalletConnect } from "@/lib/walletconnect"
 
 declare global {
   interface Window {
@@ -157,6 +158,7 @@ export function TheOfficeApp() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const [language, setLanguage] = useState<Language>("en")
+  const [walletType, setWalletType] = useState<'injected' | 'walletconnect' | null>(null)
   const t = useTranslations(language)
   const supabase = createClient()
 
@@ -605,6 +607,41 @@ export function TheOfficeApp() {
       toast("Wallet connected!")
     } catch (error: unknown) {
       console.error("Connect wallet error:", error)
+      toast(resolveWalletError(error))
+    }
+  }
+
+  const connectWalletConnect = async () => {
+    try {
+      toast("Connecting to wallet...")
+
+      const wcProvider = await initWalletConnect()
+      await wcProvider.enable()
+      const provider = new ethers.BrowserProvider(wcProvider)
+      const signer = await provider.getSigner()
+
+      const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+
+      const contracts: Record<TokenSymbol, ethers.Contract | null> = {
+        cUSD: null,
+        USDC: null,
+      }
+      for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
+        contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
+      }
+
+      const accounts = await provider.listAccounts()
+      setAccount(accounts[0].address)
+      setContract(taskContract)
+      setTokenContracts(contracts)
+      setWalletType('walletconnect')
+
+      wcProvider.on('accountsChanged', (accounts: string[]) => { setAccount(accounts[0]) })
+      wcProvider.on('disconnect', () => { setAccount(""); setContract(null); toast("Disconnected") })
+
+      toast("Wallet connected!")
+    } catch (error: unknown) {
+      console.error("WalletConnect error:", error)
       toast(resolveWalletError(error))
     }
   }
