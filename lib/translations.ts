@@ -168,6 +168,7 @@ export const translations = {
     pixInstructions: "Copy the Pix key below and pay via your bank app",
     pixNoKeyYet: "Worker hasn't provided Pix key yet",
     totalCostBrl: "Total Cost:",
+    connectViaWalletConnect: "Connect via WalletConnect",
   },
   "pt-BR": {
     // Header
@@ -335,6 +336,7 @@ export const translations = {
     pixInstructions: "Copie a chave Pix abaixo e pague pelo app do banco",
     pixNoKeyYet: "Trabalhador ainda não informou a chave Pix",
     totalCostBrl: "Custo Total:",
+    connectViaWalletConnect: "Conectar via WalletConnect",
   },
 }
 

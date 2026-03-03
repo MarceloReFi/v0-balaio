@@ -5,10 +5,11 @@ import { Wallet, Users, Building2, Handshake, CheckCircle, Globe, Shield, Zap, S
 
 interface LandingPageProps {
   onConnect: () => void
+  onConnectWalletConnect?: () => void
   language: Language
 }
 
-export function LandingPage({ onConnect, language }: LandingPageProps) {
+export function LandingPage({ onConnect, onConnectWalletConnect, language }: LandingPageProps) {
   const t = useTranslations(language)
 
   return (
@@ -29,6 +30,12 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
             className="bg-[#FFFF66] text-[#111111] px-8 py-4 font-bold text-lg border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-shadow"
           >
             {t.connectWallet}
+          </button>
+          <button
+            onClick={onConnectWalletConnect}
+            className="bg-[#FFFF66] text-[#111111] px-8 py-4 font-bold text-lg border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+          >
+            {t.connectViaWalletConnect}
           </button>
         </div>
       </section>
