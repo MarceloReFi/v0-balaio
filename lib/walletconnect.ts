@@ -1,17 +1,19 @@
-import EthereumProvider from "@walletconnect/ethereum-provider";
-
+import EthereumProvider from "@walletconnect/ethereum-provider"
+import { WALLETCONNECT_PROJECT_ID, APP_URL } from "@/lib/config"
 export async function initWalletConnect() {
+  if (!WALLETCONNECT_PROJECT_ID) {
+    throw new Error("WalletConnect Project ID not configured")
+  }
   const provider = await EthereumProvider.init({
-    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
+    projectId: WALLETCONNECT_PROJECT_ID,
     chains: [42220],
     showQrModal: true,
     metadata: {
       name: "Balaio",
       description: "Web3 Tasks on Celo",
-      url: process.env.NEXT_PUBLIC_APP_URL || "https://balaio.app",
-      icons: ["https://balaio.app/icon.png"],
+      url: APP_URL,
+      icons: [`${APP_URL}/icon.png`],
     },
-  });
-
-  return provider;
+  })
+  return provider
 }
