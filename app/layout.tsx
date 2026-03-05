@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Analytics } from "@vercel/analytics/next"
+import Script from "next/script"
 import "./globals.css"
 
 // Font class for monospace styling - using system fonts for reliability
@@ -36,6 +37,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src * wss: ws:; img-src * data: blob:; style-src * 'unsafe-inline'; frame-src *;"
+        />
+      </head>
       <body className={`${fontClass} antialiased`}>
         {children}
         <Analytics />
