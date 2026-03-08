@@ -1,9 +1,11 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Analytics } from "@vercel/analytics/next"
+import { Web3Provider } from "@/components/providers/web3-provider"
 import "./globals.css"
-// Font class for monospace styling - using system fonts for reliability
+
 const fontClass = "font-mono"
+
 export const metadata: Metadata = {
   title: "Balaio - Web3 Task Management on Celo",
   description: "A simple task-management dapp for the Celo ecosystem",
@@ -21,10 +23,12 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
 }
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
 }
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${fontClass} antialiased`}>
-        {children}
+        <Web3Provider>
+          {children}
+        </Web3Provider>
         <Analytics />
       </body>
     </html>
