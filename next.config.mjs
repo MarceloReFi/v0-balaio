@@ -6,8 +6,19 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Empty turbopack config to suppress warning
   turbopack: {},
+  webpack: (config) => {
+    config.externals.push('pino-pretty', 'lokijs', 'encoding')
+    return config
+  },
+  serverExternalPackages: [
+    '@coinbase/cdp-sdk',
+    '@base-org/account',
+    '@solana/kit',
+    '@solana-program/system',
+    '@solana-program/token',
+    'axios'
+  ]
 }
 
 export default nextConfig
