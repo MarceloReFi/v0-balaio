@@ -11,6 +11,7 @@ interface LandingPageProps {
 
 export function LandingPage({ onConnect, language }: LandingPageProps) {
   const t = useTranslations(language)
+  const { open } = useAppKit()
 
   return (
     <div className="pb-8">
