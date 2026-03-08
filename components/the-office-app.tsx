@@ -24,6 +24,8 @@ import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
+import { useAccount, useDisconnect } from 'wagmi'
+import { useAppKit } from '@reown/appkit/react'
 
 declare global {
   interface Window {
@@ -159,6 +161,10 @@ export function TheOfficeApp() {
   const [language, setLanguage] = useState<Language>("en")
   const t = useTranslations(language)
   const supabase = createClient()
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
+const { disconnect: wagmiDisconnect } = useDisconnect()
+const { open } = useAppKit()
+
 
   const toast = useCallback((msg: string) => {
     setToastMessage(msg)
