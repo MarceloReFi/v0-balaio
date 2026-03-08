@@ -162,8 +162,8 @@ export function TheOfficeApp() {
   const t = useTranslations(language)
   const supabase = createClient()
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
-const { disconnect: wagmiDisconnect } = useDisconnect()
-const { open } = useAppKit()
+  const { disconnect: wagmiDisconnect } = useDisconnect()
+  const { open } = useAppKit()
 
 
   const toast = useCallback((msg: string) => {
