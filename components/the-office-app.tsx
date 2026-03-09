@@ -1078,7 +1078,7 @@ export function TheOfficeApp() {
       )}
 
       <main className="flex-1 overflow-y-auto pb-16">
-        {!account && <LandingPage onConnect={connectWallet} language={language} />}
+        {!account && <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} />}
         {account && currentPage === "home" && (
           <HomePage
             onConnect={connectWallet}
