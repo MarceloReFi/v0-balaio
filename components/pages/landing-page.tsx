@@ -1,6 +1,6 @@
-import { useAppKit } from '@reown/appkit/react'
 "use client"
 
+import { useAppKit } from '@reown/appkit/react'
 import { useTranslations, type Language } from "@/lib/translations"
 import { Wallet, Users, Building2, Handshake, CheckCircle, Globe, Shield, Zap, Smartphone, ArrowRight, Mail } from "lucide-react"
 
