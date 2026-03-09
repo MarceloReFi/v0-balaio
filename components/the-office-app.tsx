@@ -159,11 +159,11 @@ export function TheOfficeApp() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const [language, setLanguage] = useState<Language>("en")
-  const t = useTranslations(language)
-  const supabase = createClient()
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
   const { open } = useAppKit()
+  const t = useTranslations(language)
+  const supabase = createClient()
 
 
   const toast = useCallback((msg: string) => {

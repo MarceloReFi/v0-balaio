@@ -3,6 +3,7 @@
 import { useAppKit } from '@reown/appkit/react'
 import { useTranslations, type Language } from "@/lib/translations"
 import { Wallet, Users, Building2, Handshake, CheckCircle, Globe, Shield, Zap, Smartphone, ArrowRight, Mail } from "lucide-react"
+import { useAppKit } from '@reown/appkit/react'
 
 interface LandingPageProps {
   onConnect: () => void
@@ -26,12 +27,20 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
               ? "A mobile-first task management Dapp where people earn by completing tasks, and projects can execute their budget with transparency and accountability."
               : "Um Dapp de gerenciamento de tarefas mobile-first onde pessoas ganham completando tarefas, e projetos podem executar seu orçamento com transparência e responsabilidade."}
           </p>
-          <button
-            onClick={onConnect}
-            className="bg-[#FFFF66] text-[#111111] px-8 py-4 font-bold text-lg border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-shadow"
-          >
-            {t.connectWallet}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={onConnect}
+              className="bg-[#FF99CC] text-[#111111] px-8 py-4 text-lg font-bold border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-all"
+            >
+              🦊 {t.connectWallet} (MetaMask)
+            </button>
+            <button
+              onClick={() => open()}
+              className="bg-[#99FF99] text-[#111111] px-8 py-4 text-lg font-bold border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-all"
+            >
+              🔗 {t.connectWallet} (WalletConnect)
+            </button>
+          </div>
         </div>
       </section>
 
@@ -518,12 +527,20 @@ export function LandingPage({ onConnect, language }: LandingPageProps) {
               ? "Connect your wallet and start using Balaio today."
               : "Conecte sua carteira e comece a usar o Balaio hoje."}
           </p>
-          <button
-            onClick={onConnect}
-            className="bg-[#FFFF66] text-[#111111] px-8 py-4 font-bold text-lg border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-shadow"
-          >
-            {t.connectWallet}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={onConnect}
+              className="bg-[#FF99CC] text-[#111111] px-8 py-4 text-lg font-bold border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-all"
+            >
+              🦊 {t.connectWallet} (MetaMask)
+            </button>
+            <button
+              onClick={() => open()}
+              className="bg-[#99FF99] text-[#111111] px-8 py-4 text-lg font-bold border-2 border-[#111111] rounded-xl hover:shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] transition-all"
+            >
+              🔗 {t.connectWallet} (WalletConnect)
+            </button>
+          </div>
         </div>
       </section>
     </div>

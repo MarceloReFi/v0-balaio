@@ -1,4 +1,3 @@
-```typescript
 import { useMemo } from 'react'
 import { useWalletClient } from 'wagmi'
 import { providers } from 'ethers'
@@ -22,4 +21,3 @@ export function useEthersSigner({ chainId }: { chainId?: number } = {}) {
     [walletClient]
   )
 }
-```
