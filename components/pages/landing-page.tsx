@@ -1,3 +1,4 @@
+import { useAppKit } from '@reown/appkit/react'
 "use client"
 
 import { useTranslations, type Language } from "@/lib/translations"
