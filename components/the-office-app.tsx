@@ -1004,6 +1004,19 @@ export function TheOfficeApp() {
     toast("Logged out")
   }
 
+  const handleDisconnect = () => {
+    if (wagmiConnected) {
+      wagmiDisconnect()
+    }
+    setAccount("")
+    setContract(null)
+    setTokenContracts({ cUSD: null, USDC: null })
+    setCurrentPage("landing")
+    setTasks([])
+    setUserActivity({ created: [], worked: [] })
+    toast("Disconnected")
+  }
+
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
   }
