@@ -26,6 +26,7 @@ import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { useAccount, useDisconnect } from 'wagmi'
 import { useAppKit } from '@reown/appkit/react'
+import { useEthersSigner } from '@/lib/ethers-adapter'
 
 declare global {
   interface Window {
@@ -162,6 +163,7 @@ export function TheOfficeApp() {
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
   const { open } = useAppKit()
+  const signer = useEthersSigner()
   const t = useTranslations(language)
   const supabase = createClient()
 
@@ -1023,6 +1025,30 @@ export function TheOfficeApp() {
       loadUserActivity(account)
     }
   }, [account, loadUserActivity])
+
+  useEffect(() => {
+    async function initializeWagmiContracts() {
+      if (wagmiConnected && wagmiAddress && signer && !account) {
+        try {
+          const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+          const contracts: Record<TokenSymbol, ethers.Contract | null> = {
+            cUSD: null,
+            USDC: null,
+          }
+          for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
+            contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
+          }
+          setAccount(wagmiAddress)
+          setContract(taskContract)
+          setTokenContracts(contracts)
+          toast("Wallet connected via WalletConnect!")
+        } catch (error) {
+          console.error("Wagmi contract init error:", error)
+        }
+      }
+    }
+    initializeWagmiContracts()
+  }, [wagmiConnected, wagmiAddress, signer, account])
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
