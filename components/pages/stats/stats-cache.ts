@@ -6,7 +6,7 @@ interface CachedStats {
 }
 
 let cache: CachedStats | null = null
-const CACHE_DURATION = 60 * 60 * 1000 // 1 hour in milliseconds
+const CACHE_DURATION = 6 * 60 * 60 * 1000 // 6 hours in milliseconds
 
 export function getCachedStats(): StatsData | null {
   if (!cache) return null
