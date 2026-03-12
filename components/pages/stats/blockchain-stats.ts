@@ -18,118 +18,89 @@ export interface GrowthData {
   approved: number
 }
 
+// Celo produces ~1 block every 5 seconds = ~17,280 blocks/day
+// 6 months = ~3,110,400 blocks
+const BLOCKS_TO_QUERY = 3_110_400
+
 export async function fetchBlockchainStats(): Promise<StatsData> {
-  console.log("fetchBlockchainStats: Starting")
+  console.log("[fetchBlockchainStats] Starting...")
 
-  try {
-    const provider = new ethers.JsonRpcProvider(CELO_RPC)
-    console.log("fetchBlockchainStats: Provider created")
+  const provider = new ethers.JsonRpcProvider(CELO_RPC)
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-    console.log("fetchBlockchainStats: Contract instance created")
+  // Get current block
+  const currentBlock = await provider.getBlockNumber()
+  const startBlock = Math.max(0, currentBlock - BLOCKS_TO_QUERY)
 
-    // Test connection
-    const network = await provider.getNetwork()
-    console.log("fetchBlockchainStats: Connected to network:", network.chainId.toString())
+  console.log(`[fetchBlockchainStats] Querying blocks ${startBlock} to ${currentBlock}`)
 
-    console.log("fetchBlockchainStats: Querying TaskCreated events")
-    const createdEvents = await contract.queryFilter(
-      contract.filters.TaskCreated(),
-      0,
-      "latest"
-    )
-    console.log("fetchBlockchainStats: Found", createdEvents.length, "TaskCreated events")
+  // Query events in parallel for speed
+  const [createdEvents, claimedEvents, approvedEvents] = await Promise.all([
+    contract.queryFilter(contract.filters.TaskCreated(), startBlock, currentBlock),
+    contract.queryFilter(contract.filters.TaskClaimed(), startBlock, currentBlock),
+    contract.queryFilter(contract.filters.TaskApproved(), startBlock, currentBlock),
+  ])
 
-    console.log("fetchBlockchainStats: Querying TaskClaimed events")
-    const claimedEvents = await contract.queryFilter(
-      contract.filters.TaskClaimed(),
-      0,
-      "latest"
-    )
-    console.log("fetchBlockchainStats: Found", claimedEvents.length, "TaskClaimed events")
+  console.log(`[fetchBlockchainStats] Found ${createdEvents.length} created, ${claimedEvents.length} claimed, ${approvedEvents.length} approved`)
 
-    console.log("fetchBlockchainStats: Querying TaskApproved events")
-    const approvedEvents = await contract.queryFilter(
-      contract.filters.TaskApproved(),
-      0,
-      "latest"
-    )
-    console.log("fetchBlockchainStats: Found", approvedEvents.length, "TaskApproved events")
+  // Extract unique wallet addresses
+  const walletSet = new Set<string>()
 
-    // Extract unique wallet addresses
-    const walletSet = new Set<string>()
+  createdEvents.forEach((event: any) => {
+    const creator = event.args?.[1]
+    if (creator) walletSet.add(creator.toLowerCase())
+  })
 
-    createdEvents.forEach((event: any) => {
-      try {
-        const creator = event.args?.[1]
-        if (creator) walletSet.add(creator.toLowerCase())
-      } catch (err) {
-        console.error("Error processing creator:", err)
-      }
-    })
+  claimedEvents.forEach((event: any) => {
+    const claimant = event.args?.[1]
+    if (claimant) walletSet.add(claimant.toLowerCase())
+  })
 
-    claimedEvents.forEach((event: any) => {
-      try {
-        const claimant = event.args?.[1]
-        if (claimant) walletSet.add(claimant.toLowerCase())
-      } catch (err) {
-        console.error("Error processing claimant:", err)
-      }
-    })
+  // Calculate growth (simplified - use block numbers instead of timestamps to avoid extra RPC calls)
+  const growth = await calculateGrowthSimplified(createdEvents, claimedEvents, approvedEvents)
 
-    console.log("fetchBlockchainStats: Calculating growth")
-    const growth = await calculateGrowth(createdEvents, claimedEvents, approvedEvents, provider)
-
-    const result = {
-      wallets: walletSet.size,
-      tasksCreated: createdEvents.length,
-      tasksClaimed: claimedEvents.length,
-      tasksApproved: approvedEvents.length,
-      growth,
-      lastUpdated: Date.now(),
-    }
-
-    console.log("fetchBlockchainStats: Returning result:", result)
-    return result
-  } catch (error) {
-    console.error("fetchBlockchainStats: Error:", error)
-    throw error
+  const result = {
+    wallets: walletSet.size,
+    tasksCreated: createdEvents.length,
+    tasksClaimed: claimedEvents.length,
+    tasksApproved: approvedEvents.length,
+    growth,
+    lastUpdated: Date.now(),
   }
+
+  console.log("[fetchBlockchainStats] Success:", result)
+  return result
 }
 
-async function calculateGrowth(
+// Simplified growth calculation - group by week instead of day to reduce data
+// Celo: ~17,280 blocks/day = ~120,960 blocks/week
+async function calculateGrowthSimplified(
   createdEvents: any[],
   claimedEvents: any[],
-  approvedEvents: any[],
-  provider: ethers.JsonRpcProvider
+  approvedEvents: any[]
 ): Promise<GrowthData[]> {
-  const dailyStats: Record<string, { created: number; claimed: number; approved: number }> = {}
+  const weeklyStats: Record<string, { created: number; claimed: number; approved: number }> = {}
 
-  // Helper to process events
-  const processEvents = async (events: any[], type: "created" | "claimed" | "approved") => {
-    for (const event of events) {
-      try {
-        const block = await provider.getBlock(event.blockNumber)
-        if (block && block.timestamp) {
-          const date = new Date(block.timestamp * 1000).toISOString().split("T")[0]
-          if (!dailyStats[date]) {
-            dailyStats[date] = { created: 0, claimed: 0, approved: 0 }
-          }
-          dailyStats[date][type]++
-        }
-      } catch (err) {
-        console.error(`Error processing ${type} event:`, err)
-      }
+  const BLOCKS_PER_WEEK = 120_960
+
+  const processEvent = (event: any, type: "created" | "claimed" | "approved") => {
+    const weekNumber = Math.floor(event.blockNumber / BLOCKS_PER_WEEK)
+    const weekKey = `week_${weekNumber}`
+
+    if (!weeklyStats[weekKey]) {
+      weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
     }
+    weeklyStats[weekKey][type]++
   }
 
-  await processEvents(createdEvents, "created")
-  await processEvents(claimedEvents, "claimed")
-  await processEvents(approvedEvents, "approved")
+  createdEvents.forEach((e) => processEvent(e, "created"))
+  claimedEvents.forEach((e) => processEvent(e, "claimed"))
+  approvedEvents.forEach((e) => processEvent(e, "approved"))
 
-  return Object.entries(dailyStats)
-    .map(([date, stats]) => ({
-      date,
+  // Convert to array and sort
+  return Object.entries(weeklyStats)
+    .map(([week, stats]) => ({
+      date: week, // Will show as "week_12345" - simplified
       created: stats.created,
       claimed: stats.claimed,
       approved: stats.approved,

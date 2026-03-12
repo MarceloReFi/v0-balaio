@@ -190,14 +190,22 @@ export function StatsPage({ language }: StatsPageProps) {
                 </tr>
               </thead>
               <tbody>
-                {stats.growth.map((row) => (
-                  <tr key={row.date} className="border-b border-gray-200">
-                    <td className="py-2 px-4">{row.date}</td>
-                    <td className="py-2 px-4">{row.created}</td>
-                    <td className="py-2 px-4">{row.claimed}</td>
-                    <td className="py-2 px-4">{row.approved}</td>
+                {stats.growth.length > 0 ? (
+                  stats.growth.map((row) => (
+                    <tr key={row.date} className="border-b border-gray-200">
+                      <td className="py-2 px-4">{row.date.replace("week_", "Week ")}</td>
+                      <td className="py-2 px-4">{row.created}</td>
+                      <td className="py-2 px-4">{row.claimed}</td>
+                      <td className="py-2 px-4">{row.approved}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-4 px-4 text-center text-gray-500">
+                      No growth data yet
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
