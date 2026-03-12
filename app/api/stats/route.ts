@@ -2,32 +2,47 @@ import { NextResponse } from "next/server"
 import { fetchBlockchainStats } from "@/components/pages/stats/blockchain-stats"
 import { getCachedStats, setCachedStats } from "@/components/pages/stats/stats-cache"
 
-export async function GET() {
-  try {
-    console.log("Stats API: Starting request")
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
 
+export async function GET() {
+  console.log("[Stats API] GET request started")
+
+  try {
+    console.log("[Stats API] Checking cache...")
     const cached = getCachedStats()
+
     if (cached) {
-      console.log("Stats API: Returning cached data")
+      console.log("[Stats API] Cache hit, returning cached data")
       return NextResponse.json({ ...cached, cached: true })
     }
 
-    console.log("Stats API: Fetching fresh blockchain data")
+    console.log("[Stats API] Cache miss, fetching blockchain data...")
     const stats = await fetchBlockchainStats()
 
-    console.log("Stats API: Got stats:", stats)
+    console.log("[Stats API] Data fetched successfully:", {
+      wallets: stats.wallets,
+      tasksCreated: stats.tasksCreated,
+      tasksClaimed: stats.tasksClaimed,
+      tasksApproved: stats.tasksApproved,
+      growthDays: stats.growth.length,
+    })
+
     setCachedStats(stats)
+    console.log("[Stats API] Cache updated")
 
     return NextResponse.json({ ...stats, cached: false })
   } catch (error) {
-    console.error("Stats API: Full error:", error)
-    console.error("Stats API: Error message:", error instanceof Error ? error.message : String(error))
-    console.error("Stats API: Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[Stats API] ERROR:", error)
+    console.error("[Stats API] Error type:", typeof error)
+    console.error("[Stats API] Error message:", error instanceof Error ? error.message : String(error))
+    console.error("[Stats API] Error stack:", error instanceof Error ? error.stack : "No stack")
 
     return NextResponse.json(
       {
         error: "Failed to fetch stats",
-        details: error instanceof Error ? error.message : String(error),
+        message: error instanceof Error ? error.message : String(error),
+        type: typeof error,
       },
       { status: 500 }
     )
@@ -35,24 +50,24 @@ export async function GET() {
 }
 
 export async function POST() {
-  try {
-    console.log("Stats API: Force refresh requested")
+  console.log("[Stats API] POST request started (force refresh)")
 
-    // Force refresh - bypass cache
+  try {
+    console.log("[Stats API] Fetching fresh blockchain data...")
     const stats = await fetchBlockchainStats()
+
+    console.log("[Stats API] Data fetched successfully")
     setCachedStats(stats)
 
-    console.log("Stats API: Refresh complete")
     return NextResponse.json({ ...stats, cached: false })
   } catch (error) {
-    console.error("Stats API: Refresh error:", error)
-    console.error("Stats API: Error message:", error instanceof Error ? error.message : String(error))
-    console.error("Stats API: Error stack:", error instanceof Error ? error.stack : "No stack")
+    console.error("[Stats API] POST ERROR:", error)
+    console.error("[Stats API] Error message:", error instanceof Error ? error.message : String(error))
 
     return NextResponse.json(
       {
         error: "Failed to refresh stats",
-        details: error instanceof Error ? error.message : String(error),
+        message: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     )
