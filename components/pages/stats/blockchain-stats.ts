@@ -18,9 +18,9 @@ export interface GrowthData {
   approved: number
 }
 
-// Celo produces ~1 block every 5 seconds = ~17,280 blocks/day
-// 6 months = ~3,110,400 blocks
-const BLOCKS_TO_QUERY = 3_110_400
+// Contract was deployed at block 51778358 on Celo Mainnet
+// Query all events from deployment to now
+const CONTRACT_DEPLOYMENT_BLOCK = 51778358
 
 export async function fetchBlockchainStats(): Promise<StatsData> {
   console.log("[fetchBlockchainStats] Starting...")
@@ -30,9 +30,9 @@ export async function fetchBlockchainStats(): Promise<StatsData> {
 
   // Get current block
   const currentBlock = await provider.getBlockNumber()
-  const startBlock = Math.max(0, currentBlock - BLOCKS_TO_QUERY)
+  const startBlock = CONTRACT_DEPLOYMENT_BLOCK
 
-  console.log(`[fetchBlockchainStats] Querying blocks ${startBlock} to ${currentBlock}`)
+  console.log(`[fetchBlockchainStats] Querying blocks ${startBlock} to ${currentBlock} (${currentBlock - startBlock} blocks total)`)
 
   // Query events in parallel for speed
   const [createdEvents, claimedEvents, approvedEvents] = await Promise.all([
