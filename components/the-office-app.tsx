@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { ethers } from "ethers"
-import { Home, Clipboard, User, LogOut, ArrowLeft, Languages } from "lucide-react"
+import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp } from "lucide-react"
 import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
@@ -22,6 +22,7 @@ import { TasksPage } from "@/components/pages/tasks-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
+import { StatsPage } from "@/components/pages/stats/stats-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { useAccount, useDisconnect } from 'wagmi'
@@ -146,7 +147,7 @@ export function TheOfficeApp() {
     cUSD: null,
     USDC: null,
   })
-  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features">("home")
+  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -1164,6 +1165,7 @@ export function TheOfficeApp() {
           />
         )}
         {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} language={language} />}
+        {account && currentPage === "stats" && <StatsPage language={language} />}
       </main>
 
       {account && (
@@ -1185,6 +1187,7 @@ export function TheOfficeApp() {
             { id: "home" as const, icon: Home, label: t.home },
             { id: "tasks" as const, icon: Clipboard, label: t.tasks },
             { id: "profile" as const, icon: User, label: t.profile },
+            { id: "stats" as const, icon: TrendingUp, label: "STATS" },
           ].map((tab) => {
             const Icon = tab.icon
             return (
