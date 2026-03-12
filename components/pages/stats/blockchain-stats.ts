@@ -18,9 +18,11 @@ export interface GrowthData {
   approved: number
 }
 
-// Contract was deployed at block 51778358 on Celo Mainnet
-// Query all events from deployment to now
+// Contract deployment block on Celo Mainnet
 const CONTRACT_DEPLOYMENT_BLOCK = 51778358
+
+// Query in batches to avoid timeout
+const BATCH_SIZE = 50000 // 50K blocks per batch (~3 days on Celo)
 
 export async function fetchBlockchainStats(): Promise<StatsData> {
   console.log("[fetchBlockchainStats] Starting...")
@@ -28,42 +30,68 @@ export async function fetchBlockchainStats(): Promise<StatsData> {
   const provider = new ethers.JsonRpcProvider(CELO_RPC)
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-  // Get current block
   const currentBlock = await provider.getBlockNumber()
-  const startBlock = CONTRACT_DEPLOYMENT_BLOCK
+  const totalBlocks = currentBlock - CONTRACT_DEPLOYMENT_BLOCK
 
-  console.log(`[fetchBlockchainStats] Querying blocks ${startBlock} to ${currentBlock} (${currentBlock - startBlock} blocks total)`)
+  console.log(`[fetchBlockchainStats] Total blocks to query: ${totalBlocks}`)
 
-  // Query events in parallel for speed
-  const [createdEvents, claimedEvents, approvedEvents] = await Promise.all([
-    contract.queryFilter(contract.filters.TaskCreated(), startBlock, currentBlock),
-    contract.queryFilter(contract.filters.TaskClaimed(), startBlock, currentBlock),
-    contract.queryFilter(contract.filters.TaskApproved(), startBlock, currentBlock),
-  ])
+  // Calculate number of batches needed
+  const numBatches = Math.ceil(totalBlocks / BATCH_SIZE)
+  console.log(`[fetchBlockchainStats] Will query in ${numBatches} batches`)
 
-  console.log(`[fetchBlockchainStats] Found ${createdEvents.length} created, ${claimedEvents.length} claimed, ${approvedEvents.length} approved`)
+  // Aggregate results from all batches
+  let allCreatedEvents: any[] = []
+  let allClaimedEvents: any[] = []
+  let allApprovedEvents: any[] = []
+
+  // Query in batches
+  for (let i = 0; i < numBatches; i++) {
+    const batchStart = CONTRACT_DEPLOYMENT_BLOCK + i * BATCH_SIZE
+    const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
+
+    console.log(`[fetchBlockchainStats] Batch ${i + 1}/${numBatches}: blocks ${batchStart} to ${batchEnd}`)
+
+    try {
+      const [created, claimed, approved] = await Promise.all([
+        contract.queryFilter(contract.filters.TaskCreated(), batchStart, batchEnd),
+        contract.queryFilter(contract.filters.TaskClaimed(), batchStart, batchEnd),
+        contract.queryFilter(contract.filters.TaskApproved(), batchStart, batchEnd),
+      ])
+
+      allCreatedEvents = allCreatedEvents.concat(created)
+      allClaimedEvents = allClaimedEvents.concat(claimed)
+      allApprovedEvents = allApprovedEvents.concat(approved)
+
+      console.log(`[fetchBlockchainStats] Batch ${i + 1} done: +${created.length} created, +${claimed.length} claimed, +${approved.length} approved`)
+    } catch (error) {
+      console.error(`[fetchBlockchainStats] Error in batch ${i + 1}:`, error)
+      // Continue with next batch even if one fails
+    }
+  }
+
+  console.log(`[fetchBlockchainStats] Total: ${allCreatedEvents.length} created, ${allClaimedEvents.length} claimed, ${allApprovedEvents.length} approved`)
 
   // Extract unique wallet addresses
   const walletSet = new Set<string>()
 
-  createdEvents.forEach((event: any) => {
+  allCreatedEvents.forEach((event: any) => {
     const creator = event.args?.[1]
     if (creator) walletSet.add(creator.toLowerCase())
   })
 
-  claimedEvents.forEach((event: any) => {
+  allClaimedEvents.forEach((event: any) => {
     const claimant = event.args?.[1]
     if (claimant) walletSet.add(claimant.toLowerCase())
   })
 
-  // Calculate growth (simplified - use block numbers instead of timestamps to avoid extra RPC calls)
-  const growth = await calculateGrowthSimplified(createdEvents, claimedEvents, approvedEvents)
+  // Calculate growth by week
+  const growth = calculateGrowthByWeek(allCreatedEvents, allClaimedEvents, allApprovedEvents)
 
   const result = {
     wallets: walletSet.size,
-    tasksCreated: createdEvents.length,
-    tasksClaimed: claimedEvents.length,
-    tasksApproved: approvedEvents.length,
+    tasksCreated: allCreatedEvents.length,
+    tasksClaimed: allClaimedEvents.length,
+    tasksApproved: allApprovedEvents.length,
     growth,
     lastUpdated: Date.now(),
   }
@@ -72,20 +100,19 @@ export async function fetchBlockchainStats(): Promise<StatsData> {
   return result
 }
 
-// Simplified growth calculation - group by week instead of day to reduce data
-// Celo: ~17,280 blocks/day = ~120,960 blocks/week
-async function calculateGrowthSimplified(
+function calculateGrowthByWeek(
   createdEvents: any[],
   claimedEvents: any[],
   approvedEvents: any[]
-): Promise<GrowthData[]> {
+): GrowthData[] {
   const weeklyStats: Record<string, { created: number; claimed: number; approved: number }> = {}
 
-  const BLOCKS_PER_WEEK = 120_960
+  // Celo: ~17,280 blocks/day = ~120,960 blocks/week
+  const BLOCKS_PER_WEEK = 120960
 
   const processEvent = (event: any, type: "created" | "claimed" | "approved") => {
-    const weekNumber = Math.floor(event.blockNumber / BLOCKS_PER_WEEK)
-    const weekKey = `week_${weekNumber}`
+    const weeksSinceDeployment = Math.floor((event.blockNumber - CONTRACT_DEPLOYMENT_BLOCK) / BLOCKS_PER_WEEK)
+    const weekKey = `Week ${weeksSinceDeployment + 1}`
 
     if (!weeklyStats[weekKey]) {
       weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
@@ -97,13 +124,16 @@ async function calculateGrowthSimplified(
   claimedEvents.forEach((e) => processEvent(e, "claimed"))
   approvedEvents.forEach((e) => processEvent(e, "approved"))
 
-  // Convert to array and sort
   return Object.entries(weeklyStats)
     .map(([week, stats]) => ({
-      date: week, // Will show as "week_12345" - simplified
+      date: week,
       created: stats.created,
       claimed: stats.claimed,
       approved: stats.approved,
     }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => {
+      const aNum = parseInt(a.date.replace("Week ", ""))
+      const bNum = parseInt(b.date.replace("Week ", ""))
+      return aNum - bNum
+    })
 }
