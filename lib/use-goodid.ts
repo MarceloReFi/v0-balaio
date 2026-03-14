@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { usePublicClient } from 'wagmi'
-import { IdentitySDK } from '@goodsdks/citizen-sdk/viem-identity-sdk'
+import { IdentitySDK } from '@goodsdks/citizen-sdk'
 export function useGoodID(address: string | undefined) {
   const [isVerified, setIsVerified] = useState(false)
   const [loading, setLoading] = useState(true)
