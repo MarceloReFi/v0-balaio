@@ -26,6 +26,7 @@ import { StatsPage } from "@/components/pages/stats/stats-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { useAccount, useDisconnect } from 'wagmi'
+import { useGoodID } from '@/lib/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
 import { useEthersSigner } from '@/lib/ethers-adapter'
 
@@ -159,6 +160,7 @@ export function TheOfficeApp() {
     USDC: "0.00",
   })
   const [tasks, setTasks] = useState<Task[]>([])
+  const { isVerified } = useGoodID(account)
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const [language, setLanguage] = useState<Language>("en")
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
@@ -193,6 +195,11 @@ export function TheOfficeApp() {
         const loadedTasks: Task[] = []
 
         for (const row of data) {
+          // Filter verified_humans tasks
+          if (row.visibility === 'verified_humans' && !isVerified) {
+            continue
+          }
+
           let mySlot = null
           if (contract && account) {
             try {
