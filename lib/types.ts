@@ -39,7 +39,7 @@ export interface Task {
   validationMethod?: string
   deadline?: Date | null
   tags?: string[]
-  visibility?: "public" | "private"
+  visibility?: "public" | "private" | "verified_humans"
   workerAddress?: string
   claimedAt?: Date | null
   submittedAt?: Date | null
