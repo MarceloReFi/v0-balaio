@@ -162,11 +162,11 @@ export function CreateTaskModal({
             <label className="block font-bold mb-2 text-xs">
               {language === "en" ? "VISIBILITY" : "VISIBILIDADE"}
             </label>
-            <div className="flex border-2 border-[#111111] rounded-xl overflow-hidden">
+            <div className="grid grid-cols-3 gap-0 border-2 border-[#111111] rounded-xl overflow-hidden">
               <button
                 type="button"
                 onClick={() => setVisibility("public")}
-                className={`flex-1 py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
+                className={`py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
                   visibility === "public"
                     ? "bg-[#99FF99] text-[#111111]"
                     : "bg-white text-[#666666] hover:bg-gray-100"
@@ -176,8 +176,19 @@ export function CreateTaskModal({
               </button>
               <button
                 type="button"
+                onClick={() => setVisibility("verified_humans")}
+                className={`py-2.5 px-3 font-bold text-sm flex items-center justify-center gap-1 border-x-2 border-[#111111] transition-colors ${
+                  visibility === "verified_humans"
+                    ? "bg-[#FFFF66] text-[#111111]"
+                    : "bg-white text-[#666666] hover:bg-gray-100"
+                }`}
+              >
+                ✓ {language === "en" ? "Verified" : "Verificado"}
+              </button>
+              <button
+                type="button"
                 onClick={() => setVisibility("private")}
-                className={`flex-1 py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 border-l-2 border-[#111111] transition-colors ${
+                className={`py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
                   visibility === "private"
                     ? "bg-[#FF99CC] text-[#111111]"
                     : "bg-white text-[#666666] hover:bg-gray-100"
@@ -189,6 +200,8 @@ export function CreateTaskModal({
             <p className="text-xs text-[#666666] mt-1">
               {visibility === "public"
                 ? (language === "en" ? "Anyone can see and claim this task" : "Qualquer pessoa pode ver e reivindicar esta tarefa")
+                : visibility === "verified_humans"
+                ? (language === "en" ? "Only GoodDollar verified humans can see and claim" : "Apenas humanos verificados pelo GoodDollar podem ver e reivindicar")
                 : (language === "en" ? "Only people with the task ID can access" : "Apenas pessoas com o ID da tarefa podem acessar")}
             </p>
           </div>
