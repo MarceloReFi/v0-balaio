@@ -39,6 +39,27 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 No private keys are needed to run the frontend. The contract address is public and can be found in `lib/web3.ts`.
 
+For Good Dollar Wallet users:
+
+### GoodWallet Integration
+
+**Connect & Verify**
+
+Balaio integrates with GoodDollar's verification system. When you connect your wallet, the platform automatically checks if you're a verified human via GoodID. 
+
+**Verified-Only Tasks**
+
+Task creators can set visibility to "Verified Humans" — these tasks are only visible to wallets verified through GoodDollar's identity protocol. Non-verified users see public and private tasks only.
+
+**How It Works**
+
+1. Connect any Celo wallet (Valora, MetaMask, MiniPay)
+2. Platform queries GoodDollar's IdentitySDK to check verification status
+3. If verified, you gain access to exclusive "verified_humans" tasks
+4. Verification status persists while wallet is connected
+
+No additional signup needed — verification happens on-chain, automatically.
+
 ## Docs
 
 - [Architecture](https://github.com/MarceloReFi/v0-balaio/blob/main/architecture.md)
