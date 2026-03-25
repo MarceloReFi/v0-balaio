@@ -41,7 +41,7 @@ export function CreateTaskModal({
   const [taskTitle, setTaskTitle] = useState("")
   const [taskDescription, setTaskDescription] = useState("")
   const [rewardPerSlot, setRewardPerSlot] = useState("")
-  const [totalSlots, setTotalSlots] = useState("")
+  const [totalSlots, setTotalSlots] = useState("1") // TEMPORARY: Hardcoded to 1 - multi-slot approval requires contract fix
   const [selectedToken, setSelectedToken] = useState<TokenSymbol>("cUSD")
   const [showTokenDropdown, setShowTokenDropdown] = useState(false)
   const [category, setCategory] = useState<NonNullable<Task["category"]>>("other")
@@ -79,7 +79,7 @@ export function CreateTaskModal({
     setTaskTitle("")
     setTaskDescription("")
     setRewardPerSlot("")
-    setTotalSlots("")
+    // setTotalSlots("1") // TEMPORARY: Hardcoded to 1 - no need to reset
     setSelectedToken("cUSD")
     setCategory("other")
     setComplexity("medium")
@@ -197,9 +197,9 @@ export function CreateTaskModal({
                 🔒 {language === "en" ? "Private" : "Privada"}
               </button>
             </div>
-            <p className="text-xs text-[#666666] mt-1">
+            <p className="text-xs text-[#666666] mt-2">
               {visibility === "public"
-                ? (language === "en" ? "Anyone can see and claim this task" : "Qualquer pessoa pode ver e reivindicar esta tarefa")
+                ? (language === "en" ? "Everyone can see and claim this task" : "Todos podem ver e reivindicar esta tarefa")
                 : visibility === "verified_humans"
                 ? (language === "en" ? "Only GoodDollar verified humans can see and claim" : "Apenas humanos verificados pelo GoodDollar podem ver e reivindicar")
                 : (language === "en" ? "Only people with the task ID can access" : "Apenas pessoas com o ID da tarefa podem acessar")}
@@ -366,16 +366,7 @@ export function CreateTaskModal({
             />
           </div>
 
-          <div>
-            <label className="block font-bold mb-2 text-xs">{language === "en" ? "SLOTS" : "VAGAS"}</label>
-            <input
-              type="number"
-              value={totalSlots}
-              onChange={(e) => setTotalSlots(e.target.value)}
-              placeholder="5"
-              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
-            />
-          </div>
+          {/* TEMPORARY: Slots field removed - hardcoded to 1 until contract multi-slot approval is fixed */}
 
           {totalCost && (
             <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-3">
