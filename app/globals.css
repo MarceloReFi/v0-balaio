@@ -7,6 +7,7 @@
   --pink: #FF99CC;
   --green: #99FF99;
   --yellow: #FFFF66;
+  --blue: #99CCFF;
   --black: #111111;
   --white: #FFFFFF;
   --gray: #666666;
@@ -133,6 +134,11 @@
 
 .balaio-chip.yellow {
   background: var(--yellow);
+}
+
+.balaio-chip.blue {
+  background: var(--blue);
+  border-color: #111111;
 }
 
 .balaio-card {
