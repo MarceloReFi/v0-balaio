@@ -24,7 +24,7 @@ export function StatsPage({ language }: StatsPageProps) {
       refresh: "Refresh",
       viewFullHistory: "View Full History",
       loadingFullHistory: "Loading full history...",
-      fullHistoryNote: "This may take 3-5 minutes",
+      fullHistoryNote: "This takes 1-2 minutes to load from blockchain",
       last90Days: "Last 90 Days",
       fullHistory: "Full History",
       wallets: "Unique Wallets",
@@ -48,7 +48,7 @@ export function StatsPage({ language }: StatsPageProps) {
       refresh: "Atualizar",
       viewFullHistory: "Ver Histórico Completo",
       loadingFullHistory: "Carregando histórico completo...",
-      fullHistoryNote: "Isso pode levar 3-5 minutos",
+      fullHistoryNote: "Leva 1-2 minutos para carregar do blockchain",
       last90Days: "Últimos 90 Dias",
       fullHistory: "Histórico Completo",
       wallets: "Carteiras Únicas",
@@ -101,35 +101,103 @@ export function StatsPage({ language }: StatsPageProps) {
       setFullHistoryProgress(0)
       setError(null)
 
-      // Quick progress animation
-      let progress = 0
-      const progressInterval = setInterval(() => {
-        progress = Math.min(90, progress + 15)
+      const DEPLOYMENT_BLOCK = 51778358
+      const BATCH_SIZE = 50000
+
+      const provider = new (await import("ethers")).ethers.JsonRpcProvider("https://forno.celo.org")
+      const currentBlock = await provider.getBlockNumber()
+
+      const totalBlocks = currentBlock - DEPLOYMENT_BLOCK
+      const numBatches = Math.ceil(totalBlocks / BATCH_SIZE)
+
+      console.log(`Fetching ${numBatches} batches of blockchain data...`)
+
+      const allCreators = new Set<string>()
+      const allClaimants = new Set<string>()
+      let totalCreated = 0
+      let totalClaimed = 0
+      let totalApproved = 0
+      const weeklyStats: Record<string, { created: number; claimed: number; approved: number }> = {}
+
+      for (let i = 0; i < numBatches; i++) {
+        const batchStart = DEPLOYMENT_BLOCK + i * BATCH_SIZE
+        const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
+
+        console.log(`Fetching batch ${i + 1}/${numBatches}: blocks ${batchStart}-${batchEnd}`)
+
+        const response = await fetch("/api/stats/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ startBlock: batchStart, endBlock: batchEnd }),
+        })
+
+        if (!response.ok) {
+          console.error(`Batch ${i + 1} failed, continuing...`)
+          continue
+        }
+
+        const batch = await response.json()
+
+        batch.events.created.forEach((e: any) => {
+          if (e.creator) allCreators.add(e.creator.toLowerCase())
+          totalCreated++
+
+          const weeksSinceDeployment = Math.floor((e.blockNumber - DEPLOYMENT_BLOCK) / 120960)
+          const weekKey = `Week ${weeksSinceDeployment + 1}`
+          if (!weeklyStats[weekKey]) weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
+          weeklyStats[weekKey].created++
+        })
+
+        batch.events.claimed.forEach((e: any) => {
+          if (e.claimant) allClaimants.add(e.claimant.toLowerCase())
+          totalClaimed++
+
+          const weeksSinceDeployment = Math.floor((e.blockNumber - DEPLOYMENT_BLOCK) / 120960)
+          const weekKey = `Week ${weeksSinceDeployment + 1}`
+          if (!weeklyStats[weekKey]) weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
+          weeklyStats[weekKey].claimed++
+        })
+
+        batch.events.approved.forEach((e: any) => {
+          totalApproved++
+
+          const weeksSinceDeployment = Math.floor((e.blockNumber - DEPLOYMENT_BLOCK) / 120960)
+          const weekKey = `Week ${weeksSinceDeployment + 1}`
+          if (!weeklyStats[weekKey]) weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
+          weeklyStats[weekKey].approved++
+        })
+
+        const progress = Math.round(((i + 1) / numBatches) * 100)
         setFullHistoryProgress(progress)
-      }, 200)
-
-      progressIntervalRef.current = progressInterval
-
-      const response = await fetch("/api/stats/full-history", {
-        method: "GET",
-      })
-
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current)
-        progressIntervalRef.current = null
       }
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        setError(errorData.message || strings.error)
-        setFullHistoryProgress(0)
-        return
+      const uniqueWallets = new Set([...allCreators, ...allClaimants])
+
+      const growth = Object.entries(weeklyStats)
+        .map(([week, stats]) => ({
+          date: week,
+          created: stats.created,
+          claimed: stats.claimed,
+          approved: stats.approved,
+        }))
+        .sort((a, b) => {
+          const aNum = parseInt(a.date.replace("Week ", ""))
+          const bNum = parseInt(b.date.replace("Week ", ""))
+          return aNum - bNum
+        })
+
+      const fullStats = {
+        wallets: uniqueWallets.size,
+        tasksCreated: totalCreated,
+        tasksClaimed: totalClaimed,
+        tasksApproved: totalApproved,
+        growth,
+        lastUpdated: Date.now(),
       }
 
-      const data = await response.json()
-      setStats(data)
-      setFullHistoryProgress(100)
+      setStats(fullStats)
       setIsFullHistory(true)
+      console.log("Full history loaded:", fullStats)
     } catch (err) {
       setError(strings.error)
       console.error("Full history fetch error:", err)
@@ -239,7 +307,7 @@ export function StatsPage({ language }: StatsPageProps) {
             <div className="flex justify-between mt-2 text-sm text-gray-600">
               <span className="flex items-center gap-1">
                 <Clock size={13} />
-                {strings.fullHistoryNote}
+                Loading blockchain data in batches... (~1-2 minutes)
               </span>
               <span>{fullHistoryProgress}%</span>
             </div>
