@@ -1,36 +1,49 @@
 import { NextResponse } from "next/server"
-import { fetchFullHistoryStats } from "@/components/pages/stats/full-history-stats"
+import { getCachedFullHistory } from "@/components/pages/stats/stats-cache"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
-export const maxDuration = 300 // 5 minutes (requires Vercel Pro or self-hosted)
 
-export async function POST() {
-  console.log("[Full History Stats API] POST request started")
+export async function GET() {
+  console.log("[Full History API] GET request - checking cache")
 
   try {
-    console.log("[Full History Stats API] Fetching full blockchain history...")
-    const stats = await fetchFullHistoryStats()
+    const cached = getCachedFullHistory()
 
-    console.log("[Full History Stats API] Data fetched successfully:", {
-      wallets: stats.wallets,
-      tasksCreated: stats.tasksCreated,
-      tasksClaimed: stats.tasksClaimed,
-      tasksApproved: stats.tasksApproved,
-      growthWeeks: stats.growth.length,
-    })
-
-    return NextResponse.json({ ...stats, cached: false, fullHistory: true })
-  } catch (error) {
-    console.error("[Full History Stats API] ERROR:", error)
-    console.error("[Full History Stats API] Error message:", error instanceof Error ? error.message : String(error))
+    if (cached) {
+      console.log("[Full History API] Returning cached full history")
+      return NextResponse.json({
+        ...cached,
+        cached: true,
+        fullHistory: true,
+        cacheAge: Date.now() - cached.lastUpdated,
+      })
+    }
 
     return NextResponse.json(
       {
-        error: "Failed to fetch full history stats",
-        message: error instanceof Error ? error.message : String(error),
+        error: "Full history not cached yet",
+        message:
+          "Full history data is not available yet. This feature requires pre-computation due to Vercel Hobby plan limits (10 second timeout). Please try the Last 90 Days view for recent activity.",
       },
+      { status: 503 }
+    )
+  } catch (error) {
+    console.error("[Full History API] ERROR:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch full history" },
       { status: 500 }
     )
   }
+}
+
+export async function POST() {
+  return NextResponse.json(
+    {
+      error: "Full history computation disabled",
+      message:
+        "On-demand full history computation requires Vercel Pro plan (300s timeout). Current Hobby plan limit is 10s. Please use the Last 90 Days view.",
+    },
+    { status: 501 }
+  )
 }

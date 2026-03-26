@@ -5,30 +5,57 @@ interface CachedStats {
   timestamp: number
 }
 
-let cache: CachedStats | null = null
-const CACHE_DURATION = 6 * 60 * 60 * 1000 // 6 hours in milliseconds
+let quickStatsCache: CachedStats | null = null
+let fullHistoryCache: CachedStats | null = null
 
+const QUICK_CACHE_DURATION = 6 * 60 * 60 * 1000 // 6 hours
+const FULL_HISTORY_CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
+
+// Quick stats (90 days) cache
 export function getCachedStats(): StatsData | null {
-  if (!cache) return null
+  if (!quickStatsCache) return null
 
   const now = Date.now()
-  const isExpired = now - cache.timestamp > CACHE_DURATION
+  const isExpired = now - quickStatsCache.timestamp > QUICK_CACHE_DURATION
 
   if (isExpired) {
-    cache = null
+    quickStatsCache = null
     return null
   }
 
-  return cache.data
+  return quickStatsCache.data
 }
 
 export function setCachedStats(data: StatsData): void {
-  cache = {
+  quickStatsCache = {
+    data,
+    timestamp: Date.now(),
+  }
+}
+
+// Full history cache (separate, longer duration)
+export function getCachedFullHistory(): StatsData | null {
+  if (!fullHistoryCache) return null
+
+  const now = Date.now()
+  const isExpired = now - fullHistoryCache.timestamp > FULL_HISTORY_CACHE_DURATION
+
+  if (isExpired) {
+    fullHistoryCache = null
+    return null
+  }
+
+  return fullHistoryCache.data
+}
+
+export function setCachedFullHistory(data: StatsData): void {
+  fullHistoryCache = {
     data,
     timestamp: Date.now(),
   }
 }
 
 export function clearCache(): void {
-  cache = null
+  quickStatsCache = null
+  fullHistoryCache = null
 }
