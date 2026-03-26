@@ -101,18 +101,17 @@ export function StatsPage({ language }: StatsPageProps) {
       setFullHistoryProgress(0)
       setError(null)
 
-      // Simulate progress over ~4 minutes while the request is in flight
-      const startTime = Date.now()
-      const estimatedDuration = 4 * 60 * 1000 // 4 minutes in ms
-
-      progressIntervalRef.current = setInterval(() => {
-        const elapsed = Date.now() - startTime
-        const progress = Math.min(95, Math.round((elapsed / estimatedDuration) * 100))
+      // Quick progress animation
+      let progress = 0
+      const progressInterval = setInterval(() => {
+        progress = Math.min(90, progress + 15)
         setFullHistoryProgress(progress)
-      }, 1000)
+      }, 200)
+
+      progressIntervalRef.current = progressInterval
 
       const response = await fetch("/api/stats/full-history", {
-        method: "POST",
+        method: "GET",
       })
 
       if (progressIntervalRef.current) {
@@ -120,7 +119,12 @@ export function StatsPage({ language }: StatsPageProps) {
         progressIntervalRef.current = null
       }
 
-      if (!response.ok) throw new Error("Failed to fetch full history")
+      if (!response.ok) {
+        const errorData = await response.json()
+        setError(errorData.message || strings.error)
+        setFullHistoryProgress(0)
+        return
+      }
 
       const data = await response.json()
       setStats(data)
@@ -288,6 +292,13 @@ export function StatsPage({ language }: StatsPageProps) {
               <Clock size={13} />
               {strings.fullHistoryNote}
             </span>
+          </div>
+        )}
+
+        {!isFullHistory && !loadingFullHistory && (
+          <div className="mb-8 text-xs text-gray-500 max-w-2xl p-3 bg-gray-50 rounded border border-gray-200">
+            <strong>About Full History:</strong> Full history shows all events since contract deployment (block 51778358).
+            This data is cached and updated periodically. If currently unavailable, the Last 90 Days view provides all recent platform activity.
           </div>
         )}
 
