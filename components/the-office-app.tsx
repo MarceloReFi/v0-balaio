@@ -200,6 +200,11 @@ export function TheOfficeApp() {
             continue
           }
 
+          // Filter private tasks - only show to creator
+          if (row.visibility === 'private' && row.creator_address !== account?.toLowerCase()) {
+            continue
+          }
+
           let mySlot = null
           if (contract && account) {
             try {
