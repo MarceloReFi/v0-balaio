@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server"
 import { getCachedFullHistory } from "@/components/pages/stats/stats-cache"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export async function GET() {
+export async function GET(request: Request) {
   console.log("[Full History API] GET request - checking cache")
+
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`${ip}:full-history`, 20, 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+  }
 
   try {
     const cached = getCachedFullHistory()

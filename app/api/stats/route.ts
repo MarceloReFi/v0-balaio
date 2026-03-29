@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server"
 import { fetchBlockchainStats } from "@/components/pages/stats/blockchain-stats"
 import { getCachedStats, setCachedStats } from "@/components/pages/stats/stats-cache"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export async function GET() {
+export async function GET(request: Request) {
   console.log("[Stats API] GET request started")
+
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`${ip}:stats-get`, 20, 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+  }
 
   try {
     console.log("[Stats API] Checking cache...")
@@ -49,8 +55,13 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   console.log("[Stats API] POST request started (force refresh)")
+
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`${ip}:post`, 5, 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+  }
 
   try {
     console.log("[Stats API] Fetching fresh blockchain data...")

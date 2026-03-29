@@ -2,12 +2,18 @@ import { NextResponse } from "next/server"
 import { ethers } from "ethers"
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
 import { CELO_RPC } from "@/lib/config"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 export async function POST(request: Request) {
   console.log("[Stats Batch API] Starting batch request")
+
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`${ip}:stats-batch`, 10, 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+  }
 
   try {
     const { startBlock, endBlock } = await request.json()
