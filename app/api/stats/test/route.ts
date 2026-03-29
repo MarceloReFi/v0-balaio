@@ -2,8 +2,14 @@ import { NextResponse } from "next/server"
 import { ethers } from "ethers"
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
 import { CELO_RPC } from "@/lib/config"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
-export async function GET() {
+export async function GET(request: Request) {
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`${ip}:stats-test`, 5, 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+  }
+
   const logs: string[] = []
 
   try {
