@@ -12,6 +12,10 @@ import {
   type TokenSymbol,
 } from "@/lib/web3"
 import { CELO_CHAIN_ID, CELO_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
+
+const CONTRACT_DEPLOYMENT_BLOCK = 51778358
+const BLOCKS_PER_DAY = 17280
+const BATCH_SIZE = 50000
 import type { Task, TaskClaim } from "@/lib/types"
 import { Toast } from "@/components/ui/toast"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
@@ -176,187 +180,259 @@ export function TheOfficeApp() {
     setTimeout(() => setToastMessage(""), 3000)
   }, [])
 
-  const loadAllTasksFromSupabase = useCallback(async () => {
+  const loadTasksFromBlockchain = useCallback(async () => {
     try {
       setLoading(true)
 
-      const { data, error } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("created_at", { ascending: false })
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-      if (error) {
-        toast("Error loading tasks from database")
-        setLoading(false)
-        return
-      }
+      const currentBlock = await provider.getBlockNumber()
+      const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 90 * BLOCKS_PER_DAY)
+      const numBatches = Math.ceil((currentBlock - startBlock) / BATCH_SIZE)
 
-      if (data && data.length > 0) {
-        const loadedTasks: Task[] = []
-
-        for (const row of data) {
-          // Filter verified_humans tasks
-          if (row.visibility === 'verified_humans' && !isVerified) {
-            continue
-          }
-
-          // Filter private tasks - only show to creator
-          if (row.visibility === 'private' && row.creator_address !== account?.toLowerCase()) {
-            continue
-          }
-
-          let mySlot = null
-          if (contract && account) {
-            try {
-              const slotData = await contract.getTaskSlot(row.id, account)
-              mySlot = {
-                claimed: slotData.claimed,
-                submitted: slotData.submitted,
-                approved: slotData.approved,
-                withdrawn: slotData.withdrawn,
-              }
-            } catch {
-              // User has no slot for this task
-            }
-          }
-
-          loadedTasks.push(mapDatabaseRowToTask(row, mySlot))
+      let allCreatedEvents: any[] = []
+      for (let i = 0; i < numBatches; i++) {
+        const batchStart = startBlock + i * BATCH_SIZE
+        const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
+        try {
+          const events = await readContract.queryFilter(readContract.filters.TaskCreated(), batchStart, batchEnd)
+          allCreatedEvents = allCreatedEvents.concat(events)
+        } catch (err) {
+          console.error(`Batch ${i + 1}/${numBatches} failed:`, err)
         }
-
-        setTasks(loadedTasks)
-      } else {
-        setTasks([])
       }
 
-      setLoading(false)
-    } catch {
-      toast("Error loading tasks")
+      // Deduplicate task IDs
+      const taskIdSet = new Set<string>()
+      for (const e of allCreatedEvents) {
+        taskIdSet.add(e.args[0])
+      }
+      const taskIds = Array.from(taskIdSet)
+
+      // Enrich with Supabase metadata (title, description, category, etc.)
+      let metadataMap: Record<string, any> = {}
+      if (taskIds.length > 0) {
+        const { data: metadataRows } = await supabase.from("tasks").select("*").in("id", taskIds)
+        if (metadataRows) {
+          metadataMap = metadataRows.reduce((acc: any, row: any) => { acc[row.id] = row; return acc }, {})
+        }
+      }
+
+      // Get on-chain task state in parallel
+      const taskDataResults = await Promise.all(
+        taskIds.map(id => readContract.getTask(id).catch(() => null))
+      )
+
+      // Get user slot data in parallel if connected
+      let slotDataResults: (any | null)[] = taskIds.map(() => null)
+      if (contract && account) {
+        slotDataResults = await Promise.all(
+          taskIds.map(id => contract.getTaskSlot(id, account).catch(() => null))
+        )
+      }
+
+      const loadedTasks: Task[] = []
+      for (let i = 0; i < taskIds.length; i++) {
+        const taskId = taskIds[i]
+        const taskData = taskDataResults[i]
+        const slotData = slotDataResults[i]
+        const metadata = metadataMap[taskId]
+
+        if (!taskData) continue
+
+        // Apply visibility filter
+        if (metadata?.visibility === "verified_humans" && !isVerified) continue
+        if (metadata?.visibility === "private" && metadata?.creator_address?.toLowerCase() !== account?.toLowerCase()) continue
+
+        const tokenAddress = taskData.token.toLowerCase()
+        const tokenSymbol = resolveTokenSymbol(tokenAddress)
+        const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
+        const totalSlots = Number(taskData.totalSlots)
+        const claimedSlots = Number(taskData.claimedSlots)
+
+        const mySlot = slotData ? {
+          claimed: slotData.claimed,
+          submitted: slotData.submitted,
+          approved: slotData.approved,
+          withdrawn: slotData.withdrawn,
+        } : null
+
+        loadedTasks.push({
+          id: taskData.taskId,
+          title: metadata?.title || `Task ${taskId.substring(0, 8)}...`,
+          description: metadata?.description || "",
+          reward: ethers.formatUnits(taskData.rewardPerSlot, tokenConfig.decimals),
+          totalSlots: totalSlots.toString(),
+          claimedSlots: claimedSlots.toString(),
+          availableSlots: (totalSlots - claimedSlots).toString(),
+          active: taskData.active,
+          creator: taskData.creator,
+          createdAt: new Date(Number(taskData.createdAt) * 1000),
+          token: tokenSymbol,
+          tokenAddress: tokenAddress,
+          mySlot,
+          status: taskData.active ? (claimedSlots < totalSlots ? "open" : "claimed") : "completed",
+          category: metadata?.category || undefined,
+          complexity: metadata?.complexity || undefined,
+          validationMethod: metadata?.validation_method || undefined,
+          deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
+          tags: metadata?.tags || [],
+          visibility: (metadata?.visibility || "public") as Task["visibility"],
+          workerAddress: metadata?.worker_address || undefined,
+          paymentMethod: (metadata?.payment_method || "crypto") as "crypto" | "pix",
+          fiatAmount: metadata?.fiat_amount ? parseFloat(metadata.fiat_amount) : undefined,
+          workerPixKey: metadata?.worker_pix_key || undefined,
+          workerPixKeyType: metadata?.worker_pix_key_type as any,
+          pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
+          pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
+        })
+      }
+
+      setTasks(loadedTasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()))
+    } catch (error) {
+      console.error("Error loading tasks from blockchain:", error)
+      toast("Error loading tasks from blockchain")
+    } finally {
       setLoading(false)
     }
-  }, [supabase, toast, contract, account])
+  }, [account, contract, supabase, isVerified, toast])
 
-  const loadUserActivity = useCallback(
-    async (userAddress: string) => {
-      if (!userAddress) return
+  const loadUserActivity = useCallback(async (userAddress: string) => {
+    if (!userAddress) return
 
-      try {
-        const normalizedAddress = userAddress.toLowerCase()
+    try {
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-        const { data: createdTasks, error: createdError } = await supabase
-          .from("tasks")
-          .select("*")
-          .ilike("creator_address", normalizedAddress)
-          .order("created_at", { ascending: false })
-          .limit(10)
+      // Filtered by user address — small result set even from full history
+      const [createdEvents, claimedEvents, submittedEvents, approvedEvents] = await Promise.all([
+        readContract.queryFilter(readContract.filters.TaskCreated(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
+        readContract.queryFilter(readContract.filters.TaskClaimed(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
+        readContract.queryFilter(readContract.filters.TaskSubmitted(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
+        readContract.queryFilter(readContract.filters.TaskApproved(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
+      ])
 
-        if (createdError) {
-          console.error("Error fetching created tasks:", createdError.message)
+      const createdTaskIds = createdEvents.map((e: any) => e.args[0])
+      const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.args[0]))]
+      const allTaskIds = [...new Set([...createdTaskIds, ...claimedTaskIds])]
+
+      // Enrich with Supabase metadata
+      let metadataMap: Record<string, any> = {}
+      if (allTaskIds.length > 0) {
+        const { data: metadataRows } = await supabase.from("tasks").select("*").in("id", allTaskIds)
+        if (metadataRows) {
+          metadataMap = metadataRows.reduce((acc: any, row: any) => { acc[row.id] = row; return acc }, {})
         }
-
-        const createdTaskIds = (createdTasks || []).map((t: any) => t.id)
-        let claimsMap: Record<string, TaskClaim[]> = {}
-
-        if (createdTaskIds.length > 0) {
-          const { data: claimsData, error: claimsError } = await supabase
-            .from("task_claims")
-            .select("*")
-            .in("task_id", createdTaskIds)
-            .order("claimed_at", { ascending: false })
-
-          if (claimsError) {
-            console.error("Error fetching task claims:", claimsError.message)
-          }
-
-          if (claimsData) {
-            for (const claim of claimsData) {
-              const taskId = claim.task_id
-              if (!claimsMap[taskId]) claimsMap[taskId] = []
-              claimsMap[taskId].push({
-                id: claim.id,
-                taskId: claim.task_id,
-                workerAddress: claim.worker_address,
-                claimedAt: new Date(claim.claimed_at),
-                submittedAt: claim.submitted_at ? new Date(claim.submitted_at) : null,
-                approvedAt: claim.approved_at ? new Date(claim.approved_at) : null,
-                submissionLink: claim.submission_link || null,
-              })
-            }
-          }
-        }
-
-        const { data: workedClaims, error: workedClaimsError } = await supabase
-          .from("task_claims")
-          .select("*")
-          .ilike("worker_address", normalizedAddress)
-          .order("claimed_at", { ascending: false })
-          .limit(10)
-
-        if (workedClaimsError) {
-          console.error("Error fetching worked claims:", workedClaimsError.message)
-        }
-
-        const workedTaskIds = (workedClaims || []).map((c: any) => c.task_id)
-        let workedTasksData: any[] = []
-
-        if (workedTaskIds.length > 0) {
-          const { data: wtData } = await supabase
-            .from("tasks")
-            .select("*")
-            .in("id", workedTaskIds)
-
-          workedTasksData = wtData || []
-        }
-
-        // Legacy fallback for tasks.worker_address
-        const { data: legacyWorkedTasks, error: legacyError } = await supabase
-          .from("tasks")
-          .select("*")
-          .ilike("worker_address", normalizedAddress)
-          .order("updated_at", { ascending: false })
-          .limit(10)
-
-        if (legacyError) {
-          console.error("Error fetching legacy worked tasks:", legacyError.message)
-        }
-
-        const workedTaskMap = new Map<string, any>()
-        for (const row of workedTasksData) {
-          workedTaskMap.set(row.id, row)
-        }
-
-        const workedTasksList: Task[] = []
-        const seenWorkedIds = new Set<string>()
-
-        for (const claim of (workedClaims || [])) {
-          const taskRow = workedTaskMap.get(claim.task_id)
-          if (taskRow && !seenWorkedIds.has(taskRow.id)) {
-            seenWorkedIds.add(taskRow.id)
-            workedTasksList.push({
-              ...mapDatabaseRowToTask(taskRow, null),
-              claimedAt: claim.claimed_at ? new Date(claim.claimed_at) : null,
-              submittedAt: claim.submitted_at ? new Date(claim.submitted_at) : null,
-              approvedAt: claim.approved_at ? new Date(claim.approved_at) : null,
-            })
-          }
-        }
-
-        for (const row of (legacyWorkedTasks || [])) {
-          if (!seenWorkedIds.has(row.id)) {
-            seenWorkedIds.add(row.id)
-            workedTasksList.push(mapDatabaseRowToTask(row, null))
-          }
-        }
-
-        setUserActivity({
-          created: (createdTasks || []).map((row: any) => mapDatabaseRowToTask(row, null, claimsMap[row.id] || [])),
-          worked: workedTasksList,
-        })
-      } catch (error) {
-        console.error("Error loading user activity:", error)
       }
-    },
-    [supabase],
-  )
+
+      // Get on-chain task state in parallel
+      const taskDataResults = await Promise.all(
+        allTaskIds.map(id => readContract.getTask(id).catch(() => null))
+      )
+      const taskDataMap: Record<string, any> = {}
+      allTaskIds.forEach((id, i) => { if (taskDataResults[i]) taskDataMap[id] = taskDataResults[i] })
+
+      const buildTaskFromChain = (taskId: string, mySlot: Task["mySlot"] = null): Task | null => {
+        const taskData = taskDataMap[taskId]
+        if (!taskData) return null
+        const metadata = metadataMap[taskId]
+        const tokenAddress = taskData.token.toLowerCase()
+        const tokenSymbol = resolveTokenSymbol(tokenAddress)
+        const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
+        const totalSlots = Number(taskData.totalSlots)
+        const claimedSlots = Number(taskData.claimedSlots)
+        return {
+          id: taskData.taskId,
+          title: metadata?.title || `Task ${taskId.substring(0, 8)}...`,
+          description: metadata?.description || "",
+          reward: ethers.formatUnits(taskData.rewardPerSlot, tokenConfig.decimals),
+          totalSlots: totalSlots.toString(),
+          claimedSlots: claimedSlots.toString(),
+          availableSlots: (totalSlots - claimedSlots).toString(),
+          active: taskData.active,
+          creator: taskData.creator,
+          createdAt: new Date(Number(taskData.createdAt) * 1000),
+          token: tokenSymbol,
+          tokenAddress: tokenAddress,
+          mySlot,
+          status: taskData.active ? (claimedSlots < totalSlots ? "open" : "claimed") : "completed",
+          category: metadata?.category || undefined,
+          complexity: metadata?.complexity || undefined,
+          validationMethod: metadata?.validation_method || undefined,
+          deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
+          tags: metadata?.tags || [],
+          visibility: (metadata?.visibility || "public") as Task["visibility"],
+          paymentMethod: (metadata?.payment_method || "crypto") as "crypto" | "pix",
+          fiatAmount: metadata?.fiat_amount ? parseFloat(metadata.fiat_amount) : undefined,
+          workerPixKey: metadata?.worker_pix_key || undefined,
+          workerPixKeyType: metadata?.worker_pix_key_type as any,
+          pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
+          pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
+        }
+      }
+
+      // Get claims for each created task (TaskClaimed events per task)
+      const claimsForCreatedTasks: Record<string, TaskClaim[]> = {}
+      if (createdTaskIds.length > 0) {
+        const [taskClaimEventsAll, taskSubmitEventsAll] = await Promise.all([
+          Promise.all(createdTaskIds.map(taskId =>
+            readContract.queryFilter(readContract.filters.TaskClaimed(taskId), CONTRACT_DEPLOYMENT_BLOCK)
+              .then((events: any[]) => ({ taskId, events })).catch(() => ({ taskId, events: [] }))
+          )),
+          Promise.all(createdTaskIds.map(taskId =>
+            readContract.queryFilter(readContract.filters.TaskSubmitted(taskId), CONTRACT_DEPLOYMENT_BLOCK)
+              .then((events: any[]) => ({ taskId, events })).catch(() => ({ taskId, events: [] }))
+          )),
+        ])
+
+        const submitMapByTask: Record<string, Record<string, string>> = {}
+        taskSubmitEventsAll.forEach(({ taskId, events }: { taskId: string; events: any[] }) => {
+          submitMapByTask[taskId] = {}
+          events.forEach((e: any) => { submitMapByTask[taskId][e.args[1].toLowerCase()] = e.args[2] })
+        })
+
+        taskClaimEventsAll.forEach(({ taskId, events }: { taskId: string; events: any[] }) => {
+          claimsForCreatedTasks[taskId] = events.map((e: any) => ({
+            id: `${taskId}-${e.args[1]}`,
+            taskId,
+            workerAddress: e.args[1],
+            claimedAt: new Date(),
+            submissionLink: submitMapByTask[taskId]?.[e.args[1].toLowerCase()] || null,
+            submittedAt: submitMapByTask[taskId]?.[e.args[1].toLowerCase()] ? new Date() : null,
+            approvedAt: null,
+          }))
+        })
+      }
+
+      // Submission / approval maps for worked tasks
+      const submittedMap: Record<string, string> = {}
+      submittedEvents.forEach((e: any) => { submittedMap[e.args[0]] = e.args[2] })
+      const approvedSet = new Set(approvedEvents.map((e: any) => e.args[0]))
+
+      const createdTasks = createdTaskIds
+        .map(id => buildTaskFromChain(id))
+        .filter(Boolean) as Task[]
+
+      const createdTasksWithClaims = createdTasks.map(t => ({
+        ...t,
+        claims: claimsForCreatedTasks[t.id] || [],
+      }))
+
+      const workedTasks = claimedTaskIds
+        .map(id => buildTaskFromChain(id, {
+          claimed: true,
+          submitted: !!submittedMap[id],
+          approved: approvedSet.has(id),
+          withdrawn: false,
+        }))
+        .filter(Boolean) as Task[]
+
+      setUserActivity({ created: createdTasksWithClaims, worked: workedTasks })
+    } catch (error) {
+      console.error("Error loading user activity:", error)
+    }
+  }, [supabase])
 
   const saveTaskToSupabase = useCallback(
     async (task: Task): Promise<{ success: boolean; error?: string }> => {
@@ -398,91 +474,6 @@ export function TheOfficeApp() {
     [supabase],
   )
 
-  const loadAllTasksFromBlockchain = useCallback(async () => {
-    if (!contract || !account) return
-
-    try {
-      setLoading(true)
-
-      const storedTaskIds = localStorage.getItem("taskIds")
-      const taskIds = new Set<string>()
-
-      if (storedTaskIds) {
-        JSON.parse(storedTaskIds).forEach((id: string) => taskIds.add(id))
-      }
-
-      const taskIdsArray = Array.from(taskIds)
-      let metadataMap: Record<string, any> = {}
-
-      if (taskIdsArray.length > 0) {
-        const { data: metadataRows } = await supabase
-          .from("tasks")
-          .select("*")
-          .in("id", taskIdsArray)
-
-        if (metadataRows) {
-          metadataMap = metadataRows.reduce(
-            (acc: Record<string, any>, row: any) => { acc[row.id] = row; return acc },
-            {},
-          )
-        }
-      }
-
-      const loadedTasks: Task[] = []
-      for (const taskId of taskIds) {
-        try {
-          const taskData = await contract.getTask(taskId)
-          const tokenAddress = taskData[3].toLowerCase()
-          const tokenSymbol = resolveTokenSymbol(tokenAddress)
-          const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
-
-          let mySlot = null
-          try {
-            const slotData = await contract.getTaskSlot(taskId, account)
-            mySlot = {
-              claimed: slotData.claimed,
-              submitted: slotData.submitted,
-              approved: slotData.approved,
-              withdrawn: slotData.withdrawn,
-            }
-          } catch {
-          }
-
-          const metadata = metadataMap[taskId]
-
-          loadedTasks.push({
-            id: taskData[0],
-            title: metadata?.title || `Task ${taskData[0].substring(0, 8)}...`,
-            description: metadata?.description || "",
-            reward: Number(ethers.formatUnits(taskData[4], tokenConfig.decimals)),
-            totalSlots: Number(taskData[6]),
-            claimedSlots: Number(taskData[6]),
-            availableSlots: Number(taskData[5]) - Number(taskData[6]),
-            token: tokenSymbol,
-            tokenAddress: tokenAddress,
-            creator: taskData[1],
-            status: taskData[7] ? "open" : "closed",
-            createdAt: new Date(Number(taskData[8]) * 1000),
-            mySlot,
-            category: metadata?.category || undefined,
-            complexity: metadata?.complexity || undefined,
-            validationMethod: metadata?.validation_method || undefined,
-            deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
-            tags: metadata?.tags || [],
-            visibility: metadata?.visibility || "public",
-          })
-        } catch (err) {
-          console.error("Error loading task", taskId, ":", err)
-        }
-      }
-
-      setTasks(loadedTasks)
-      setLoading(false)
-    } catch (error) {
-      console.error("Error loading tasks:", error)
-      setLoading(false)
-    }
-  }, [contract, account, supabase])
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return
@@ -516,11 +507,6 @@ export function TheOfficeApp() {
     }
   }, [toast])
 
-  useEffect(() => {
-    if (contract && account) {
-      loadAllTasksFromBlockchain()
-    }
-  }, [contract, account, loadAllTasksFromBlockchain])
 
   useEffect(() => {
     const fetchBalances = async () => {
@@ -848,7 +834,7 @@ export function TheOfficeApp() {
       setTasks([newTask, ...tasks])
       setShowCreateModal(false)
 
-      await loadAllTasksFromSupabase()
+      await loadTasksFromBlockchain()
       await loadUserActivity(account)
     } catch (error) {
       console.error("Create task error:", error)
@@ -874,22 +860,6 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
-        await saveTaskToSupabase(updated)
-        await supabase.from("task_claims").upsert(
-          {
-            task_id: id,
-            worker_address: account.toLowerCase(),
-            claimed_at: new Date().toISOString(),
-          },
-          { onConflict: "task_id,worker_address" },
-        )
-        await supabase
-          .from("tasks")
-          .update({
-            worker_address: account.toLowerCase(),
-            claimed_at: new Date().toISOString(),
-          })
-          .eq("id", id)
       }
       if (account) await loadUserActivity(account)
     } catch (error) {
@@ -916,23 +886,6 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
-        const now = new Date().toISOString()
-        await supabase
-          .from("task_claims")
-          .update({
-            submission_link: proof,
-            submitted_at: now,
-          })
-          .eq("task_id", id)
-          .eq("worker_address", account.toLowerCase())
-        await supabase
-          .from("tasks")
-          .update({
-            submission_link: proof,
-            submitted_at: now,
-            updated_at: now,
-          })
-          .eq("id", id)
       }
       if (account) await loadUserActivity(account)
     } catch (error) {
@@ -959,17 +912,6 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
-        await saveTaskToSupabase(updated)
-        const now = new Date().toISOString()
-        await supabase
-          .from("task_claims")
-          .update({ approved_at: now })
-          .eq("task_id", id)
-          .eq("worker_address", claimant.toLowerCase())
-        await supabase
-          .from("tasks")
-          .update({ approved_at: now })
-          .eq("id", id)
       }
       if (account) await loadUserActivity(account)
     } catch (error) {
@@ -996,7 +938,6 @@ export function TheOfficeApp() {
       if (updated) {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
-        await saveTaskToSupabase(updated)
       }
 
       setShowTaskModal(false)
@@ -1037,14 +978,14 @@ export function TheOfficeApp() {
   const displayBalance = `${tokenBalances.CELO} CELO | ${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
 
   useEffect(() => {
-    loadAllTasksFromSupabase()
-  }, [loadAllTasksFromSupabase])
+    loadTasksFromBlockchain()
+  }, [loadTasksFromBlockchain])
 
   useEffect(() => {
     if (contract && account) {
-      loadAllTasksFromSupabase()
+      loadTasksFromBlockchain()
     }
-  }, [contract, account, loadAllTasksFromSupabase])
+  }, [contract, account, loadTasksFromBlockchain])
 
   useEffect(() => {
     if (account) {
