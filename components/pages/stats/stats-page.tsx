@@ -132,7 +132,8 @@ export function StatsPage({ language }: StatsPageProps) {
         })
 
         if (!response.ok) {
-          console.error(`Batch ${i + 1} failed, continuing...`)
+          const errBody = await response.json().catch(() => ({}))
+          console.error(`Batch ${i + 1} failed (status ${response.status}):`, errBody)
           continue
         }
 

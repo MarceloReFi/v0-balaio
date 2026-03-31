@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   console.log("[Stats Batch API] Starting batch request")
 
   const ip = getClientIp(request)
-  if (!checkRateLimit(`${ip}:stats-batch`, 10, 60 * 1000)) {
+  if (!checkRateLimit(`${ip}:stats-batch`, 500, 60 * 1000)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 })
   }
 
