@@ -184,17 +184,27 @@ export function TheOfficeApp() {
     try {
       setLoading(true)
 
-      const response = await fetch("/api/tasks")
-      if (!response.ok) throw new Error("Failed to load tasks")
-      const { taskIds } = await response.json()
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-      if (!taskIds || taskIds.length === 0) {
-        setTasks([])
-        setLoading(false)
-        return
+      const currentBlock = await provider.getBlockNumber()
+      const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
+      const numBatches = Math.ceil((currentBlock - startBlock) / BATCH_SIZE)
+
+      let allCreatedEvents: any[] = []
+      for (let i = 0; i < numBatches; i++) {
+        const batchStart = startBlock + i * BATCH_SIZE
+        const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
+        try {
+          const events = await readContract.queryFilter(readContract.filters.TaskCreated(), batchStart, batchEnd)
+          allCreatedEvents = allCreatedEvents.concat(events)
+        } catch (err) {
+          console.error(`Batch ${i + 1}/${numBatches} failed:`, err)
+        }
       }
 
-      // Enrich with Supabase metadata (title, description, category, etc.)
+      const taskIds = [...new Set(allCreatedEvents.map(e => e.args?.[0]).filter(Boolean))]
+
       let metadataMap: Record<string, any> = {}
       if (taskIds.length > 0) {
         const { data: metadataRows } = await supabase.from("tasks").select("*").in("id", taskIds)
@@ -203,12 +213,10 @@ export function TheOfficeApp() {
         }
       }
 
-      // Get on-chain task state in parallel
       const taskDataResults = await Promise.all(
         taskIds.map(id => readContract.getTask(id).catch(() => null))
       )
 
-      // Get user slot data in parallel if connected
       let slotDataResults: (any | null)[] = taskIds.map(() => null)
       if (contract && account) {
         slotDataResults = await Promise.all(
@@ -225,7 +233,6 @@ export function TheOfficeApp() {
 
         if (!taskData) continue
 
-        // Apply visibility filter
         if (metadata?.visibility === "verified_humans" && !isVerified) continue
         if (metadata?.visibility === "private" && metadata?.creator_address?.toLowerCase() !== account?.toLowerCase()) continue
 
@@ -286,25 +293,23 @@ export function TheOfficeApp() {
     if (!userAddress) return
 
     try {
-      const response = await fetch("/api/user-activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userAddress })
-      })
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-      if (!response.ok) throw new Error("Failed to load user activity")
-      const { created, claimed, submitted, approved } = await response.json()
+      const currentBlock = await provider.getBlockNumber()
+      const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
 
-      const createdEvents = created.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
-      const claimedEvents = claimed.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
-      const submittedEvents = submitted.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
-      const approvedEvents = approved.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
+      const [createdEvents, claimedEvents, submittedEvents, approvedEvents] = await Promise.all([
+        readContract.queryFilter(readContract.filters.TaskCreated(null, userAddress), startBlock, currentBlock),
+        readContract.queryFilter(readContract.filters.TaskClaimed(null, userAddress), startBlock, currentBlock),
+        readContract.queryFilter(readContract.filters.TaskSubmitted(null, userAddress), startBlock, currentBlock),
+        readContract.queryFilter(readContract.filters.TaskApproved(null, userAddress), startBlock, currentBlock),
+      ])
 
       const createdTaskIds = createdEvents.map((e: any) => e.args[0])
       const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.args[0]))]
       const allTaskIds = [...new Set([...createdTaskIds, ...claimedTaskIds])]
 
-      // Enrich with Supabase metadata
       let metadataMap: Record<string, any> = {}
       if (allTaskIds.length > 0) {
         const { data: metadataRows } = await supabase.from("tasks").select("*").in("id", allTaskIds)
@@ -313,7 +318,6 @@ export function TheOfficeApp() {
         }
       }
 
-      // Get on-chain task state in parallel
       const taskDataResults = await Promise.all(
         allTaskIds.map(id => readContract.getTask(id).catch(() => null))
       )
@@ -359,16 +363,15 @@ export function TheOfficeApp() {
         }
       }
 
-      // Get claims for each created task (TaskClaimed events per task)
       const claimsForCreatedTasks: Record<string, TaskClaim[]> = {}
       if (createdTaskIds.length > 0) {
         const [taskClaimEventsAll, taskSubmitEventsAll] = await Promise.all([
           Promise.all(createdTaskIds.map(taskId =>
-            readContract.queryFilter(readContract.filters.TaskClaimed(taskId), CONTRACT_DEPLOYMENT_BLOCK)
+            readContract.queryFilter(readContract.filters.TaskClaimed(taskId), startBlock, currentBlock)
               .then((events: any[]) => ({ taskId, events })).catch(() => ({ taskId, events: [] }))
           )),
           Promise.all(createdTaskIds.map(taskId =>
-            readContract.queryFilter(readContract.filters.TaskSubmitted(taskId), CONTRACT_DEPLOYMENT_BLOCK)
+            readContract.queryFilter(readContract.filters.TaskSubmitted(taskId), startBlock, currentBlock)
               .then((events: any[]) => ({ taskId, events })).catch(() => ({ taskId, events: [] }))
           )),
         ])
