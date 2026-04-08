@@ -216,18 +216,12 @@ export function TheOfficeApp() {
         return
       }
 
-      console.log(`[loadTasksFromBlockchain] Total events collected: ${allCreatedEvents.length}`)
-      if (allCreatedEvents.length > 0) {
-        console.log(`[loadTasksFromBlockchain] First event sample:`, allCreatedEvents[0])
-        console.log(`[loadTasksFromBlockchain] Event args:`, allCreatedEvents[0].args)
-      }
-
-      const taskIds = [...new Set(allCreatedEvents.map(e => e.args?.[0]).filter(Boolean))]
+      const taskIds = [...new Set(allCreatedEvents.map(e => {
+        // ethers v6: eventos raw não têm .args parseado
+        // taskId é o topic[1] (primeiro parâmetro indexed)
+        return e.topics?.[1] || null
+      }).filter(Boolean))]
       console.log(`[loadTasksFromBlockchain] Found ${taskIds.length} unique task IDs`)
-      if (taskIds.length === 0 && allCreatedEvents.length > 0) {
-        console.error(`[loadTasksFromBlockchain] BUG: Events found but no IDs extracted!`)
-        console.error(`[loadTasksFromBlockchain] Event structure:`, JSON.stringify(allCreatedEvents[0], null, 2))
-      }
 
       let metadataMap: Record<string, any> = {}
       if (taskIds.length > 0) {
@@ -334,8 +328,8 @@ export function TheOfficeApp() {
         readContract.queryFilter(readContract.filters.TaskApproved(null, userAddress), startBlock, currentBlock),
       ])
 
-      const createdTaskIds = createdEvents.map((e: any) => e.args?.[0]).filter(Boolean)
-      const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.args?.[0]).filter(Boolean))]
+      const createdTaskIds = createdEvents.map((e: any) => e.topics?.[1] || null).filter(Boolean)
+      const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.topics?.[1] || null).filter(Boolean))]
       const allTaskIds = [...new Set([...createdTaskIds, ...claimedTaskIds])]
 
       let metadataMap: Record<string, any> = {}
