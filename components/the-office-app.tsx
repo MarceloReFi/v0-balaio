@@ -184,31 +184,15 @@ export function TheOfficeApp() {
     try {
       setLoading(true)
 
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      const response = await fetch("/api/tasks")
+      if (!response.ok) throw new Error("Failed to load tasks")
+      const { taskIds } = await response.json()
 
-      const currentBlock = await provider.getBlockNumber()
-      const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 90 * BLOCKS_PER_DAY)
-      const numBatches = Math.ceil((currentBlock - startBlock) / BATCH_SIZE)
-
-      let allCreatedEvents: any[] = []
-      for (let i = 0; i < numBatches; i++) {
-        const batchStart = startBlock + i * BATCH_SIZE
-        const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
-        try {
-          const events = await readContract.queryFilter(readContract.filters.TaskCreated(), batchStart, batchEnd)
-          allCreatedEvents = allCreatedEvents.concat(events)
-        } catch (err) {
-          console.error(`Batch ${i + 1}/${numBatches} failed:`, err)
-        }
+      if (!taskIds || taskIds.length === 0) {
+        setTasks([])
+        setLoading(false)
+        return
       }
-
-      // Deduplicate task IDs
-      const taskIdSet = new Set<string>()
-      for (const e of allCreatedEvents) {
-        taskIdSet.add(e.args[0])
-      }
-      const taskIds = Array.from(taskIdSet)
 
       // Enrich with Supabase metadata (title, description, category, etc.)
       let metadataMap: Record<string, any> = {}
@@ -302,16 +286,19 @@ export function TheOfficeApp() {
     if (!userAddress) return
 
     try {
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      const response = await fetch("/api/user-activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userAddress })
+      })
 
-      // Filtered by user address — small result set even from full history
-      const [createdEvents, claimedEvents, submittedEvents, approvedEvents] = await Promise.all([
-        readContract.queryFilter(readContract.filters.TaskCreated(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
-        readContract.queryFilter(readContract.filters.TaskClaimed(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
-        readContract.queryFilter(readContract.filters.TaskSubmitted(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
-        readContract.queryFilter(readContract.filters.TaskApproved(null, userAddress), CONTRACT_DEPLOYMENT_BLOCK),
-      ])
+      if (!response.ok) throw new Error("Failed to load user activity")
+      const { created, claimed, submitted, approved } = await response.json()
+
+      const createdEvents = created.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
+      const claimedEvents = claimed.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
+      const submittedEvents = submitted.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
+      const approvedEvents = approved.map((e: any) => ({ args: [e.taskId], blockNumber: e.blockNumber }))
 
       const createdTaskIds = createdEvents.map((e: any) => e.args[0])
       const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.args[0]))]
