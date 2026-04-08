@@ -183,6 +183,7 @@ export function TheOfficeApp() {
   const loadTasksFromBlockchain = useCallback(async () => {
     try {
       setLoading(true)
+      console.log("[loadTasksFromBlockchain] Starting...")
 
       const provider = new ethers.JsonRpcProvider(CELO_RPC)
       const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
@@ -191,19 +192,32 @@ export function TheOfficeApp() {
       const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
       const numBatches = Math.ceil((currentBlock - startBlock) / BATCH_SIZE)
 
+      console.log(`[loadTasksFromBlockchain] Querying blocks ${startBlock} to ${currentBlock} in ${numBatches} batches`)
+
       let allCreatedEvents: any[] = []
+      let successfulBatches = 0
       for (let i = 0; i < numBatches; i++) {
         const batchStart = startBlock + i * BATCH_SIZE
         const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
         try {
           const events = await readContract.queryFilter(readContract.filters.TaskCreated(), batchStart, batchEnd)
           allCreatedEvents = allCreatedEvents.concat(events)
+          successfulBatches++
+          console.log(`[loadTasksFromBlockchain] Batch ${i + 1}/${numBatches} success: ${events.length} events`)
         } catch (err) {
-          console.error(`Batch ${i + 1}/${numBatches} failed:`, err)
+          console.error(`[loadTasksFromBlockchain] Batch ${i + 1}/${numBatches} failed:`, err)
         }
       }
 
+      if (successfulBatches === 0) {
+        console.error("[loadTasksFromBlockchain] All batches failed!")
+        toast("Failed to load tasks from blockchain. Please try again.")
+        setLoading(false)
+        return
+      }
+
       const taskIds = [...new Set(allCreatedEvents.map(e => e.args?.[0]).filter(Boolean))]
+      console.log(`[loadTasksFromBlockchain] Found ${taskIds.length} unique task IDs`)
 
       let metadataMap: Record<string, any> = {}
       if (taskIds.length > 0) {
@@ -293,11 +307,15 @@ export function TheOfficeApp() {
     if (!userAddress) return
 
     try {
+      console.log("[loadUserActivity] Starting for:", userAddress)
+
       const provider = new ethers.JsonRpcProvider(CELO_RPC)
       const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
       const currentBlock = await provider.getBlockNumber()
       const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
+
+      console.log(`[loadUserActivity] Querying blocks ${startBlock} to ${currentBlock}`)
 
       const [createdEvents, claimedEvents, submittedEvents, approvedEvents] = await Promise.all([
         readContract.queryFilter(readContract.filters.TaskCreated(null, userAddress), startBlock, currentBlock),
@@ -306,8 +324,8 @@ export function TheOfficeApp() {
         readContract.queryFilter(readContract.filters.TaskApproved(null, userAddress), startBlock, currentBlock),
       ])
 
-      const createdTaskIds = createdEvents.map((e: any) => e.args[0])
-      const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.args[0]))]
+      const createdTaskIds = createdEvents.map((e: any) => e.args?.[0]).filter(Boolean)
+      const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.args?.[0]).filter(Boolean))]
       const allTaskIds = [...new Set([...createdTaskIds, ...claimedTaskIds])]
 
       let metadataMap: Record<string, any> = {}
