@@ -13,6 +13,10 @@ export function useGoodID(address: string | undefined) {
     }
     const checkVerification = async () => {
       try {
+        if (!publicClient.account) {
+          setIsVerified(false)
+          return
+        }
         const identitySDK = new IdentitySDK(publicClient, null, 'production')
         const { isWhitelisted } = await identitySDK.getWhitelistedRoot(address)
         setIsVerified(isWhitelisted)
