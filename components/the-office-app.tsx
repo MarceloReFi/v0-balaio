@@ -299,6 +299,8 @@ export function TheOfficeApp() {
       const allTaskIds = (allTaskRows || []).map((r: any) => r.id)
       const provider = new ethers.JsonRpcProvider(CELO_RPC)
       const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      const currentBlock = await provider.getBlockNumber()
+      const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
       const slotResults = await Promise.all(
         allTaskIds.map((id: string) => readContract.getTaskSlot(id, userAddress).catch(() => null))
       )
