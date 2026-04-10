@@ -33,7 +33,7 @@ createAppKit({
   metadata: {
     name: 'Balaio',
     description: 'Web3 Task Management on Celo',
-    url: 'https://usebalaio.com',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://usebalaio.com',
     icons: ['https://usebalaio.com/icon-light-32x32.png']
   },
   features: {
