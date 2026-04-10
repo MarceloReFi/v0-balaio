@@ -287,24 +287,22 @@ export function TheOfficeApp() {
     try {
       console.log("[loadUserActivity] Starting for:", userAddress)
 
+      // Created tasks: query Supabase by creator_address
+      const { data: createdRows } = await supabase
+        .from("tasks")
+        .select("id")
+        .ilike("creator_address", userAddress)
+      const createdTaskIds = (createdRows || []).map((r: any) => r.id)
+
+      // Worked tasks: get all task IDs, check slot for each
+      const { data: allTaskRows } = await supabase.from("tasks").select("id")
+      const allTaskIds = (allTaskRows || []).map((r: any) => r.id)
       const provider = new ethers.JsonRpcProvider(CELO_RPC)
       const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-
-      const currentBlock = await provider.getBlockNumber()
-      const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
-
-      console.log(`[loadUserActivity] Querying blocks ${startBlock} to ${currentBlock}`)
-
-      const [createdEvents, claimedEvents, submittedEvents, approvedEvents] = await Promise.all([
-        readContract.queryFilter(readContract.filters.TaskCreated(null, userAddress), startBlock, currentBlock),
-        readContract.queryFilter(readContract.filters.TaskClaimed(null, userAddress), startBlock, currentBlock),
-        readContract.queryFilter(readContract.filters.TaskSubmitted(null, userAddress), startBlock, currentBlock),
-        readContract.queryFilter(readContract.filters.TaskApproved(null, userAddress), startBlock, currentBlock),
-      ])
-
-      const createdTaskIds = createdEvents.map((e: any) => e.args?.[0] || e.args?.taskId || null).filter(Boolean)
-      const claimedTaskIds = [...new Set(claimedEvents.map((e: any) => e.args?.[0] || e.args?.taskId || null).filter(Boolean))]
-      const allTaskIds = [...new Set([...createdTaskIds, ...claimedTaskIds])]
+      const slotResults = await Promise.all(
+        allTaskIds.map((id: string) => readContract.getTaskSlot(id, userAddress).catch(() => null))
+      )
+      const claimedTaskIds = allTaskIds.filter((_: string, i: number) => slotResults[i]?.claimed === true)
 
       let metadataMap: Record<string, any> = {}
       if (allTaskIds.length > 0) {
@@ -391,11 +389,6 @@ export function TheOfficeApp() {
         })
       }
 
-      // Submission / approval maps for worked tasks
-      const submittedMap: Record<string, string> = {}
-      submittedEvents.forEach((e: any) => { submittedMap[e.args[0]] = e.args[2] })
-      const approvedSet = new Set(approvedEvents.map((e: any) => e.args[0]))
-
       const createdTasks = createdTaskIds
         .map(id => buildTaskFromChain(id))
         .filter(Boolean) as Task[]
@@ -405,14 +398,16 @@ export function TheOfficeApp() {
         claims: claimsForCreatedTasks[t.id] || [],
       }))
 
-      const workedTasks = claimedTaskIds
-        .map(id => buildTaskFromChain(id, {
-          claimed: true,
-          submitted: !!submittedMap[id],
-          approved: approvedSet.has(id),
-          withdrawn: false,
-        }))
-        .filter(Boolean) as Task[]
+      const workedTasks = claimedTaskIds.map((id: string) => {
+        const slotIndex = allTaskIds.indexOf(id)
+        const slot = slotResults[slotIndex]
+        return buildTaskFromChain(id, {
+          claimed: slot?.claimed ?? true,
+          submitted: slot?.submitted ?? false,
+          approved: slot?.approved ?? false,
+          withdrawn: slot?.withdrawn ?? false,
+        })
+      }).filter(Boolean) as Task[]
 
       setUserActivity({ created: createdTasksWithClaims, worked: workedTasks })
     } catch (error) {
