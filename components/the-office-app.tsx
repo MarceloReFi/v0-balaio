@@ -13,9 +13,6 @@ import {
 } from "@/lib/web3"
 import { CELO_CHAIN_ID, CELO_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
 
-const CONTRACT_DEPLOYMENT_BLOCK = 51778358
-const BLOCKS_PER_DAY = 17280
-const BATCH_SIZE = 50000
 import type { Task, TaskClaim } from "@/lib/types"
 import { Toast } from "@/components/ui/toast"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
@@ -287,38 +284,48 @@ export function TheOfficeApp() {
     try {
       console.log("[loadUserActivity] Starting for:", userAddress)
 
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+
       // Created tasks: query Supabase by creator_address
       const { data: createdRows } = await supabase
         .from("tasks")
         .select("id")
-        .ilike("creator_address", userAddress)
+        .eq("creator_address", userAddress.toLowerCase())
       const createdTaskIds = (createdRows || []).map((r: any) => r.id)
 
-      // Worked tasks: get all task IDs, check slot for each
-      const { data: allTaskRows } = await supabase.from("tasks").select("id")
-      const allTaskIds = (allTaskRows || []).map((r: any) => r.id)
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-      const currentBlock = await provider.getBlockNumber()
-      const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
-      const slotResults = await Promise.all(
-        allTaskIds.map((id: string) => readContract.getTaskSlot(id, userAddress).catch(() => null))
-      )
-      const claimedTaskIds = allTaskIds.filter((_: string, i: number) => slotResults[i]?.claimed === true)
+      // Worked tasks: query Supabase by worker_address
+      const { data: workedRows } = await supabase
+        .from("tasks")
+        .select("id")
+        .eq("worker_address", userAddress.toLowerCase())
+      const workedTaskIds = (workedRows || []).map((r: any) => r.id)
 
+      // Unique set of all task IDs needed
+      const allUniqueIds = [...new Set([...createdTaskIds, ...workedTaskIds])]
+
+      // Fetch metadata for all unique task IDs
       let metadataMap: Record<string, any> = {}
-      if (allTaskIds.length > 0) {
-        const { data: metadataRows } = await supabase.from("tasks").select("*").in("id", allTaskIds)
+      if (allUniqueIds.length > 0) {
+        const { data: metadataRows } = await supabase.from("tasks").select("*").in("id", allUniqueIds)
         if (metadataRows) {
           metadataMap = metadataRows.reduce((acc: any, row: any) => { acc[row.id] = row; return acc }, {})
         }
       }
 
+      // Fetch on-chain task data for all unique IDs
       const taskDataResults = await Promise.all(
-        allTaskIds.map(id => readContract.getTask(id).catch(() => null))
+        allUniqueIds.map(id => readContract.getTask(id).catch(() => null))
       )
       const taskDataMap: Record<string, any> = {}
-      allTaskIds.forEach((id, i) => { if (taskDataResults[i]) taskDataMap[id] = taskDataResults[i] })
+      allUniqueIds.forEach((id, i) => { if (taskDataResults[i]) taskDataMap[id] = taskDataResults[i] })
+
+      // Fetch slot state for worked task IDs
+      const slotResults = await Promise.all(
+        workedTaskIds.map((id: string) => readContract.getTaskSlot(id, userAddress).catch(() => null))
+      )
+      const slotMap: Record<string, any> = {}
+      workedTaskIds.forEach((id: string, i: number) => { if (slotResults[i]) slotMap[id] = slotResults[i] })
 
       const buildTaskFromChain = (taskId: string, mySlot: Task["mySlot"] = null): Task | null => {
         const taskData = taskDataMap[taskId]
@@ -359,59 +366,21 @@ export function TheOfficeApp() {
         }
       }
 
-      const claimsForCreatedTasks: Record<string, TaskClaim[]> = {}
-      if (createdTaskIds.length > 0) {
-        const [taskClaimEventsAll, taskSubmitEventsAll] = await Promise.all([
-          Promise.all(createdTaskIds.map(taskId =>
-            readContract.queryFilter(readContract.filters.TaskClaimed(taskId), startBlock, currentBlock)
-              .then((events: any[]) => ({ taskId, events })).catch(() => ({ taskId, events: [] }))
-          )),
-          Promise.all(createdTaskIds.map(taskId =>
-            readContract.queryFilter(readContract.filters.TaskSubmitted(taskId), startBlock, currentBlock)
-              .then((events: any[]) => ({ taskId, events })).catch(() => ({ taskId, events: [] }))
-          )),
-        ])
-
-        const submitMapByTask: Record<string, Record<string, string>> = {}
-        taskSubmitEventsAll.forEach(({ taskId, events }: { taskId: string; events: any[] }) => {
-          submitMapByTask[taskId] = {}
-          events.forEach((e: any) => { submitMapByTask[taskId][e.args[1].toLowerCase()] = e.args[2] })
-        })
-
-        taskClaimEventsAll.forEach(({ taskId, events }: { taskId: string; events: any[] }) => {
-          claimsForCreatedTasks[taskId] = events.map((e: any) => ({
-            id: `${taskId}-${e.args[1]}`,
-            taskId,
-            workerAddress: e.args[1],
-            claimedAt: new Date(),
-            submissionLink: submitMapByTask[taskId]?.[e.args[1].toLowerCase()] || null,
-            submittedAt: submitMapByTask[taskId]?.[e.args[1].toLowerCase()] ? new Date() : null,
-            approvedAt: null,
-          }))
-        })
-      }
-
       const createdTasks = createdTaskIds
         .map(id => buildTaskFromChain(id))
         .filter(Boolean) as Task[]
 
-      const createdTasksWithClaims = createdTasks.map(t => ({
-        ...t,
-        claims: claimsForCreatedTasks[t.id] || [],
-      }))
-
-      const workedTasks = claimedTaskIds.map((id: string) => {
-        const slotIndex = allTaskIds.indexOf(id)
-        const slot = slotResults[slotIndex]
-        return buildTaskFromChain(id, {
-          claimed: slot?.claimed ?? true,
-          submitted: slot?.submitted ?? false,
-          approved: slot?.approved ?? false,
-          withdrawn: slot?.withdrawn ?? false,
-        })
+      const workedTasks = workedTaskIds.map((id: string) => {
+        const slot = slotMap[id]
+        return buildTaskFromChain(id, slot ? {
+          claimed: slot.claimed,
+          submitted: slot.submitted,
+          approved: slot.approved,
+          withdrawn: slot.withdrawn,
+        } : null)
       }).filter(Boolean) as Task[]
 
-      setUserActivity({ created: createdTasksWithClaims, worked: workedTasks })
+      setUserActivity({ created: createdTasks, worked: workedTasks })
     } catch (error) {
       console.error("Error loading user activity:", error)
     }
