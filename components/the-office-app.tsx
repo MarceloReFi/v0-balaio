@@ -288,17 +288,21 @@ export function TheOfficeApp() {
       const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
       // Created tasks: query Supabase by creator_address
-      const { data: createdRows } = await supabase
+      const { data: createdRows, error: createdError } = await supabase
         .from("tasks")
         .select("id")
-        .eq("creator_address", userAddress.toLowerCase())
+        .ilike("creator_address", userAddress)
+      if (createdError) console.error("[loadUserActivity] Supabase error:", createdError)
+      console.log("[loadUserActivity] Created rows from Supabase:", createdRows?.length ?? 0)
       const createdTaskIds = (createdRows || []).map((r: any) => r.id)
 
       // Worked tasks: query Supabase by worker_address
-      const { data: workedRows } = await supabase
+      const { data: workedRows, error: workedError } = await supabase
         .from("tasks")
         .select("id")
-        .eq("worker_address", userAddress.toLowerCase())
+        .ilike("worker_address", userAddress)
+      if (workedError) console.error("[loadUserActivity] Supabase error:", workedError)
+      console.log("[loadUserActivity] Worked rows from Supabase:", workedRows?.length ?? 0)
       const workedTaskIds = (workedRows || []).map((r: any) => r.id)
 
       // Unique set of all task IDs needed
