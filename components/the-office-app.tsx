@@ -278,117 +278,18 @@ export function TheOfficeApp() {
     }
   }, [account, contract, supabase, isVerified, toast])
 
-  const loadUserActivity = useCallback(async (userAddress: string) => {
-    if (!userAddress) return
+  const loadUserActivity = useCallback(async (userAddress: string, currentTasks: Task[]) => {
+    if (!userAddress || currentTasks.length === 0) return
 
-    try {
-      console.log("[loadUserActivity] Starting for:", userAddress)
+    const addr = userAddress.toLowerCase()
 
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+    const created = currentTasks.filter(t => t.creator.toLowerCase() === addr)
+    const worked = currentTasks.filter(t =>
+      t.creator.toLowerCase() !== addr && t.mySlot?.claimed
+    )
 
-      // Created tasks: query Supabase by creator_address
-      const { data: createdRows, error: createdError } = await supabase
-        .from("tasks")
-        .select("id")
-        .ilike("creator_address", userAddress)
-      if (createdError) console.error("[loadUserActivity] Supabase error:", createdError)
-      console.log("[loadUserActivity] Created rows from Supabase:", createdRows?.length ?? 0)
-      const createdTaskIds = (createdRows || []).map((r: any) => r.id)
-
-      // Worked tasks: query Supabase by worker_address
-      const { data: workedRows, error: workedError } = await supabase
-        .from("tasks")
-        .select("id")
-        .ilike("worker_address", userAddress)
-      if (workedError) console.error("[loadUserActivity] Supabase error:", workedError)
-      console.log("[loadUserActivity] Worked rows from Supabase:", workedRows?.length ?? 0)
-      const workedTaskIds = (workedRows || []).map((r: any) => r.id)
-
-      // Unique set of all task IDs needed
-      const allUniqueIds = [...new Set([...createdTaskIds, ...workedTaskIds])]
-
-      // Fetch metadata for all unique task IDs
-      let metadataMap: Record<string, any> = {}
-      if (allUniqueIds.length > 0) {
-        const { data: metadataRows } = await supabase.from("tasks").select("*").in("id", allUniqueIds)
-        if (metadataRows) {
-          metadataMap = metadataRows.reduce((acc: any, row: any) => { acc[row.id] = row; return acc }, {})
-        }
-      }
-
-      // Fetch on-chain task data for all unique IDs
-      const taskDataResults = await Promise.all(
-        allUniqueIds.map(id => readContract.getTask(id).catch(() => null))
-      )
-      const taskDataMap: Record<string, any> = {}
-      allUniqueIds.forEach((id, i) => { if (taskDataResults[i]) taskDataMap[id] = taskDataResults[i] })
-
-      // Fetch slot state for worked task IDs
-      const slotResults = await Promise.all(
-        workedTaskIds.map((id: string) => readContract.getTaskSlot(id, userAddress).catch(() => null))
-      )
-      const slotMap: Record<string, any> = {}
-      workedTaskIds.forEach((id: string, i: number) => { if (slotResults[i]) slotMap[id] = slotResults[i] })
-
-      const buildTaskFromChain = (taskId: string, mySlot: Task["mySlot"] = null): Task | null => {
-        const taskData = taskDataMap[taskId]
-        if (!taskData) return null
-        const metadata = metadataMap[taskId]
-        const tokenAddress = taskData.token.toLowerCase()
-        const tokenSymbol = resolveTokenSymbol(tokenAddress)
-        const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
-        const totalSlots = Number(taskData.totalSlots)
-        const claimedSlots = Number(taskData.claimedSlots)
-        return {
-          id: taskData.taskId,
-          title: metadata?.title || `Task ${taskId.substring(0, 8)}...`,
-          description: metadata?.description || "",
-          reward: ethers.formatUnits(taskData.rewardPerSlot, tokenConfig.decimals),
-          totalSlots: totalSlots.toString(),
-          claimedSlots: claimedSlots.toString(),
-          availableSlots: (totalSlots - claimedSlots).toString(),
-          active: taskData.active,
-          creator: taskData.creator,
-          createdAt: new Date(Number(taskData.createdAt) * 1000),
-          token: tokenSymbol,
-          tokenAddress: tokenAddress,
-          mySlot,
-          status: taskData.active ? (claimedSlots < totalSlots ? "open" : "claimed") : "completed",
-          category: metadata?.category || undefined,
-          complexity: metadata?.complexity || undefined,
-          validationMethod: metadata?.validation_method || undefined,
-          deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
-          tags: metadata?.tags || [],
-          visibility: (metadata?.visibility || "public") as Task["visibility"],
-          paymentMethod: (metadata?.payment_method || "crypto") as "crypto" | "pix",
-          fiatAmount: metadata?.fiat_amount ? parseFloat(metadata.fiat_amount) : undefined,
-          workerPixKey: metadata?.worker_pix_key || undefined,
-          workerPixKeyType: metadata?.worker_pix_key_type as any,
-          pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
-          pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
-        }
-      }
-
-      const createdTasks = createdTaskIds
-        .map(id => buildTaskFromChain(id))
-        .filter(Boolean) as Task[]
-
-      const workedTasks = workedTaskIds.map((id: string) => {
-        const slot = slotMap[id]
-        return buildTaskFromChain(id, slot ? {
-          claimed: slot.claimed,
-          submitted: slot.submitted,
-          approved: slot.approved,
-          withdrawn: slot.withdrawn,
-        } : null)
-      }).filter(Boolean) as Task[]
-
-      setUserActivity({ created: createdTasks, worked: workedTasks })
-    } catch (error) {
-      console.error("Error loading user activity:", error)
-    }
-  }, [supabase])
+    setUserActivity({ created, worked })
+  }, [])
 
   const saveTaskToSupabase = useCallback(
     async (task: Task): Promise<{ success: boolean; error?: string }> => {
@@ -791,7 +692,7 @@ export function TheOfficeApp() {
       setShowCreateModal(false)
 
       await loadTasksFromBlockchain()
-      await loadUserActivity(account)
+      await loadUserActivity(account, tasks)
     } catch (error) {
       console.error("Create task error:", error)
       toast("Error: " + parseContractError(error))
@@ -817,7 +718,7 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
       }
-      if (account) await loadUserActivity(account)
+      if (account) await loadUserActivity(account, tasks)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -843,7 +744,7 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
       }
-      if (account) await loadUserActivity(account)
+      if (account) await loadUserActivity(account, tasks)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -869,7 +770,7 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
       }
-      if (account) await loadUserActivity(account)
+      if (account) await loadUserActivity(account, tasks)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -945,9 +846,9 @@ export function TheOfficeApp() {
 
   useEffect(() => {
     if (account) {
-      loadUserActivity(account)
+      loadUserActivity(account, tasks)
     }
-  }, [account, loadUserActivity])
+  }, [account, tasks, loadUserActivity])
 
   useEffect(() => {
     async function initializeWagmiContracts() {
