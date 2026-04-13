@@ -1034,6 +1034,7 @@ export function TheOfficeApp() {
             onAuthorizeWithdraw={(id) => submitTask(id, "Withdraw Funds")}
             onWithdraw={approveTaskSubmission}
             onClaimTokens={claimReward}
+            onRefreshClaims={() => loadUserActivity(account, tasks)}
             language={language}
           />
         )}
