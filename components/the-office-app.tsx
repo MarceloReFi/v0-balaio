@@ -288,8 +288,39 @@ export function TheOfficeApp() {
       t.creator.toLowerCase() !== addr && t.mySlot?.claimed
     )
 
+    // Attach claims to created tasks
+    if (created.length > 0) {
+      const createdIds = created.map(t => t.id)
+      const { data: claimsRows } = await supabase
+        .from("task_claims")
+        .select("*")
+        .in("task_id", createdIds)
+
+      if (claimsRows && claimsRows.length > 0) {
+        const claimsByTask: Record<string, TaskClaim[]> = {}
+        for (const row of claimsRows) {
+          if (!claimsByTask[row.task_id]) claimsByTask[row.task_id] = []
+          claimsByTask[row.task_id].push({
+            id: row.id,
+            taskId: row.task_id,
+            workerAddress: row.worker_address,
+            claimedAt: row.claimed_at ? new Date(row.claimed_at) : new Date(),
+            submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
+            approvedAt: row.approved_at ? new Date(row.approved_at) : null,
+            submissionLink: row.submission_link || null,
+          })
+        }
+        const createdWithClaims = created.map(t => ({
+          ...t,
+          claims: claimsByTask[t.id] || [],
+        }))
+        setUserActivity({ created: createdWithClaims, worked })
+        return
+      }
+    }
+
     setUserActivity({ created, worked })
-  }, [])
+  }, [supabase])
 
   const saveTaskToSupabase = useCallback(
     async (task: Task): Promise<{ success: boolean; error?: string }> => {
