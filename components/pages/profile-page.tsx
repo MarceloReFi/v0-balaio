@@ -116,7 +116,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
               ✨ {t.tasksYouCreated}
             </div>
             <div className="space-y-3">
-              {userActivity.created.slice(0, 10).map((task) => {
+              {userActivity.created.map((task) => {
                 const claims = task.claims || []
                 const hasClaims = claims.length > 0
                 return (
@@ -251,7 +251,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
               💼 {t.tasksYouWorkedOn}
             </div>
             <div className="space-y-2">
-              {userActivity.worked.slice(0, 5).map((task) => (
+              {userActivity.worked.map((task) => (
                 <div key={`worked-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
                   <span className="text-xs truncate max-w-[50%]">{task.title}</span>
                   <div className="flex items-center gap-2">
