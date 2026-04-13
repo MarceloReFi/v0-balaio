@@ -742,6 +742,11 @@ export function TheOfficeApp() {
       const tx = await contract.claimTask(id)
       await tx.wait()
 
+      await supabase.from("task_claims").upsert(
+        { task_id: id, worker_address: account.toLowerCase(), claimed_at: new Date().toISOString() },
+        { onConflict: "task_id,worker_address" }
+      )
+
       toast("Task claimed!")
 
       const updated = await getTask(id)
@@ -768,6 +773,11 @@ export function TheOfficeApp() {
       const tx = await contract.submitTask(id, proof)
       await tx.wait()
 
+      await supabase.from("task_claims").upsert(
+        { task_id: id, worker_address: account.toLowerCase(), submitted_at: new Date().toISOString(), submission_link: proof },
+        { onConflict: "task_id,worker_address" }
+      )
+
       toast("Work submitted!")
 
       const updated = await getTask(id)
@@ -793,6 +803,11 @@ export function TheOfficeApp() {
 
       const tx = await contract.approveTask(id, claimant)
       await tx.wait()
+
+      await supabase.from("task_claims").upsert(
+        { task_id: id, worker_address: claimant.toLowerCase(), approved_at: new Date().toISOString() },
+        { onConflict: "task_id,worker_address" }
+      )
 
       toast("Submission approved!")
 
