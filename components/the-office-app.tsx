@@ -13,6 +13,8 @@ import {
 } from "@/lib/web3"
 import { CELO_CHAIN_ID, CELO_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
 
+const CONTRACT_DEPLOYMENT_BLOCK = 51778358
+
 import type { Task, TaskClaim } from "@/lib/types"
 import { Toast } from "@/components/ui/toast"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
@@ -288,39 +290,54 @@ export function TheOfficeApp() {
       t.creator.toLowerCase() !== addr && t.mySlot?.claimed
     )
 
-    // Attach claims to created tasks
     if (created.length > 0) {
-      const createdIds = created.map(t => t.id)
-      const { data: claimsRows } = await supabase
-        .from("task_claims")
-        .select("*")
-        .in("task_id", createdIds)
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
-      if (claimsRows && claimsRows.length > 0) {
-        const claimsByTask: Record<string, TaskClaim[]> = {}
-        for (const row of claimsRows) {
-          if (!claimsByTask[row.task_id]) claimsByTask[row.task_id] = []
-          claimsByTask[row.task_id].push({
-            id: row.id,
-            taskId: row.task_id,
-            workerAddress: row.worker_address,
-            claimedAt: row.claimed_at ? new Date(row.claimed_at) : new Date(),
-            submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
-            approvedAt: row.approved_at ? new Date(row.approved_at) : null,
-            submissionLink: row.submission_link || null,
-          })
+      const claimsByTask: Record<string, TaskClaim[]> = {}
+
+      await Promise.all(created.map(async (task) => {
+        try {
+          const [claimedEvents, submittedEvents, approvedEvents] = await Promise.all([
+            readContract.queryFilter(readContract.filters.TaskClaimed(task.id), CONTRACT_DEPLOYMENT_BLOCK),
+            readContract.queryFilter(readContract.filters.TaskSubmitted(task.id), CONTRACT_DEPLOYMENT_BLOCK),
+            readContract.queryFilter(readContract.filters.TaskApproved(task.id), CONTRACT_DEPLOYMENT_BLOCK),
+          ])
+
+          const submittedMap: Record<string, { link: string; blockNumber: number }> = {}
+          for (const e of submittedEvents) {
+            const worker = (e as any).args?.[1]?.toLowerCase()
+            if (worker) submittedMap[worker] = { link: (e as any).args?.[2], blockNumber: e.blockNumber }
+          }
+
+          const approvedSet = new Set(
+            approvedEvents.map((e: any) => e.args?.[1]?.toLowerCase()).filter(Boolean)
+          )
+
+          claimsByTask[task.id] = claimedEvents.map((e: any) => {
+            const worker = e.args?.[1]?.toLowerCase()
+            return {
+              id: `${task.id}-${worker}`,
+              taskId: task.id,
+              workerAddress: worker,
+              claimedAt: new Date(),
+              submittedAt: submittedMap[worker] ? new Date() : null,
+              submissionLink: submittedMap[worker]?.link || null,
+              approvedAt: approvedSet.has(worker) ? new Date() : null,
+            }
+          }).filter(c => c.workerAddress)
+        } catch {
+          claimsByTask[task.id] = []
         }
-        const createdWithClaims = created.map(t => ({
-          ...t,
-          claims: claimsByTask[t.id] || [],
-        }))
-        setUserActivity({ created: createdWithClaims, worked })
-        return
-      }
+      }))
+
+      const createdWithClaims = created.map(t => ({ ...t, claims: claimsByTask[t.id] || [] }))
+      setUserActivity({ created: createdWithClaims, worked })
+      return
     }
 
     setUserActivity({ created, worked })
-  }, [supabase])
+  }, [])
 
   const saveTaskToSupabase = useCallback(
     async (task: Task): Promise<{ success: boolean; error?: string }> => {
