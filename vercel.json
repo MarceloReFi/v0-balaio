@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/backfill-claims",
+      "schedule": "0 3 */2 * *"
+    }
+  ]
+}
