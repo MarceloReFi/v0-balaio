@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   const ip = getClientIp(request)
-  if (!checkRateLimit(`${ip}:tasks-claims`, 10, 60 * 1000)) {
+  if (!checkRateLimit(`${ip}:tasks-claims`, 30, 60 * 1000)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 })
   }
 
