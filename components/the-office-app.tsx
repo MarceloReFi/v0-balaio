@@ -869,6 +869,79 @@ export function TheOfficeApp() {
     }
   }
 
+  const refreshClaimsFromBlockchain = async (createdTaskIds: string[]) => {
+    if (createdTaskIds.length === 0) return
+
+    try {
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+
+      toast("Fetching submissions from blockchain...")
+
+      const claimedEvents = await readContract.queryFilter(
+        readContract.filters.TaskClaimed(), CONTRACT_DEPLOYMENT_BLOCK
+      ).catch(() => [])
+
+      toast("Processing claims...")
+
+      const submittedEvents = await readContract.queryFilter(
+        readContract.filters.TaskSubmitted(), CONTRACT_DEPLOYMENT_BLOCK
+      ).catch(() => [])
+
+      toast("Processing approvals...")
+
+      const approvedEvents = await readContract.queryFilter(
+        readContract.filters.TaskApproved(), CONTRACT_DEPLOYMENT_BLOCK
+      ).catch(() => [])
+
+      const createdIdSet = new Set(createdTaskIds)
+
+      // Build lookup maps for submitted and approved by taskId+worker
+      const submittedMap: Record<string, { submissionLink: string }> = {}
+      for (const e of submittedEvents as any[]) {
+        const taskId = e.args?.[0]
+        const worker = e.args?.[1]?.toLowerCase()
+        if (taskId && worker) submittedMap[`${taskId}:${worker}`] = { submissionLink: e.args?.[2] || null }
+      }
+
+      const approvedSet = new Set<string>()
+      for (const e of approvedEvents as any[]) {
+        const taskId = e.args?.[0]
+        const worker = e.args?.[1]?.toLowerCase()
+        if (taskId && worker) approvedSet.add(`${taskId}:${worker}`)
+      }
+
+      const claimsByTask: Record<string, TaskClaim[]> = {}
+      for (const e of claimedEvents as any[]) {
+        const taskId = e.args?.[0]
+        const worker = e.args?.[1]?.toLowerCase()
+        if (!taskId || !worker || !createdIdSet.has(taskId)) continue
+
+        if (!claimsByTask[taskId]) claimsByTask[taskId] = []
+        const key = `${taskId}:${worker}`
+        claimsByTask[taskId].push({
+          id: key,
+          taskId,
+          workerAddress: worker,
+          claimedAt: new Date(),
+          submittedAt: submittedMap[key] ? new Date() : null,
+          submissionLink: submittedMap[key]?.submissionLink || null,
+          approvedAt: approvedSet.has(key) ? new Date() : null,
+        })
+      }
+
+      setUserActivity(prev => ({
+        ...prev,
+        created: prev.created.map(t => ({ ...t, claims: claimsByTask[t.id] || [] })),
+      }))
+
+      toast("Claims synced!")
+    } catch (error) {
+      console.error("Error refreshing claims:", error)
+      toast("Error fetching claims")
+    }
+  }
+
   const logout = () => {
     setAccount("")
     setContract(null)
@@ -1034,6 +1107,7 @@ export function TheOfficeApp() {
             onAuthorizeWithdraw={(id) => submitTask(id, "Withdraw Funds")}
             onWithdraw={approveTaskSubmission}
             onClaimTokens={claimReward}
+            onRefreshClaims={() => refreshClaimsFromBlockchain(userActivity.created.map(t => t.id))}
             language={language}
           />
         )}

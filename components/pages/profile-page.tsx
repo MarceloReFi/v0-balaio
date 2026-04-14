@@ -18,6 +18,7 @@ interface ProfilePageProps {
   onAuthorizeWithdraw: (taskId: string) => Promise<void>
   onWithdraw: (taskId: string, creatorAddress: string) => Promise<void>
   onClaimTokens: (taskId: string) => Promise<void>
+  onRefreshClaims: () => void
   language: Language
 }
 
@@ -31,7 +32,7 @@ const formatTimestamp = (date: Date | null | undefined): string => {
   })
 }
 
-export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, onWithdrawClaim, onAuthorizeWithdraw, onWithdraw, onClaimTokens, language }: ProfilePageProps) {
+export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, onWithdrawClaim, onAuthorizeWithdraw, onWithdraw, onClaimTokens, onRefreshClaims, language }: ProfilePageProps) {
   const t = useTranslations(language)
   const [noticeDismissed, setNoticeDismissed] = useState(() => {
     if (typeof window === "undefined") return false
@@ -112,8 +113,14 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
 
         {userActivity.created.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs font-bold text-[#111111] mb-2 flex items-center gap-1">
-              ✨ {t.tasksYouCreated}
+            <div className="text-xs font-bold text-[#111111] mb-2 flex items-center gap-1 justify-between">
+              <span className="flex items-center gap-1">✨ {t.tasksYouCreated}</span>
+              <button
+                onClick={onRefreshClaims}
+                className="text-xs font-bold px-2 py-1 border-2 border-[#111111] rounded-lg bg-white hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+              >
+                🔄 {language === "en" ? "Refresh Claims" : "Atualizar"}
+              </button>
             </div>
             <div className="space-y-3">
               {userActivity.created.map((task) => {
