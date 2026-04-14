@@ -26,6 +26,7 @@ export async function POST(request: Request) {
   }
 
   const taskIds: string[] = (body as any).taskIds
+  const hashToTaskId = new Map(taskIds.map(id => [ethers.id(id), id]))
 
   try {
     const provider = await getProvider()
@@ -36,8 +37,6 @@ export async function POST(request: Request) {
       CONTRACT_DEPLOYMENT_BLOCK,
       currentBlock - 30 * BLOCKS_PER_DAY
     )
-
-    const taskIdSet = new Set(taskIds)
 
     const [claimedEvents, submittedEvents, approvedEvents] = await Promise.all([
       retryQuery(() => contract.queryFilter(contract.filters.TaskClaimed(), startBlock, currentBlock)),
@@ -50,8 +49,9 @@ export async function POST(request: Request) {
     for (const e of submittedEvents as any[]) {
       const taskId = e.args?.[0]
       const worker = e.args?.[1]?.toLowerCase()
-      if (taskId && worker && taskIdSet.has(taskId)) {
-        submittedMap[`${taskId}:${worker}`] = { submissionLink: e.args?.[2] || null }
+      const originalId = hashToTaskId.get(taskId)
+      if (originalId && worker) {
+        submittedMap[`${originalId}:${worker}`] = { submissionLink: e.args?.[2] || null }
       }
     }
 
@@ -59,8 +59,9 @@ export async function POST(request: Request) {
     for (const e of approvedEvents as any[]) {
       const taskId = e.args?.[0]
       const worker = e.args?.[1]?.toLowerCase()
-      if (taskId && worker && taskIdSet.has(taskId)) {
-        approvedSet.add(`${taskId}:${worker}`)
+      const originalId = hashToTaskId.get(taskId)
+      if (originalId && worker) {
+        approvedSet.add(`${originalId}:${worker}`)
       }
     }
 
@@ -74,11 +75,12 @@ export async function POST(request: Request) {
     for (const e of claimedEvents as any[]) {
       const taskId = e.args?.[0]
       const worker = e.args?.[1]?.toLowerCase()
-      if (!taskId || !worker || !taskIdSet.has(taskId)) continue
+      const originalId = hashToTaskId.get(taskId)
+      if (!originalId || !worker) continue
 
-      if (!result[taskId]) result[taskId] = []
-      const key = `${taskId}:${worker}`
-      result[taskId].push({
+      if (!result[originalId]) result[originalId] = []
+      const key = `${originalId}:${worker}`
+      result[originalId].push({
         workerAddress: worker,
         submissionLink: submittedMap[key]?.submissionLink ?? null,
         hasSubmitted: !!submittedMap[key],
