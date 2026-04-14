@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     const currentBlock = await provider.getBlockNumber()
     const startBlock = Math.max(
       CONTRACT_DEPLOYMENT_BLOCK,
-      currentBlock - 180 * BLOCKS_PER_DAY
+      currentBlock - 30 * BLOCKS_PER_DAY
     )
 
     const taskIdSet = new Set(taskIds)
