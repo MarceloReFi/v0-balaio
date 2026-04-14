@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server"
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export async function POST() {
+async function runBackfill() {
   try {
     const supabase = await createClient()
     const { data: taskRows } = await supabase.from("tasks").select("id")
@@ -83,4 +83,12 @@ export async function POST() {
       { status: 500 }
     )
   }
+}
+
+export async function GET() {
+  return runBackfill()
+}
+
+export async function POST() {
+  return runBackfill()
 }
