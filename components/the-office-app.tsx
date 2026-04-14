@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { ethers } from "ethers"
 import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp } from "lucide-react"
 import {
@@ -165,6 +165,7 @@ export function TheOfficeApp() {
   const [tasks, setTasks] = useState<Task[]>([])
   const { isVerified } = useGoodID(account)
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
+  const loadingActivityRef = useRef(false)
   const [language, setLanguage] = useState<Language>("en")
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
@@ -281,43 +282,50 @@ export function TheOfficeApp() {
   }, [account, contract, supabase, isVerified, toast])
 
   const loadUserActivity = useCallback(async (userAddress: string, currentTasks: Task[]) => {
-    if (!userAddress || currentTasks.length === 0) return
+    if (loadingActivityRef.current) return
+    loadingActivityRef.current = true
 
-    const addr = userAddress.toLowerCase()
+    try {
+      if (!userAddress || currentTasks.length === 0) return
 
-    const created = currentTasks.filter(t => t.creator.toLowerCase() === addr)
-    const worked = currentTasks.filter(t =>
-      t.creator.toLowerCase() !== addr && t.mySlot?.claimed
-    )
+      const addr = userAddress.toLowerCase()
 
-    if (created.length > 0) {
-      const res = await fetch("/api/tasks/claims", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskIds: created.map(t => t.id) }),
-      })
-      const claimsByTask: Record<string, TaskClaim[]> = {}
-      if (res.ok) {
-        const data = await res.json()
-        for (const [taskId, claims] of Object.entries(data) as any[]) {
-          claimsByTask[taskId] = claims.map((c: any) => ({
-            id: `${taskId}-${c.workerAddress}`,
-            taskId,
-            workerAddress: c.workerAddress,
-            claimedAt: new Date(),
-            submittedAt: c.hasSubmitted ? new Date() : null,
-            submissionLink: c.submissionLink,
-            approvedAt: c.hasApproved ? new Date() : null,
-          }))
+      const created = currentTasks.filter(t => t.creator.toLowerCase() === addr)
+      const worked = currentTasks.filter(t =>
+        t.creator.toLowerCase() !== addr && t.mySlot?.claimed
+      )
+
+      if (created.length > 0) {
+        const res = await fetch("/api/tasks/claims", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskIds: created.map(t => t.id) }),
+        })
+        const claimsByTask: Record<string, TaskClaim[]> = {}
+        if (res.ok) {
+          const data = await res.json()
+          for (const [taskId, claims] of Object.entries(data) as any[]) {
+            claimsByTask[taskId] = claims.map((c: any) => ({
+              id: `${taskId}-${c.workerAddress}`,
+              taskId,
+              workerAddress: c.workerAddress,
+              claimedAt: new Date(),
+              submittedAt: c.hasSubmitted ? new Date() : null,
+              submissionLink: c.submissionLink,
+              approvedAt: c.hasApproved ? new Date() : null,
+            }))
+          }
         }
+
+        const createdWithClaims = created.map(t => ({ ...t, claims: claimsByTask[t.id] || [] }))
+        setUserActivity({ created: createdWithClaims, worked })
+        return
       }
 
-      const createdWithClaims = created.map(t => ({ ...t, claims: claimsByTask[t.id] || [] }))
-      setUserActivity({ created: createdWithClaims, worked })
-      return
+      setUserActivity({ created, worked })
+    } finally {
+      loadingActivityRef.current = false
     }
-
-    setUserActivity({ created, worked })
   }, [])
 
   const saveTaskToSupabase = useCallback(
