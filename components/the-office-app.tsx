@@ -730,6 +730,7 @@ export function TheOfficeApp() {
             toast(`Task "${taskId}" on blockchain but failed to save to DB: ${saveResult.error}`)
           }
 
+          setTasks((prev) => [newTask, ...prev.filter((t) => t.id !== taskId)])
           setMultiTaskStatuses((prev) => ({ ...prev, [taskId]: "success" }))
         } catch (error) {
           console.error(`Create task error for "${taskId}":`, error)
