@@ -167,6 +167,7 @@ export function TheOfficeApp() {
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const loadingActivityRef = useRef(false)
   const [language, setLanguage] = useState<Language>("en")
+  const [multiTaskStatuses, setMultiTaskStatuses] = useState<Record<string, "idle" | "pending" | "success" | "error">>({})
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
   const { open } = useAppKit()
@@ -626,7 +627,7 @@ export function TheOfficeApp() {
   }
 
   const createTask = async (
-    taskId: string,
+    taskIds: string[],
     taskTitle: string,
     taskDescription: string,
     rewardPerSlot: string,
@@ -653,7 +654,7 @@ export function TheOfficeApp() {
       setLoading(true)
 
       const rewardWei = ethers.parseUnits(rewardPerSlot, tokenConfig.decimals)
-      const totalDeposit = rewardWei * BigInt(totalSlots)
+      const totalDeposit = rewardWei * BigInt(taskIds.length)
 
       toast(`Checking ${token} balance...`)
       const balance = await tokenContract.balanceOf(account)
@@ -664,17 +665,6 @@ export function TheOfficeApp() {
         toast(`Insufficient ${token}. Need ${needed}, have ${have}`)
         setLoading(false)
         return
-      }
-
-      toast("Checking task ID availability...")
-      try {
-        const existingTask = await contract.getTask(taskId)
-        if (existingTask && existingTask.taskId === taskId) {
-          toast("Task ID already exists. Please use a different ID.")
-          setLoading(false)
-          return
-        }
-      } catch {
       }
 
       toast(`Checking ${token} allowance...`)
@@ -689,47 +679,73 @@ export function TheOfficeApp() {
         toast(`${token} already approved`)
       }
 
-      toast("Creating task on blockchain...")
-      const tx = await contract.createTask(taskId, tokenConfig.address, rewardWei, totalSlots, account)
-      await tx.wait()
+      let hasErrors = false
 
-      toast("Blockchain transaction confirmed, saving to database...")
+      for (const taskId of taskIds) {
+        setMultiTaskStatuses((prev) => ({ ...prev, [taskId]: "pending" }))
 
-      const newTask: Task = {
-        id: taskId,
-        title: taskTitle || taskId,
-        description: taskDescription,
-        reward: rewardPerSlot,
-        totalSlots: totalSlots,
-        claimedSlots: "0",
-        availableSlots: totalSlots,
-        active: true,
-        creator: account,
-        createdAt: new Date(),
-        token: token,
-        tokenAddress: tokenConfig.address,
-        mySlot: null,
-        category: category,
-        complexity: complexity,
-        validationMethod: validationMethod,
-        deadline: deadline,
-        tags: tags,
-        visibility: visibility,
-        paymentMethod: "crypto",
+        try {
+          let taskExists = false
+          try {
+            const existingTask = await contract.getTask(taskId)
+            if (existingTask && existingTask.taskId === taskId) {
+              taskExists = true
+            }
+          } catch {
+            // task not found on chain — expected for new IDs
+          }
+          if (taskExists) {
+            throw new Error(`Task ID "${taskId}" already exists. Please use a different ID.`)
+          }
+
+          toast(`Creating task "${taskId}" on blockchain...`)
+          const tx = await contract.createTask(taskId, tokenConfig.address, rewardWei, totalSlots, account)
+          await tx.wait()
+
+          const newTask: Task = {
+            id: taskId,
+            title: taskTitle || taskId,
+            description: taskDescription,
+            reward: rewardPerSlot,
+            totalSlots: totalSlots,
+            claimedSlots: "0",
+            availableSlots: totalSlots,
+            active: true,
+            creator: account,
+            createdAt: new Date(),
+            token: token,
+            tokenAddress: tokenConfig.address,
+            mySlot: null,
+            category: category,
+            complexity: complexity,
+            validationMethod: validationMethod,
+            deadline: deadline,
+            tags: tags,
+            visibility: visibility,
+            paymentMethod: "crypto",
+          }
+
+          const saveResult = await saveTaskToSupabase(newTask)
+          if (!saveResult.success) {
+            toast(`Task "${taskId}" on blockchain but failed to save to DB: ${saveResult.error}`)
+          }
+
+          setMultiTaskStatuses((prev) => ({ ...prev, [taskId]: "success" }))
+        } catch (error) {
+          console.error(`Create task error for "${taskId}":`, error)
+          toast(`Error creating "${taskId}": ` + parseContractError(error))
+          setMultiTaskStatuses((prev) => ({ ...prev, [taskId]: "error" }))
+          hasErrors = true
+        }
       }
-
-      const saveResult = await saveTaskToSupabase(newTask)
-      if (!saveResult.success) {
-        toast(`Task created on blockchain but failed to save to database: ${saveResult.error}. Please try searching for task ID "${taskId}" to sync it.`)
-      } else {
-        toast("Task created successfully!")
-      }
-
-      setTasks([newTask, ...tasks])
-      setShowCreateModal(false)
 
       await loadTasksFromBlockchain()
       await loadUserActivity(account, tasks)
+
+      if (!hasErrors) {
+        setShowCreateModal(false)
+        setMultiTaskStatuses({})
+      }
     } catch (error) {
       console.error("Create task error:", error)
       toast("Error: " + parseContractError(error))
@@ -1113,6 +1129,7 @@ export function TheOfficeApp() {
         loading={loading}
         tokenBalances={tokenBalances}
         language={language}
+        taskStatuses={multiTaskStatuses}
       />
 
       <TaskDetailModal
