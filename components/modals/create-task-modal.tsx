@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { X, ChevronDown, Calendar } from "lucide-react"
+import { X, ChevronDown, Calendar, Plus } from "lucide-react"
 import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Task } from "@/lib/types"
@@ -10,7 +10,7 @@ interface CreateTaskModalProps {
   open: boolean
   onClose: () => void
   onCreateTask: (
-    taskId: string,
+    taskIds: string[],
     taskTitle: string,
     taskDescription: string,
     rewardPerSlot: string,
@@ -26,6 +26,7 @@ interface CreateTaskModalProps {
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
   language: Language
+  taskStatuses: Record<string, "idle" | "pending" | "success" | "error">
 }
 
 export function CreateTaskModal({
@@ -35,9 +36,10 @@ export function CreateTaskModal({
   loading,
   tokenBalances,
   language,
+  taskStatuses,
 }: CreateTaskModalProps) {
   const t = useTranslations(language)
-  const [taskId, setTaskId] = useState("")
+  const [taskIds, setTaskIds] = useState<string[]>([""])
   const [taskTitle, setTaskTitle] = useState("")
   const [taskDescription, setTaskDescription] = useState("")
   const [rewardPerSlot, setRewardPerSlot] = useState("")
@@ -54,6 +56,8 @@ export function CreateTaskModal({
 
   if (!open) return null
 
+  const validTaskIds = taskIds.map((id) => id.trim()).filter(Boolean)
+
   const submitTaskForm = () => {
     const parsedDeadline = deadline ? new Date(deadline) : null
     const parsedTags = tagsInput
@@ -62,7 +66,7 @@ export function CreateTaskModal({
       .filter((tag: string) => tag.length > 0)
 
     onCreateTask(
-      taskId,
+      taskIds.map((id) => id.trim()).filter(Boolean),
       taskTitle,
       taskDescription,
       rewardPerSlot,
@@ -75,17 +79,32 @@ export function CreateTaskModal({
       parsedTags,
       visibility,
     )
-    setTaskId("")
-    setTaskTitle("")
-    setTaskDescription("")
-    setRewardPerSlot("")
-    // setTotalSlots("1") // TEMPORARY: Hardcoded to 1 - no need to reset
-    setSelectedToken("cUSD")
-    setCategory("other")
-    setComplexity("medium")
-    setDeadline("")
-    setTagsInput("")
-    setVisibility("public")
+  }
+
+  const addTaskId = () => {
+    if (taskIds.length < 10) {
+      setTaskIds([...taskIds, ""])
+    }
+  }
+
+  const removeTaskId = (index: number) => {
+    setTaskIds(taskIds.filter((_, i) => i !== index))
+  }
+
+  const updateTaskId = (index: number, value: string) => {
+    const updated = [...taskIds]
+    updated[index] = value
+    setTaskIds(updated)
+  }
+
+  const getStatusIcon = (taskId: string) => {
+    const trimmed = taskId.trim()
+    if (!trimmed) return null
+    const status = taskStatuses[trimmed]
+    if (status === "pending") return <span className="text-base leading-none">⏳</span>
+    if (status === "success") return <span className="text-base leading-none">✅</span>
+    if (status === "error") return <span className="text-base leading-none">❌</span>
+    return null
   }
 
   const totalCost =
@@ -129,12 +148,36 @@ export function CreateTaskModal({
         <div className="flex flex-col gap-4">
           <div>
             <label className="block font-bold mb-2 text-xs">{t.taskId}</label>
-            <input
-              value={taskId}
-              onChange={(e) => setTaskId(e.target.value)}
-              placeholder="unique-task-id"
-              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
-            />
+            <div className="flex flex-col gap-2">
+              {taskIds.map((id, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    value={id}
+                    onChange={(e) => updateTaskId(index, e.target.value)}
+                    placeholder="unique-task-id"
+                    className="flex-1 p-2.5 border-2 border-[#111111] rounded-xl font-mono"
+                  />
+                  {getStatusIcon(id)}
+                  <button
+                    type="button"
+                    onClick={() => removeTaskId(index)}
+                    className="p-1 hover:opacity-70 text-[#666666] flex-shrink-0"
+                    aria-label="Remove task ID"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addTaskId}
+              disabled={taskIds.length >= 10}
+              className="mt-2 flex items-center gap-1 text-sm font-bold text-[#111111] hover:opacity-70 disabled:opacity-40"
+            >
+              <Plus size={16} />
+              {t.addTaskId}
+            </button>
           </div>
 
           <div>
@@ -379,7 +422,7 @@ export function CreateTaskModal({
 
           <button
             onClick={submitTaskForm}
-            disabled={loading || !taskId || !taskTitle || !totalSlots || !rewardPerSlot}
+            disabled={loading || validTaskIds.length === 0 || !taskTitle || !totalSlots || !rewardPerSlot}
             className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-50 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
           >
             {loading ? (language === "en" ? "CREATING..." : "CRIANDO...") : t.createTaskButton}

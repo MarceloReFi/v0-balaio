@@ -141,6 +141,7 @@ export const translations = {
     complexityMedium: "Medium",
     complexityHard: "Hard",
     validationUrl: "URL Submission",
+    addTaskId: "Add Task ID",
 
     // Messages
     connecting: "Connecting...",
@@ -308,6 +309,7 @@ export const translations = {
     complexityMedium: "Médio",
     complexityHard: "Difícil",
     validationUrl: "Envio de URL",
+    addTaskId: "Adicionar Task ID",
 
     // Messages
     connecting: "Conectando...",
