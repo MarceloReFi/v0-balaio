@@ -1124,7 +1124,7 @@ export function TheOfficeApp() {
 
       <CreateTaskModal
         open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => { setShowCreateModal(false); setMultiTaskStatuses({}) }}
         onCreateTask={createTask}
         loading={loading}
         tokenBalances={tokenBalances}
