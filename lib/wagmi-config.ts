@@ -34,7 +34,7 @@ createAppKit({
     name: 'Balaio',
     description: 'Web3 Task Management on Celo',
     url: process.env.NEXT_PUBLIC_APP_URL || 'https://www.usebalaio.com',
-    icons: ['https://usebalaio.com/icon-light-32x32.png']
+    icons: ['https://www.usebalaio.com/icon-light-32x32.png']
   },
   features: {
     analytics: false
