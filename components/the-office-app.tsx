@@ -523,17 +523,20 @@ export function TheOfficeApp() {
       if (!contract || !account) return null
 
       try {
-        const task = await contract.getTask(id)
-        const availableSlots = await contract.getAvailableSlots(id)
-        const mySlot = await contract.getTaskSlot(id, account)
+        const [task, availableSlots, mySlot, { data: metadata }] = await Promise.all([
+          contract.getTask(id),
+          contract.getAvailableSlots(id),
+          contract.getTaskSlot(id, account),
+          supabase.from("tasks").select("*").eq("id", id).single(),
+        ])
 
         const tokenSymbol = resolveTokenSymbol(task.token)
         const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
 
         return {
           id: task.taskId,
-          title: task.taskId,
-          description: "",
+          title: metadata?.title || task.taskId,
+          description: metadata?.description || "",
           reward: ethers.formatUnits(task.rewardPerSlot, tokenConfig.decimals),
           totalSlots: task.totalSlots.toString(),
           claimedSlots: task.claimedSlots.toString(),
@@ -551,13 +554,26 @@ export function TheOfficeApp() {
                 withdrawn: mySlot.withdrawn,
               }
             : null,
+          category: metadata?.category || undefined,
+          complexity: metadata?.complexity || undefined,
+          validationMethod: metadata?.validation_method || undefined,
+          deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
+          tags: metadata?.tags || [],
+          visibility: (metadata?.visibility || "public") as Task["visibility"],
+          workerAddress: metadata?.worker_address || undefined,
+          paymentMethod: (metadata?.payment_method || "crypto") as "crypto" | "pix",
+          fiatAmount: metadata?.fiat_amount ? parseFloat(metadata.fiat_amount) : undefined,
+          workerPixKey: metadata?.worker_pix_key || undefined,
+          workerPixKeyType: metadata?.worker_pix_key_type as any,
+          pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
+          pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
         }
       } catch (error) {
         console.error("Error getting task:", error)
         return null
       }
     },
-    [contract, account],
+    [contract, account, supabase],
   )
 
   const searchTask = async (searchQuery: string) => {
