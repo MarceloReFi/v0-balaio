@@ -210,18 +210,10 @@ export function TheOfficeApp() {
         taskIds.map(id => readContract.getTask(id).catch(() => null))
       )
 
-      let slotDataResults: (any | null)[] = taskIds.map(() => null)
-      if (contract && account) {
-        slotDataResults = await Promise.all(
-          taskIds.map(id => contract.getTaskSlot(id, account).catch(() => null))
-        )
-      }
-
       const loadedTasks: Task[] = []
       for (let i = 0; i < taskIds.length; i++) {
         const taskId = taskIds[i]
         const taskData = taskDataResults[i]
-        const slotData = slotDataResults[i]
         const metadata = metadataMap[taskId]
 
         if (!taskData) continue
@@ -234,13 +226,6 @@ export function TheOfficeApp() {
         const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
         const totalSlots = Number(taskData.totalSlots)
         const claimedSlots = Number(taskData.claimedSlots)
-
-        const mySlot = slotData ? {
-          claimed: slotData.claimed,
-          submitted: slotData.submitted,
-          approved: slotData.approved,
-          withdrawn: slotData.withdrawn,
-        } : null
 
         loadedTasks.push({
           id: taskData.taskId,
@@ -255,7 +240,7 @@ export function TheOfficeApp() {
           createdAt: new Date(Number(taskData.createdAt) * 1000),
           token: tokenSymbol,
           tokenAddress: tokenAddress,
-          mySlot,
+          mySlot: null,
           status: taskData.active ? (claimedSlots < totalSlots ? "open" : "claimed") : "completed",
           category: metadata?.category || undefined,
           complexity: metadata?.complexity || undefined,
@@ -280,7 +265,7 @@ export function TheOfficeApp() {
     } finally {
       setLoading(false)
     }
-  }, [account, contract, supabase, isVerified, toast])
+  }, [account, supabase, isVerified, toast])
 
   const loadUserActivity = useCallback(async (userAddress: string, currentTasks: Task[]) => {
     if (loadingActivityRef.current) return
