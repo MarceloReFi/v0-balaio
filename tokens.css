@@ -1,0 +1,57 @@
+/*
+ * Balaio — Design Tokens
+ * Direction: "Papel"
+ * Generated from design exploration: Balaio Rebrand Directions.html
+ *
+ * Drop this file in app/globals.css (or import it there).
+ * All token names follow a --balaio- prefix to avoid collisions.
+ */
+
+:root {
+  /* ── Color: Base ──────────────────────────────────────── */
+  --balaio-bg:       #FFFFFF;
+  --balaio-ink:      #16161A;
+  --balaio-sage:     #4A7B5E;
+  --balaio-surface:  #F2F4F1;   /* light fills, input backgrounds */
+  --balaio-rule:     #E4E8E5;   /* dividers, borders */
+  --balaio-muted:    #7A8784;   /* secondary text, placeholders */
+
+  /* ── Color: Semantic ──────────────────────────────────── */
+  --balaio-status-open:      #EAF4EE;
+  --balaio-status-open-text: #4A7B5E;
+  --balaio-status-pending:   #FEF9E7;
+  --balaio-status-pending-text: #8A6D00;
+  --balaio-status-claimed:   #F2F4F1;
+  --balaio-status-claimed-text: #7A8784;
+  --balaio-status-approved:  #EAF4EE;
+  --balaio-status-approved-text: #4A7B5E;
+
+  /* ── Typography ───────────────────────────────────────── */
+  --balaio-font-display: 'Instrument Serif', Georgia, serif;
+  --balaio-font-body:    'DM Sans', system-ui, sans-serif;
+
+  /* ── Spacing ──────────────────────────────────────────── */
+  --balaio-space-xs:  4px;
+  --balaio-space-sm:  8px;
+  --balaio-space-md:  12px;
+  --balaio-space-lg:  16px;
+  --balaio-space-xl:  22px;
+  --balaio-space-2xl: 32px;
+
+  /* ── Radius ───────────────────────────────────────────── */
+  --balaio-radius-sm:  8px;
+  --balaio-radius-md:  10px;
+  --balaio-radius-lg:  12px;
+  --balaio-radius-xl:  14px;
+  --balaio-radius-pill: 20px;
+  --balaio-radius-sheet: 18px;  /* bottom sheet top corners */
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --balaio-shadow-card: 0 2px 12px rgba(22, 22, 26, 0.06);
+  --balaio-shadow-sheet: 0 -4px 24px rgba(22, 22, 26, 0.10);
+
+  /* ── Tokens (crypto) ──────────────────────────────────── */
+  --balaio-token-g:    #00B4A0;   /* GoodDollar $G  */
+  --balaio-token-celo: #FCFF52;   /* Celo           */
+  --balaio-token-usdt: #26A17B;   /* USDT / Tether  */
+}

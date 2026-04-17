@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Balaio — Rebrand Direction: Papel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }</style>
+</head>
+<body>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel">
+
+// ── Design tokens ──────────────────────────────────────────────
+const T = {
+  bg:    "#FFFFFF",
+  ink:   "#16161A",
+  sage:  "#4A7B5E",
+  light: "#F2F4F1",
+  rule:  "#E4E8E5",
+  muted: "#7A8784",
+  serif: "'Instrument Serif', serif",
+  sans:  "'DM Sans', sans-serif",
+};
+
+// ── Shared components ──────────────────────────────────────────
+function BalaioMark({ size = 28, color = T.ink }) {
+  return (
+    <svg width={size * (40/48)} height={size} viewBox="0 0 40 48" fill="none">
+      <path fill={color} fillRule="evenodd" d="m7.839 40.783 16.03-28.054L20 6 0 40.783h7.839Zm8.214 0H40L27.99 19.894l-4.02 7.032 3.976 6.914H20.02l-3.967 6.943Z" clipRule="evenodd"/>
+    </svg>
+  );
+}
+
+function Nav({ wallet }) {
+  return (
+    <div style={{ padding: "14px 20px", display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${T.rule}`, background: T.bg }}>
+      <BalaioMark size={20} />
+      <span style={{ fontSize: 15, fontWeight: 600, color: T.ink, letterSpacing: -0.3, fontFamily: T.sans }}>Balaio</span>
+      {wallet ? (
+        <div style={{ marginLeft: "auto", background: T.light, borderRadius: 20, padding: "5px 12px", fontSize: 11, fontWeight: 500, color: T.muted, fontFamily: "monospace" }}>
+          {wallet}
+        </div>
+      ) : (
+        <button style={{ marginLeft: "auto", background: T.ink, color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.sans }}>
+          Connect
+        </button>
+      )}
+    </div>
+  );
+}
+
+function BottomNav({ active }) {
+  const items = [
+    { id: "home", label: "Home", icon: "⌂" },
+    { id: "tasks", label: "Tasks", icon: "✓" },
+    { id: "profile", label: "Profile", icon: "○" },
+  ];
+  return (
+    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, borderTop: `1px solid ${T.rule}`, background: T.bg, display: "flex" }}>
+      {items.map(item => (
+        <div key={item.id} style={{ flex: 1, padding: "10px 0", textAlign: "center", cursor: "pointer" }}>
+          <div style={{ fontSize: 16, marginBottom: 2, opacity: active === item.id ? 1 : 0.35 }}>{item.icon}</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: active === item.id ? T.sage : T.muted, fontFamily: T.sans, letterSpacing: 0.5 }}>{item.label.toUpperCase()}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatusPill({ status }) {
+  const map = {
+    "Open":      { bg: "#EAF4EE", color: T.sage },
+    "Claimed":   { bg: T.light,   color: T.muted },
+    "Submitted": { bg: "#FEF9E7", color: "#8A6D00" },
+    "Approved":  { bg: "#EAF4EE", color: T.sage },
+    "Pending":   { bg: "#FEF9E7", color: "#8A6D00" },
+  };
+  const s = map[status] || { bg: T.light, color: T.muted };
+  return (
+    <span style={{ background: s.bg, color: s.color, fontSize: 10, fontWeight: 600, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap", fontFamily: T.sans, letterSpacing: 0.3 }}>
+      {status}
+    </span>
+  );
+}
+
+function TaskRow({ title, reward, slots, time, status }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", padding: "13px 0", borderBottom: `1px solid ${T.rule}` }}>
+      <div style={{ flex: 1, paddingRight: 12 }}>
+        <p style={{ fontSize: 13, fontWeight: 500, color: T.ink, marginBottom: 3, fontFamily: T.sans }}>{title}</p>
+        <p style={{ fontSize: 11, color: T.muted, fontFamily: T.sans }}>{reward} · {slots} slots · {time}</p>
+      </div>
+      <StatusPill status={status} />
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SCREEN 1 — Landing
+// ══════════════════════════════════════════════════════════════
+function LandingScreen() {
+  return (
+    <div style={{ fontFamily: T.sans, background: T.bg, width: 390, height: 780, position: "relative", overflow: "hidden" }}>
+      <Nav />
+      <div style={{ padding: "36px 24px 28px", borderBottom: `1px solid ${T.rule}` }}>
+        <h1 style={{ fontFamily: T.serif, fontSize: 38, fontWeight: 400, color: T.ink, lineHeight: 1.13, marginBottom: 14 }}>
+          Onchain task<br/><em>coordination,</em><br/>simplified.
+        </h1>
+        <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.7, marginBottom: 26 }}>
+          Post work, claim it, submit proof. Rewards released from escrow on approval — transparent, borderless, onchain.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button style={{ background: T.ink, color: "#fff", border: "none", borderRadius: 12, padding: "14px 24px", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: T.sans, textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>🦊 Connect with MetaMask</span>
+            <span style={{ opacity: 0.5 }}>→</span>
+          </button>
+          <button style={{ background: T.light, color: T.ink, border: "none", borderRadius: 12, padding: "14px 24px", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: T.sans, textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>🔗 WalletConnect</span>
+            <span style={{ opacity: 0.5 }}>→</span>
+          </button>
+        </div>
+      </div>
+
+      <div style={{ padding: "22px 24px" }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 16, fontFamily: T.sans }}>How it works</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {[
+            ["Create", "Organizations post tasks with escrowed token rewards."],
+            ["Claim", "Contributors claim slots and complete the work."],
+            ["Get paid", "Submit proof and receive onchain payment on approval."],
+          ].map(([title, desc], i) => (
+            <div key={i} style={{ display: "flex", gap: 14, padding: "12px 0", borderBottom: i < 2 ? `1px solid ${T.rule}` : "none" }}>
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: T.sage, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i+1}</div>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 2 }}>{title}</p>
+                <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ position: "absolute", bottom: 24, left: 24, right: 24 }}>
+        <p style={{ fontSize: 11, color: T.muted, textAlign: "center", fontFamily: T.sans }}>
+          Live on Celo Mainnet · <span style={{ color: T.sage }}>talkbalaio@gmail.com</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SCREEN 2 — Home (post-connect)
+// ══════════════════════════════════════════════════════════════
+function HomeScreen() {
+  const tasks = [
+    { title: "Translate blog post EN→PT", reward: "5 cUSD", slots: "2/3", time: "2h ago", status: "Open" },
+    { title: "Map local food vendors", reward: "8 cUSD", slots: "1/5", time: "5h ago", status: "Claimed" },
+    { title: "Review smart contract docs", reward: "12 cUSD", slots: "3/3", time: "1d ago", status: "Submitted" },
+  ];
+
+  return (
+    <div style={{ fontFamily: T.sans, background: T.bg, width: 390, height: 780, position: "relative", overflow: "hidden" }}>
+      <Nav wallet="0x4f3a...c81e" />
+
+      {/* Greeting */}
+      <div style={{ padding: "22px 22px 16px", borderBottom: `1px solid ${T.rule}` }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Good morning</p>
+        <h2 style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 400, color: T.ink, lineHeight: 1.2 }}>
+          Ready to <em>earn</em> today?
+        </h2>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${T.rule}` }}>
+        {[
+          { label: "Tasks done", value: "7" },
+          { label: "Total earned", value: "43 cUSD" },
+          { label: "Open slots", value: "12" },
+        ].map((s, i) => (
+          <div key={i} style={{ flex: 1, padding: "14px 0", textAlign: "center", borderRight: i < 2 ? `1px solid ${T.rule}` : "none" }}>
+            <p style={{ fontSize: 17, fontWeight: 600, color: i === 1 ? T.sage : T.ink, fontFamily: T.sans }}>{s.value}</p>
+            <p style={{ fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: 0.3 }}>{s.label.toUpperCase()}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Latest tasks */}
+      <div style={{ padding: "18px 22px 0" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted }}>Latest Tasks</p>
+          <span style={{ fontSize: 12, color: T.sage, fontWeight: 500, cursor: "pointer" }}>See all →</span>
+        </div>
+        {tasks.map((t, i) => <TaskRow key={i} {...t} />)}
+      </div>
+
+      {/* CTA banner */}
+      <div style={{ margin: "16px 22px 0", background: T.light, borderRadius: 14, padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: T.ink, marginBottom: 3 }}>Create a task</p>
+          <p style={{ fontSize: 11, color: T.muted }}>Post work with onchain rewards</p>
+        </div>
+        <button style={{ background: T.sage, color: "#fff", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: T.sans, whiteSpace: "nowrap" }}>+ New task</button>
+      </div>
+
+      <BottomNav active="home" />
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SCREEN 3 — Tasks
+// ══════════════════════════════════════════════════════════════
+function TasksScreen() {
+  const tasks = [
+    { title: "Translate blog post EN→PT", reward: "5 cUSD", slots: "2/3", time: "2h ago", status: "Open" },
+    { title: "Map local food vendors", reward: "8 cUSD", slots: "1/5", time: "5h ago", status: "Open" },
+    { title: "Write community recap thread", reward: "6 cUSD", slots: "3/3", time: "6h ago", status: "Claimed" },
+    { title: "Review smart contract docs", reward: "12 cUSD", slots: "1/2", time: "1d ago", status: "Submitted" },
+    { title: "Onboard 3 new Valora users", reward: "15 cUSD", slots: "5/10", time: "2d ago", status: "Open" },
+  ];
+
+  return (
+    <div style={{ fontFamily: T.sans, background: T.bg, width: 390, height: 780, position: "relative", overflow: "hidden" }}>
+      <Nav wallet="0x4f3a...c81e" />
+
+      <div style={{ padding: "16px 22px 12px", borderBottom: `1px solid ${T.rule}` }}>
+        {/* Search */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <div style={{ flex: 1, background: T.light, borderRadius: 10, padding: "9px 14px", fontSize: 13, color: T.muted, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ opacity: 0.5 }}>⌕</span>
+            <span>Search tasks…</span>
+          </div>
+          <button style={{ background: T.sage, color: "#fff", border: "none", borderRadius: 10, padding: "9px 14px", fontSize: 13, cursor: "pointer", fontFamily: T.sans, fontWeight: 500 }}>+ Create</button>
+        </div>
+        {/* Filters */}
+        <div style={{ display: "flex", gap: 6 }}>
+          {["All", "Open", "Created", "Claimed"].map((f, i) => (
+            <button key={f} style={{ background: i === 0 ? T.ink : T.light, color: i === 0 ? "#fff" : T.muted, border: "none", borderRadius: 20, padding: "5px 14px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: T.sans, letterSpacing: 0.3 }}>{f}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: "4px 22px 80px", overflowY: "hidden" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 4px" }}>
+          <p style={{ fontSize: 11, color: T.muted, letterSpacing: 0.3, textTransform: "uppercase", fontWeight: 600 }}>12 tasks</p>
+        </div>
+        {tasks.map((t, i) => <TaskRow key={i} {...t} />)}
+      </div>
+
+      <BottomNav active="tasks" />
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SCREEN 4 — Profile
+// ══════════════════════════════════════════════════════════════
+function ProfileScreen() {
+  const activity = [
+    { title: "Translate blog post EN→PT", reward: "5 cUSD", status: "Approved" },
+    { title: "Map local food vendors", reward: "8 cUSD", status: "Submitted" },
+    { title: "Write community recap", reward: "6 cUSD", status: "Claimed" },
+  ];
+
+  return (
+    <div style={{ fontFamily: T.sans, background: T.bg, width: 390, height: 780, position: "relative", overflow: "hidden" }}>
+      <Nav wallet="0x4f3a...c81e" />
+
+      {/* Identity card */}
+      <div style={{ padding: "20px 22px", borderBottom: `1px solid ${T.rule}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: T.light, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🧺</div>
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 3 }}>Wallet</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: T.ink, fontFamily: "monospace" }}>0x4f3a...c81e</p>
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.sage }} />
+            <span style={{ fontSize: 11, color: T.sage, fontWeight: 500 }}>Verified</span>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          {[
+            { label: "Completed", value: "7" },
+            { label: "Earned", value: "43 cUSD" },
+            { label: "Created", value: "3" },
+          ].map((s, i) => (
+            <div key={i} style={{ background: T.light, borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: i === 1 ? T.sage : T.ink }}>{s.value}</p>
+              <p style={{ fontSize: 10, color: T.muted, marginTop: 2, letterSpacing: 0.3, textTransform: "uppercase" }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Activity */}
+      <div style={{ padding: "16px 22px 0" }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 4 }}>Recent Activity</p>
+        {activity.map((a, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${T.rule}` }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, color: T.ink, marginBottom: 2 }}>{a.title}</p>
+              <p style={{ fontSize: 11, color: T.muted }}>{a.reward}</p>
+            </div>
+            <StatusPill status={a.status} />
+          </div>
+        ))}
+      </div>
+
+      {/* Settings */}
+      <div style={{ padding: "16px 22px 80px" }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 10 }}>Settings</p>
+        {["Notifications", "Security", "Export data", "Language"].map((item, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${T.rule}`, cursor: "pointer" }}>
+            <span style={{ fontSize: 13, color: T.ink, fontWeight: 400 }}>{item}</span>
+            <span style={{ color: T.muted, fontSize: 14 }}>›</span>
+          </div>
+        ))}
+      </div>
+
+      <BottomNav active="profile" />
+    </div>
+  );
+}
+
+// ── Shell (phone frame) ────────────────────────────────────────
+function PhoneFrame({ children, label }) {
+  return (
+    <div>
+      <DCArtboard label={label} width={390} height={780} style={{ borderRadius: 0, overflow: "hidden" }}>
+        {children}
+      </DCArtboard>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SCREEN 5 — Create Task (modal sheet)
+// ══════════════════════════════════════════════════════════════
+function CreateTaskScreen() {
+  const [visibility, setVisibility] = React.useState("public");
+
+  const Field = ({ label, children }) => (
+    <div style={{ marginBottom: 16 }}>
+      <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.3, textTransform: "uppercase", color: T.muted, marginBottom: 6, fontFamily: T.sans }}>{label}</p>
+      {children}
+    </div>
+  );
+
+  const Input = ({ placeholder, mono, textarea }) => {
+    const base = { width: "100%", background: T.light, border: "none", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: T.ink, fontFamily: mono ? "monospace" : T.sans, outline: "none", resize: "none" };
+    return textarea
+      ? <textarea rows={3} placeholder={placeholder} style={{ ...base, lineHeight: 1.5 }} />
+      : <input placeholder={placeholder} style={base} />;
+  };
+
+  const visOpts = [
+    { id: "public",           icon: "🌐", label: "Public" },
+    { id: "verified_humans",  icon: "✓",  label: "Verified" },
+    { id: "private",          icon: "🔒", label: "Private" },
+  ];
+
+  return (
+    <div style={{ fontFamily: T.sans, background: "rgba(22,22,26,0.45)", width: 390, height: 780, position: "relative", overflow: "hidden" }}>
+      {/* Dimmed tasks bg */}
+      <div style={{ position: "absolute", inset: 0, background: T.bg, opacity: 0.3 }} />
+
+      {/* Sheet */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: T.bg, borderRadius: "18px 18px 0 0", maxHeight: 720, overflowY: "auto", paddingBottom: 24 }}>
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: T.rule }} />
+        </div>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 22px 16px", borderBottom: `1px solid ${T.rule}` }}>
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.muted, marginBottom: 3 }}>New task</p>
+            <h2 style={{ fontFamily: T.serif, fontSize: 22, color: T.ink, fontWeight: 400 }}>Create a <em>task</em></h2>
+          </div>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: T.light, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.muted }}>✕</div>
+        </div>
+
+        <div style={{ padding: "20px 22px 0" }}>
+          <Field label="Task ID">
+            <Input placeholder="unique-task-id" mono />
+          </Field>
+
+          <Field label="Title">
+            <Input placeholder="What needs to be done?" />
+          </Field>
+
+          <Field label="Description">
+            <Input placeholder="Describe the work, requirements and acceptance criteria…" textarea />
+          </Field>
+
+          <Field label="Visibility">
+            <div style={{ display: "flex", gap: 6 }}>
+              {visOpts.map(v => (
+                <button key={v.id} onClick={() => setVisibility(v.id)} style={{ flex: 1, padding: "9px 6px", background: visibility === v.id ? T.ink : T.light, color: visibility === v.id ? "#fff" : T.muted, border: "none", borderRadius: 10, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: T.sans, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                  <span>{v.icon}</span>
+                  <span>{v.label}</span>
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: T.muted, marginTop: 7, lineHeight: 1.5 }}>
+              {visibility === "public" ? "Everyone can see and claim this task." : visibility === "verified_humans" ? "Only GoodDollar verified humans can access." : "Only people with the task ID can access."}
+            </p>
+          </Field>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.3, textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Category</p>
+              <div style={{ background: T.light, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: T.muted, display: "flex", justifyContent: "space-between" }}>
+                <span>Content</span><span>›</span>
+              </div>
+            </div>
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.3, textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Complexity</p>
+              <div style={{ background: T.light, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: T.muted, display: "flex", justifyContent: "space-between" }}>
+                <span>Medium</span><span>›</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.3, textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Reward (cUSD)</p>
+              <input placeholder="10" type="number" style={{ width: "100%", background: T.light, border: "none", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: T.ink, fontFamily: T.sans }} />
+            </div>
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.3, textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Deadline</p>
+              <input type="date" style={{ width: "100%", background: T.light, border: "none", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: T.muted, fontFamily: T.sans }} />
+            </div>
+          </div>
+
+          <Field label="Tags">
+            <Input placeholder="translation, content, portuguese" />
+          </Field>
+
+          {/* Cost summary */}
+          <div style={{ background: T.light, borderRadius: 12, padding: "14px 16px", marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <p style={{ fontSize: 11, color: T.muted, marginBottom: 3 }}>Total to escrow</p>
+              <p style={{ fontSize: 20, fontWeight: 600, color: T.ink, fontFamily: T.sans }}>10.00 <span style={{ fontSize: 13, color: T.muted }}>cUSD</span></p>
+            </div>
+            <div style={{ fontSize: 11, color: T.muted, textAlign: "right" }}>
+              <p>Balance</p>
+              <p style={{ color: T.sage, fontWeight: 600 }}>48.50 cUSD</p>
+            </div>
+          </div>
+
+          <button style={{ width: "100%", background: T.ink, color: "#fff", border: "none", borderRadius: 12, padding: "15px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.sans }}>
+            Create Task →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SCREEN 6 — Task Detail / Claim (modal sheet)
+// ══════════════════════════════════════════════════════════════
+function TaskClaimScreen() {
+  const [state, setS] = React.useState("claim"); // claim | submit | pending
+
+  return (
+    <div style={{ fontFamily: T.sans, background: "rgba(22,22,26,0.45)", width: 390, height: 780, position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, background: T.bg, opacity: 0.3 }} />
+
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: T.bg, borderRadius: "18px 18px 0 0", maxHeight: 740, overflowY: "auto", paddingBottom: 28 }}>
+        {/* Handle */}
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 4px" }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: T.rule }} />
+        </div>
+
+        {/* Header */}
+        <div style={{ padding: "10px 22px 16px", borderBottom: `1px solid ${T.rule}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div style={{ flex: 1, paddingRight: 12 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.sage, marginBottom: 5 }}>Open · 2 of 3 slots</p>
+              <h2 style={{ fontFamily: T.serif, fontSize: 22, color: T.ink, fontWeight: 400, lineHeight: 1.25 }}>Translate blog post <em>EN→PT</em></h2>
+            </div>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: T.light, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 16, color: T.muted, flexShrink: 0 }}>✕</div>
+          </div>
+        </div>
+
+        <div style={{ padding: "18px 22px 0" }}>
+          {/* Description */}
+          <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.65, marginBottom: 18 }}>
+            Translate a 600-word blog post from English to Brazilian Portuguese. Must preserve tone, context, and technical terminology. Deliver as a Google Doc link.
+          </p>
+
+          {/* Details grid */}
+          <div style={{ background: T.light, borderRadius: 12, padding: "16px", marginBottom: 18 }}>
+            {[
+              ["Reward", "5 cUSD"],
+              ["Available slots", "2 / 3"],
+              ["Creator", "0x4f3a...c81e"],
+              ["Posted", "2 hours ago"],
+              ["Deadline", "7 days left"],
+            ].map(([k, v], i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: i < 4 ? `1px solid ${T.rule}` : "none" }}>
+                <span style={{ fontSize: 12, color: T.muted }}>{k}</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: T.ink }}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Tags */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+            {["translation", "content", "portuguese", "blog"].map(tag => (
+              <span key={tag} style={{ background: T.light, color: T.muted, fontSize: 11, fontWeight: 500, padding: "4px 10px", borderRadius: 20 }}>{tag}</span>
+            ))}
+          </div>
+
+          {/* State machine */}
+          {state === "claim" && (
+            <>
+              <button onClick={() => setS("submit")} style={{ width: "100%", background: T.ink, color: "#fff", border: "none", borderRadius: 12, padding: "15px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.sans, marginBottom: 10 }}>
+                Claim this task →
+              </button>
+              <p style={{ fontSize: 11, color: T.muted, textAlign: "center", lineHeight: 1.5 }}>Claiming reserves your slot. You'll need to submit proof within the deadline.</p>
+            </>
+          )}
+
+          {state === "submit" && (
+            <>
+              <div style={{ background: "#EAF4EE", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", gap: 10, alignItems: "center" }}>
+                <span style={{ fontSize: 18 }}>✓</span>
+                <div>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: T.sage }}>Task claimed</p>
+                  <p style={{ fontSize: 11, color: T.muted }}>Submit your proof link once done.</p>
+                </div>
+              </div>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: 1.3, textTransform: "uppercase", color: T.muted, marginBottom: 6 }}>Proof URL</p>
+              <input placeholder="https://docs.google.com/..." style={{ width: "100%", background: T.light, border: "none", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: T.ink, fontFamily: T.sans, marginBottom: 12 }} />
+              <button onClick={() => setS("pending")} style={{ width: "100%", background: T.sage, color: "#fff", border: "none", borderRadius: 12, padding: "15px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.sans }}>
+                Submit work →
+              </button>
+            </>
+          )}
+
+          {state === "pending" && (
+            <div style={{ background: "#FEF9E7", borderRadius: 12, padding: "18px 16px", textAlign: "center" }}>
+              <p style={{ fontSize: 22, marginBottom: 8 }}>⏳</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: T.ink, marginBottom: 4 }}>Awaiting review</p>
+              <p style={{ fontSize: 12, color: T.muted, lineHeight: 1.6 }}>The task creator will review your submission and approve the payment.</p>
+            </div>
+          )}
+
+          {/* State switcher for demo */}
+          <div style={{ display: "flex", gap: 6, marginTop: 18, justifyContent: "center" }}>
+            {["claim","submit","pending"].map(s => (
+              <button key={s} onClick={() => setS(s)} style={{ padding: "4px 10px", background: state === s ? T.ink : T.light, color: state === s ? "#fff" : T.muted, border: "none", borderRadius: 20, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: T.sans }}>
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App ────────────────────────────────────────────────────────
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection
+        title="Balaio — Direction: Papel"
+        subtitle="White · Sage · Instrument Serif + DM Sans · Clean editorial · Mobile-first   —   pinch or scroll to zoom, drag to pan"
+      >
+        <PhoneFrame label="Landing">
+          <LandingScreen />
+        </PhoneFrame>
+        <PhoneFrame label="Home">
+          <HomeScreen />
+        </PhoneFrame>
+        <PhoneFrame label="Tasks">
+          <TasksScreen />
+        </PhoneFrame>
+        <PhoneFrame label="Profile">
+          <ProfileScreen />
+        </PhoneFrame>
+      </DCSection>
+      <DCSection
+        title="Modals"
+        subtitle="Bottom sheet pattern — slides up over the current screen"
+      >
+        <PhoneFrame label="Create Task">
+          <CreateTaskScreen />
+        </PhoneFrame>
+        <PhoneFrame label="Task Detail — Claim / Submit / Pending">
+          <TaskClaimScreen />
+        </PhoneFrame>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+<div id="root"></div>
+</body>
+</html>
