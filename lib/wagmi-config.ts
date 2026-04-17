@@ -37,6 +37,9 @@ createAppKit({
     icons: ['https://www.usebalaio.com/icon-light-32x32.png']
   },
   features: {
-    analytics: false
+    analytics: false,
+    email: true,
+    socials: ['google'],
+    showWallets: true,
   }
 })
