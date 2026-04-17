@@ -115,6 +115,11 @@ export const translations = {
     submitted: "Submitted",
     approved: "Approved",
     completed: "Completed",
+    editDeadline: "Edit Deadline",
+    saveDeadline: "Save Deadline",
+    savingDeadline: "Saving...",
+    deadlineSaved: "Deadline updated!",
+    clearDeadline: "Clear deadline",
 
     // Create Task Modal
     createNewTask: "Create New Task",
@@ -283,6 +288,11 @@ export const translations = {
     submitted: "Enviado",
     approved: "Aprovado",
     completed: "Concluído",
+    editDeadline: "Editar Prazo",
+    saveDeadline: "Salvar Prazo",
+    savingDeadline: "Salvando...",
+    deadlineSaved: "Prazo atualizado!",
+    clearDeadline: "Remover prazo",
 
     // Create Task Modal
     createNewTask: "Criar Nova Tarefa",

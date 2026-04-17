@@ -876,6 +876,30 @@ export function TheOfficeApp() {
     }
   }
 
+  const updateTaskDeadline = useCallback(
+    async (taskId: string, deadline: Date | null) => {
+      try {
+        const { error } = await supabase
+          .from("tasks")
+          .update({ deadline: deadline ? deadline.toISOString() : null })
+          .eq("id", taskId)
+
+        if (error) throw error
+
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, deadline } : t))
+        )
+        if (selectedTask?.id === taskId) {
+          setSelectedTask((prev) => prev ? { ...prev, deadline } : prev)
+        }
+        toast(language === "en" ? "Deadline updated!" : "Prazo atualizado!")
+      } catch (error) {
+        toast("Error: " + (error instanceof Error ? error.message : String(error)))
+      }
+    },
+    [supabase, selectedTask, language, toast]
+  )
+
   const refreshClaimsFromBlockchain = async (createdTaskIds: string[]) => {
     if (createdTaskIds.length === 0) return
 
@@ -1117,6 +1141,7 @@ export function TheOfficeApp() {
         onSubmitTask={submitTask}
         onApproveTask={approveTaskSubmission}
         onClaimReward={claimReward}
+        onUpdateDeadline={updateTaskDeadline}
         language={language}
       />
 
