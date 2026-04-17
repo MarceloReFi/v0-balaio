@@ -4,63 +4,31 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --pink: #FF99CC;
-  --green: #99FF99;
-  --yellow: #FFFF66;
-  --blue: #99CCFF;
-  --black: #111111;
-  --white: #FFFFFF;
-  --gray: #666666;
-
-  --background: var(--white);
-  --foreground: var(--black);
-  --card: var(--white);
-  --card-foreground: var(--black);
-  --popover: var(--white);
-  --popover-foreground: var(--black);
-  --primary: var(--black);
-  --primary-foreground: var(--white);
-  --secondary: #F5F5F5;
-  --secondary-foreground: var(--black);
-  --accent: var(--pink);
-  --accent-foreground: var(--black);
-  --muted: #F5F5F5;
-  --muted-foreground: var(--gray);
+  --background: #FFFFFF;
+  --foreground: #16161A;
+  --card: #FFFFFF;
+  --card-foreground: #16161A;
+  --popover: #FFFFFF;
+  --popover-foreground: #16161A;
+  --primary: #16161A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F2F4F1;
+  --secondary-foreground: #16161A;
+  --muted: #F2F4F1;
+  --muted-foreground: #7A8784;
+  --accent: #4A7B5E;
+  --accent-foreground: #FFFFFF;
   --destructive: #DC2626;
-  --destructive-foreground: var(--white);
-  --border: var(--black);
-  --input: var(--white);
-  --ring: var(--black);
+  --destructive-foreground: #FFFFFF;
+  --border: #E4E8E5;
+  --input: #F2F4F1;
+  --ring: #4A7B5E;
   --radius: 12px;
-  --balaio-border: 2px solid var(--black);
-  --balaio-shadow: 2px 2px 0 var(--black);
-}
-
-.dark {
-  --background: #111111;
-  --foreground: #F5F5F5;
-  --card: #1A1A1A;
-  --card-foreground: #F5F5F5;
-  --popover: #1A1A1A;
-  --popover-foreground: #F5F5F5;
-  --primary: var(--white);
-  --primary-foreground: var(--black);
-  --secondary: #2A2A2A;
-  --secondary-foreground: #F5F5F5;
-  --muted: #2A2A2A;
-  --muted-foreground: #999999;
-  --accent: var(--pink);
-  --accent-foreground: var(--black);
-  --destructive: #DC2626;
-  --destructive-foreground: var(--white);
-  --border: #333333;
-  --input: #2A2A2A;
-  --ring: var(--white);
 }
 
 @theme inline {
-  --font-sans: "Courier Prime", "Courier New", monospace;
-  --font-mono: "Courier Prime", "Courier New", monospace;
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -82,17 +50,45 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --color-balaio-pink: var(--pink);
-  --color-balaio-green: var(--green);
-  --color-balaio-yellow: var(--yellow);
-  --color-balaio-black: var(--black);
-  --color-balaio-white: var(--white);
-  --color-balaio-gray: var(--gray);
-
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+}
+
+@theme {
+  /* Colors */
+  --color-balaio-ink:     #16161A;
+  --color-balaio-sage:    #4A7B5E;
+  --color-balaio-bg:      #FFFFFF;
+  --color-balaio-surface: #F2F4F1;
+  --color-balaio-rule:    #E4E8E5;
+  --color-balaio-muted:   #7A8784;
+
+  /* Status */
+  --color-balaio-open-bg:      #EAF4EE;
+  --color-balaio-open-text:    #4A7B5E;
+  --color-balaio-pending-bg:   #FEF9E7;
+  --color-balaio-pending-text: #8A6D00;
+  --color-balaio-claimed-bg:   #F2F4F1;
+  --color-balaio-claimed-text: #7A8784;
+
+  /* Crypto token colors */
+  --color-balaio-token-g:    #00B4A0;
+  --color-balaio-token-celo: #FCFF52;
+  --color-balaio-token-usdt: #26A17B;
+
+  /* Shadows */
+  --shadow-balaio-card:  0 2px 12px rgba(22, 22, 26, 0.06);
+  --shadow-balaio-sheet: 0 -4px 24px rgba(22, 22, 26, 0.10);
+
+  /* Border radius */
+  --radius-balaio-sm:    8px;
+  --radius-balaio-md:    10px;
+  --radius-balaio-lg:    12px;
+  --radius-balaio-xl:    14px;
+  --radius-balaio-pill:  20px;
+  --radius-balaio-sheet: 18px;
 }
 
 @layer base {
@@ -101,50 +97,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: "Courier Prime", "Courier New", monospace;
-    font-size: 17px;
+    font-family: var(--font-sans, 'DM Sans', system-ui, sans-serif);
+    font-size: 16px;
     line-height: 1.5;
   }
-}
-
-.balaio-chip {
-  display: inline-block;
-  padding: 0.35rem 0.85rem;
-  border: 2px solid var(--black);
-  border-radius: var(--radius);
-  font-weight: bold;
-  font-size: 0.9rem;
-  background: var(--white);
-  box-shadow: 2px 2px 0 var(--black);
-  transition: all 0.15s ease;
-}
-
-.balaio-chip:hover {
-  box-shadow: 3px 3px 0 var(--black);
-  transform: translate(-1px, -1px);
-}
-
-.balaio-chip.pink {
-  background: var(--pink);
-}
-
-.balaio-chip.green {
-  background: var(--green);
-}
-
-.balaio-chip.yellow {
-  background: var(--yellow);
-}
-
-.balaio-chip.blue {
-  background: var(--blue);
-  border-color: #111111;
-}
-
-.balaio-card {
-  padding: 1rem;
-  border: 2px solid var(--black);
-  border-radius: var(--radius);
-  background: var(--white);
-  box-shadow: 2px 2px 0 var(--black);
 }

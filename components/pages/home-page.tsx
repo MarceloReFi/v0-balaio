@@ -1,6 +1,7 @@
 "use client"
 
 import { useTranslations, type Language } from "@/lib/translations"
+import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task } from "@/lib/types"
 
 interface HomePageProps {
@@ -31,29 +32,17 @@ export function HomePage({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "open":
-        return <span className="bg-[#99FF99] text-[#111111] px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Active</span>
+        return <span className="bg-balaio-open-bg text-balaio-open-text px-3 py-1 text-xs font-semibold rounded-balaio-pill">Open</span>
       case "claimed":
-        return (
-          <span className="bg-white text-[#666666] px-2 py-0.5 text-xs font-bold border-2 border-[#666666] rounded-lg">Claimed</span>
-        )
+        return <span className="bg-balaio-claimed-bg text-balaio-claimed-text px-3 py-1 text-xs font-semibold rounded-balaio-pill">Claimed</span>
       case "submitted":
-        return (
-          <span className="bg-[#FFFF66] text-[#111111] px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Pending</span>
-        )
+        return <span className="bg-balaio-pending-bg text-balaio-pending-text px-3 py-1 text-xs font-semibold rounded-balaio-pill">Pending</span>
       case "approved":
-        return (
-          <span className="bg-[#99FF99] text-[#111111] px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Approved</span>
-        )
+        return <span className="bg-balaio-open-bg text-balaio-open-text px-3 py-1 text-xs font-semibold rounded-balaio-pill">Approved</span>
       case "completed":
-        return (
-          <span className="bg-[#666666] text-white px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg">Completed</span>
-        )
+        return <span className="bg-balaio-claimed-bg text-balaio-claimed-text px-3 py-1 text-xs font-semibold rounded-balaio-pill">Completed</span>
       default:
-        return (
-          <span className="bg-gray-200 text-[#666666] px-2 py-0.5 text-xs font-bold border-2 border-[#666666] rounded-lg">
-            {status}
-          </span>
-        )
+        return <span className="bg-balaio-claimed-bg text-balaio-claimed-text px-3 py-1 text-xs font-semibold rounded-balaio-pill">{status}</span>
     }
   }
 
@@ -69,26 +58,23 @@ export function HomePage({
     return "Just now"
   }
 
-  const getSlotStatusColor = (task: Task) => {
+  const getSlotDotColor = (task: Task) => {
     const available = Number(task.availableSlots)
     const total = Number(task.totalSlots)
-
-    if (!task.active || available === 0) return "bg-red-500"
-    if (available === total) return "bg-[#99FF99]"
-    return "bg-[#FFFF66]"
+    if (!task.active || available === 0) return "bg-red-400"
+    if (available === total) return "bg-balaio-sage"
+    return "bg-yellow-400"
   }
 
   const getDeadlineInfo = (deadline: Date | null | undefined) => {
     if (!deadline) return null
-
     const now = new Date()
     const deadlineDate = new Date(deadline)
     const diffMs = deadlineDate.getTime() - now.getTime()
     const diffDays = diffMs / (1000 * 60 * 60 * 24)
-
-    if (diffMs < 0) return { color: "text-red-600", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-[#FFFF66]", text: language === "en" ? "1 day" : "1 dia" }
-    return { color: "text-[#99FF99]", text: `${Math.ceil(diffDays)}d` }
+    if (diffMs < 0) return { color: "text-red-500", text: language === "en" ? "Expired" : "Expirado" }
+    if (diffDays <= 1) return { color: "text-balaio-pending-text", text: language === "en" ? "1 day" : "1 dia" }
+    return { color: "text-balaio-sage", text: `${Math.ceil(diffDays)}d` }
   }
 
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -137,75 +123,87 @@ export function HomePage({
   ]
 
   return (
-    <div className="p-5 pb-24">
+    <div className="px-[22px] py-5 pb-24">
+      {/* Latest Tasks */}
       {latestTasks.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <span className="text-[#666666]">📋</span> {language === "en" ? "Latest Tasks" : "Últimas Tarefas"}
-            </h3>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
+                {language === "en" ? "Recent" : "Recentes"}
+              </p>
+              <h3 className="font-display text-xl text-balaio-ink">
+                {language === "en" ? <><em>Latest</em> Tasks</> : <>Últimas <em>Tarefas</em></>}
+              </h3>
+            </div>
             {onNavigateToTasks && (
               <button
                 onClick={onNavigateToTasks}
-                className="bg-white border-2 border-[#111111] rounded-xl px-3 py-1.5 text-sm font-bold hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+                className="bg-balaio-surface text-balaio-muted px-4 py-1.5 text-xs font-semibold rounded-balaio-pill hover:bg-balaio-rule transition-colors"
               >
-                + More
+                {language === "en" ? "See all" : "Ver todas"}
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="flex flex-col">
             {latestTasks.map((task) => {
               const deadlineInfo = getDeadlineInfo(task.deadline)
               return (
-                <div key={task.id} className="bg-white border-2 border-[#111111] rounded-xl p-4 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
+                <div
+                  key={task.id}
+                  className="py-4 border-b border-balaio-rule -mx-[22px] px-[22px]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`w-2.5 h-2.5 rounded-full ${getSlotStatusColor(task)}`}></span>
-                        <h4 className="font-bold text-sm">{task.title}</h4>
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getSlotDotColor(task)}`} />
+                        <h4 className="font-semibold text-sm text-balaio-ink truncate">{task.title}</h4>
                       </div>
-                      <p className="text-xs text-[#666666] mb-2 line-clamp-2">{task.description}</p>
+                      <p className="text-xs text-balaio-muted mb-2 line-clamp-2">{task.description}</p>
 
-                      <div className="text-xs text-[#666666] mb-1">
-                        {language === "en" ? "By:" : "Por:"} {shortenAddress(task.creator)}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-balaio-muted">
+                        <span>{shortenAddress(task.creator)}</span>
+                        <span>·</span>
                         <span className="flex items-center gap-1">
-                          💰 {task.reward} {task.token || "cUSD"}
+                          {task.reward} <TokenBadge symbol={task.token || "cUSD"} />
                         </span>
-                        <span className="flex items-center gap-1">👥 {task.availableSlots || task.totalSlots || 1} slots</span>
-                        <span className="flex items-center gap-1">⏰ {getTimeAgo(task.createdAt)}</span>
+                        <span>·</span>
+                        <span>{task.availableSlots || task.totalSlots || 1} {language === "en" ? "slots" : "vagas"}</span>
+                        <span>·</span>
+                        <span>{getTimeAgo(task.createdAt)}</span>
                         {deadlineInfo && (
-                          <span className={`flex items-center gap-1 ${deadlineInfo.color}`}>
-                            📅 {deadlineInfo.text}
-                          </span>
+                          <>
+                            <span>·</span>
+                            <span className={deadlineInfo.color}>{deadlineInfo.text}</span>
+                          </>
                         )}
-                        {getStatusBadge(task.status || "open")}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1">
-                      {onViewTask && (
-                        <button
-                          onClick={() => onViewTask(task)}
-                          className="bg-[#111111] text-white px-3 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
-                        >
-                          View
-                        </button>
-                      )}
-                      {(task.status === "open" || (!task.status && task.active && Number(task.availableSlots) > 0)) &&
-                        account &&
-                        task.creator?.toLowerCase() !== account?.toLowerCase() &&
-                        onClaimTask && (
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      {getStatusBadge(task.status || "open")}
+                      <div className="flex gap-1">
+                        {onViewTask && (
                           <button
-                            onClick={() => onClaimTask(task)}
-                            className="bg-[#FF99CC] text-[#111111] px-3 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+                            onClick={() => onViewTask(task)}
+                            className="bg-balaio-ink text-white px-3 py-1 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity"
                           >
-                            Claim
+                            {language === "en" ? "View" : "Ver"}
                           </button>
                         )}
+                        {(task.status === "open" || (!task.status && task.active && Number(task.availableSlots) > 0)) &&
+                          account &&
+                          task.creator?.toLowerCase() !== account?.toLowerCase() &&
+                          onClaimTask && (
+                            <button
+                              onClick={() => onClaimTask(task)}
+                              className="bg-balaio-sage text-white px-3 py-1 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity"
+                            >
+                              {language === "en" ? "Claim" : "Reivindicar"}
+                            </button>
+                          )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -215,59 +213,51 @@ export function HomePage({
         </div>
       )}
 
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-3">
-
-          <button className="bg-white border-2 border-[#111111] rounded-xl px-3 py-1.5 text-sm font-bold hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow">
-            + More
-          </button>
+      {/* Opportunities */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
+              {language === "en" ? "Ecosystem" : "Ecossistema"}
+            </p>
+            <h3 className="font-display text-xl text-balaio-ink">
+              {language === "en" ? <><em>Funding</em> Opportunities</> : <>Oportunidades de <em>Financiamento</em></>}
+            </h3>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           {opportunities.map((opp, index) => (
-            <div key={index} className="bg-white border-2 border-[#111111] rounded-xl p-4 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
+            <div key={index} className="bg-white border border-balaio-rule rounded-balaio-xl p-4 shadow-balaio-card">
               <div className="flex items-start justify-between mb-2">
-                <h4 className="font-bold text-sm flex-1">{opp.title}</h4>
+                <h4 className="font-semibold text-sm text-balaio-ink flex-1 mr-2">{opp.title}</h4>
                 <a
                   href={opp.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-[#FF99CC] text-[#111111] px-3 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+                  className="bg-balaio-sage text-white px-3 py-1 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity flex-shrink-0"
                 >
                   Apply
                 </a>
               </div>
 
-              <div className="mb-2">
-                <span
-                  className={`px-2 py-0.5 text-xs font-bold border-2 border-[#111111] rounded-lg ${
-                    opp.type.includes("Grant") || opp.type.includes("Subsídio")
-                      ? "bg-[#FF99CC] text-[#111111]"
-                      : opp.type.includes("Rewards") || opp.type.includes("Recompensas")
-                        ? "bg-[#99FF99] text-[#111111]"
-                        : opp.type.includes("Accelerator") || opp.type.includes("Aceleradora")
-                          ? "bg-[#FFFF66] text-[#111111]"
-                          : "bg-[#111111] text-white"
-                  }`}
-                >
-                  {opp.type}
-                </span>
-              </div>
+              <span className="bg-balaio-surface text-balaio-muted px-2 py-0.5 text-xs font-semibold rounded-full inline-block mb-2">
+                {opp.type}
+              </span>
 
-              <p className="text-xs text-[#666666] mb-3">{opp.description}</p>
+              <p className="text-xs text-balaio-muted mb-3" style={{ lineHeight: 1.6 }}>{opp.description}</p>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs mb-3">
-                <span className="flex items-center gap-1">🏢 {opp.provider}</span>
-                <span className="flex items-center gap-1">💰 {opp.amount}</span>
-              </div>
-
-              <div className="flex items-center gap-1 text-xs mb-3">
-                <span>📅 {opp.deadline}</span>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-balaio-muted mb-3">
+                <span>{opp.provider}</span>
+                <span>·</span>
+                <span>{opp.amount}</span>
+                <span>·</span>
+                <span>{opp.deadline}</span>
               </div>
 
               <div className="flex flex-wrap gap-1">
                 {opp.tags.map((tag) => (
-                  <span key={tag} className="bg-white border-2 border-[#111111] rounded-lg px-2 py-0.5 text-xs">
+                  <span key={tag} className="bg-balaio-surface text-balaio-muted px-2 py-0.5 text-xs rounded-full">
                     {tag}
                   </span>
                 ))}
@@ -277,26 +267,25 @@ export function HomePage({
         </div>
       </div>
 
-      <div className="bg-[#99FF99] border-2 border-[#111111] rounded-xl p-6 relative overflow-hidden shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20">
-          <img src="/logo.png" alt="Balaio" className="w-32 h-32 object-contain" />
+      {/* Explore Features Banner */}
+      <div className="bg-balaio-surface rounded-balaio-xl p-6 relative overflow-hidden">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-10">
+          <img src="/logo.png" alt="Balaio" className="w-24 h-24 object-contain" />
         </div>
-
-        <div className="text-center relative z-10">
-
-          <h3 className="text-[#111111] font-bold text-lg mb-2">
-            {language === "en" ? "Discover All Features" : "Descubra Todas as Funcionalidades"}
+        <div className="relative z-10">
+          <h3 className="font-display text-xl text-balaio-ink mb-2">
+            {language === "en" ? <>Discover All <em>Features</em></> : <>Descubra as <em>Funcionalidades</em></>}
           </h3>
-          <p className="text-[#111111]/80 text-sm mb-4">
+          <p className="text-xs text-balaio-muted mb-4" style={{ lineHeight: 1.6 }}>
             {language === "en"
               ? "Smart task creation, mobile-first design, and comprehensive tools for every user type"
               : "Criação inteligente de tarefas, design mobile-first e ferramentas completas para todos os tipos de usuário"}
           </p>
           <button
             onClick={onNavigateToFeatures}
-            className="bg-[#111111] text-white px-4 py-2 text-sm font-bold border-2 border-[#111111] rounded-xl hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+            className="bg-balaio-ink text-white px-5 py-2.5 text-sm font-semibold rounded-balaio-lg hover:opacity-90 transition-opacity"
           >
-            📋 {language === "en" ? "Explore Features →" : "Explorar Funcionalidades →"}
+            {language === "en" ? "Explore Features →" : "Explorar Funcionalidades →"}
           </button>
         </div>
       </div>
