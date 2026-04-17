@@ -31,6 +31,7 @@ interface TaskDetailModalProps {
   onSubmitTask: (id: string, proof: string) => void
   onApproveTask: (id: string, claimant: string) => void
   onClaimReward: (id: string) => void
+  onUpdateDeadline: (taskId: string, deadline: Date | null) => Promise<void>
   language: Language
 }
 
@@ -44,11 +45,25 @@ export function TaskDetailModal({
   onSubmitTask,
   onApproveTask,
   onClaimReward,
+  onUpdateDeadline,
   language,
 }: TaskDetailModalProps) {
   const t = useTranslations(language)
   const [proofUrl, setProofUrl] = useState("")
   const [approveAddress, setApproveAddress] = useState("")
+  const [editingDeadline, setEditingDeadline] = useState(false)
+  const [newDeadline, setNewDeadline] = useState<string>(
+    task?.deadline ? new Date(task.deadline).toISOString().split("T")[0] : ""
+  )
+  const [savingDeadline, setSavingDeadline] = useState(false)
+
+  const handleSaveDeadline = async () => {
+    setSavingDeadline(true)
+    const parsed = newDeadline ? new Date(newDeadline) : null
+    await onUpdateDeadline(task!.id, parsed)
+    setSavingDeadline(false)
+    setEditingDeadline(false)
+  }
 
   if (!open || !task) return null
 
@@ -265,6 +280,51 @@ export function TaskDetailModal({
               >
                 {language === "en" ? "Approve Submission →" : "Aprovar Envio →"}
               </button>
+
+              <div className="mt-3 border-t-2 border-[#111111] pt-3">
+                <div className="font-bold mb-2 text-xs">{t.editDeadline}</div>
+                {!editingDeadline ? (
+                  <button
+                    onClick={() => setEditingDeadline(true)}
+                    className="text-xs font-bold underline hover:opacity-70"
+                  >
+                    {task.deadline
+                      ? new Date(task.deadline).toLocaleDateString()
+                      : language === "en" ? "No deadline set" : "Sem prazo definido"} ✏️
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="date"
+                      value={newDeadline}
+                      onChange={(e) => setNewDeadline(e.target.value)}
+                      className="w-full p-2 border-2 border-[#111111] rounded-xl text-xs font-mono"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveDeadline}
+                        disabled={savingDeadline}
+                        className="flex-1 bg-[#99FF99] text-[#111111] px-3 py-2 font-bold border-2 border-[#111111] rounded-xl text-xs disabled:opacity-70"
+                      >
+                        {savingDeadline ? t.savingDeadline : t.saveDeadline}
+                      </button>
+                      <button
+                        onClick={() => { setNewDeadline(""); handleSaveDeadline() }}
+                        disabled={savingDeadline}
+                        className="text-xs font-bold underline hover:opacity-70 disabled:opacity-40"
+                      >
+                        {t.clearDeadline}
+                      </button>
+                      <button
+                        onClick={() => setEditingDeadline(false)}
+                        className="text-xs text-[#666666] hover:opacity-70"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
