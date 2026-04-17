@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { X, ChevronDown, Calendar, Plus } from "lucide-react"
+import { ChevronDown, Calendar, Plus, X } from "lucide-react"
 import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
+import { BottomSheet } from "@/components/ui/bottom-sheet"
 import type { Task } from "@/lib/types"
 
 interface CreateTaskModalProps {
@@ -135,19 +136,22 @@ export function CreateTaskModal({
     return complexityOptions.find((c) => c.value === comp)?.label || comp
   }
 
+  const inputClass = "w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm outline-none focus:ring-1 focus:ring-balaio-sage"
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-[#111111] rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-lg">{t.createNewTask}</h2>
-          <button onClick={onClose} className="hover:opacity-70">
-            <X size={24} />
-          </button>
+    <BottomSheet onClose={onClose}>
+      <div className="px-[22px] pb-8">
+        <div className="mb-5">
+          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-1">
+            {language === "en" ? "New task" : "Nova tarefa"}
+          </p>
+          <h2 className="font-display text-2xl text-balaio-ink">{t.createNewTask}</h2>
         </div>
 
         <div className="flex flex-col gap-4">
+          {/* Task IDs */}
           <div>
-            <label className="block font-bold mb-2 text-xs">{t.taskId}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.taskId}</label>
             <div className="flex flex-col gap-2">
               {taskIds.map((id, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -155,13 +159,13 @@ export function CreateTaskModal({
                     value={id}
                     onChange={(e) => updateTaskId(index, e.target.value)}
                     placeholder="unique-task-id"
-                    className="flex-1 p-2.5 border-2 border-[#111111] rounded-xl font-mono"
+                    className={`flex-1 ${inputClass}`}
                   />
                   {getStatusIcon(id)}
                   <button
                     type="button"
                     onClick={() => removeTaskId(index)}
-                    className="p-1 hover:opacity-70 text-[#666666] flex-shrink-0"
+                    className="p-1 hover:opacity-70 text-balaio-muted flex-shrink-0"
                     aria-label="Remove task ID"
                   >
                     <X size={18} />
@@ -173,74 +177,62 @@ export function CreateTaskModal({
               type="button"
               onClick={addTaskId}
               disabled={taskIds.length >= 10}
-              className="mt-2 flex items-center gap-1 text-sm font-bold text-[#111111] hover:opacity-70 disabled:opacity-40"
+              className="mt-2 flex items-center gap-1 text-sm font-semibold text-balaio-sage hover:opacity-70 disabled:opacity-40"
             >
               <Plus size={16} />
               {t.addTaskId}
             </button>
           </div>
 
+          {/* Title */}
           <div>
-            <label className="block font-bold mb-2 text-xs">{t.title}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.title}</label>
             <input
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="Task title"
-              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
+              className={inputClass}
             />
           </div>
 
+          {/* Description */}
           <div>
-            <label className="block font-bold mb-2 text-xs">{t.description}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.description}</label>
             <textarea
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
               placeholder="Task description"
               rows={3}
-              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
+          {/* Visibility */}
           <div>
-            <label className="block font-bold mb-2 text-xs">
-              {language === "en" ? "VISIBILITY" : "VISIBILIDADE"}
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">
+              {language === "en" ? "Visibility" : "Visibilidade"}
             </label>
-            <div className="grid grid-cols-3 gap-0 border-2 border-[#111111] rounded-xl overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setVisibility("public")}
-                className={`py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-                  visibility === "public"
-                    ? "bg-[#99FF99] text-[#111111]"
-                    : "bg-white text-[#666666] hover:bg-gray-100"
-                }`}
-              >
-                🌐 {language === "en" ? "Public" : "Publica"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setVisibility("verified_humans")}
-                className={`py-2.5 px-3 font-bold text-sm flex items-center justify-center gap-1 border-x-2 border-[#111111] transition-colors ${
-                  visibility === "verified_humans"
-                    ? "bg-[#FFFF66] text-[#111111]"
-                    : "bg-white text-[#666666] hover:bg-gray-100"
-                }`}
-              >
-                ✓ {language === "en" ? "Verified" : "Verificado"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setVisibility("private")}
-                className={`py-2.5 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
-                  visibility === "private"
-                    ? "bg-[#FF99CC] text-[#111111]"
-                    : "bg-white text-[#666666] hover:bg-gray-100"
-                }`}
-              >
-                🔒 {language === "en" ? "Private" : "Privada"}
-              </button>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: "public" as const, label: language === "en" ? "Public" : "Publica" },
+                { value: "verified_humans" as const, label: language === "en" ? "Verified" : "Verificado" },
+                { value: "private" as const, label: language === "en" ? "Private" : "Privada" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setVisibility(opt.value)}
+                  className={`py-2.5 px-3 font-semibold text-sm rounded-balaio-lg transition-colors ${
+                    visibility === opt.value
+                      ? "bg-balaio-ink text-white"
+                      : "bg-balaio-surface text-balaio-muted hover:bg-balaio-rule"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-[#666666] mt-2">
+            <p className="text-xs text-balaio-muted mt-2">
               {visibility === "public"
                 ? (language === "en" ? "Everyone can see and claim this task" : "Todos podem ver e reivindicar esta tarefa")
                 : visibility === "verified_humans"
@@ -249,146 +241,141 @@ export function CreateTaskModal({
             </p>
           </div>
 
-          <div>
-            <label className="block font-bold mb-2 text-xs">{t.category}</label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono flex items-center justify-between bg-white"
-              >
-                <span>{getCategoryLabel(category)}</span>
-                <ChevronDown size={18} className={`transition-transform ${showCategoryDropdown ? "rotate-180" : ""}`} />
-              </button>
+          {/* Category + Complexity side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.category}</label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                  className="w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm flex items-center justify-between outline-none"
+                >
+                  <span>{getCategoryLabel(category)}</span>
+                  <ChevronDown size={16} className={`transition-transform ${showCategoryDropdown ? "rotate-180" : ""}`} />
+                </button>
+                {showCategoryDropdown && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-balaio-rule rounded-balaio-lg z-10 overflow-hidden shadow-balaio-card mt-1">
+                    {categoryOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => { setCategory(opt.value); setShowCategoryDropdown(false) }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-balaio-surface transition-colors ${category === opt.value ? "font-semibold text-balaio-sage" : "text-balaio-ink"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
-              {showCategoryDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border-2 border-[#111111] border-t-0 rounded-b-xl z-10 overflow-hidden">
-                  {categoryOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setCategory(opt.value)
-                        setShowCategoryDropdown(false)
-                      }}
-                      className={`w-full p-2.5 text-left hover:bg-gray-100 ${
-                        category === opt.value ? "bg-[#FFFF66]" : ""
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.complexity}</label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowComplexityDropdown(!showComplexityDropdown)}
+                  className="w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm flex items-center justify-between outline-none"
+                >
+                  <span>{getComplexityLabel(complexity)}</span>
+                  <ChevronDown size={16} className={`transition-transform ${showComplexityDropdown ? "rotate-180" : ""}`} />
+                </button>
+                {showComplexityDropdown && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-balaio-rule rounded-balaio-lg z-10 overflow-hidden shadow-balaio-card mt-1">
+                    {complexityOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => { setComplexity(opt.value); setShowComplexityDropdown(false) }}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-balaio-surface transition-colors ${complexity === opt.value ? "font-semibold text-balaio-sage" : "text-balaio-ink"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
+          {/* Validation method (fixed) */}
           <div>
-            <label className="block font-bold mb-2 text-xs">{t.complexity}</label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowComplexityDropdown(!showComplexityDropdown)}
-                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono flex items-center justify-between bg-white"
-              >
-                <span>{getComplexityLabel(complexity)}</span>
-                <ChevronDown
-                  size={18}
-                  className={`transition-transform ${showComplexityDropdown ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {showComplexityDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border-2 border-[#111111] border-t-0 rounded-b-xl z-10 overflow-hidden">
-                  {complexityOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setComplexity(opt.value)
-                        setShowComplexityDropdown(false)
-                      }}
-                      className={`w-full p-2.5 text-left hover:bg-gray-100 ${
-                        complexity === opt.value ? "bg-[#FFFF66]" : ""
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block font-bold mb-2 text-xs">{t.validationMethod}</label>
-            <div className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono bg-gray-50 text-[#666666]">
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.validationMethod}</label>
+            <div className="px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm text-balaio-muted">
               {t.validationUrl}
             </div>
           </div>
 
-          <div>
-            <label className="block font-bold mb-2 text-xs">{t.deadline}</label>
-            <div className="relative">
+          {/* Reward + Deadline side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">
+                {t.reward} ({selectedToken})
+              </label>
               <input
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono pr-10"
+                type="number"
+                value={rewardPerSlot}
+                onChange={(e) => setRewardPerSlot(e.target.value)}
+                placeholder="10"
+                className={inputClass}
               />
-              <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#666666] pointer-events-none" size={18} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.deadline}</label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  className={`${inputClass} pr-10`}
+                />
+                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-balaio-muted pointer-events-none" size={16} />
+              </div>
             </div>
           </div>
 
+          {/* Tags */}
           <div>
-            <label className="block font-bold mb-2 text-xs">{t.tags}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.tags}</label>
             <input
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder={t.tagsPlaceholder}
-              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
+              className={inputClass}
             />
           </div>
 
+          {/* Token selector */}
           <div>
-            <label className="block font-bold mb-2 text-xs">{t.selectToken}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.selectToken}</label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-                className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono flex items-center justify-between bg-white"
+                className="w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm flex items-center justify-between outline-none"
               >
                 <span className="flex items-center gap-2">
-                  <span className="font-bold">{selectedToken}</span>
-                  <span className="text-[#666666] text-sm">
-                    (Balance: {tokenBalances[selectedToken]} {selectedToken})
+                  <span className="font-semibold text-balaio-ink">{selectedToken}</span>
+                  <span className="text-balaio-muted text-xs">
+                    ({language === "en" ? "Balance" : "Saldo"}: {tokenBalances[selectedToken]})
                   </span>
                 </span>
-                <ChevronDown size={18} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
+                <ChevronDown size={16} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
               </button>
-
               {showTokenDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border-2 border-[#111111] border-t-0 rounded-b-xl z-10 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 bg-white border border-balaio-rule rounded-balaio-lg z-10 max-h-48 overflow-y-auto shadow-balaio-card mt-1">
                   {tokenOptions.map((token) => (
                     <button
                       key={token.symbol}
                       type="button"
-                      onClick={() => {
-                        setSelectedToken(token.symbol)
-                        setShowTokenDropdown(false)
-                      }}
-                      className={`w-full p-2.5 text-left hover:bg-gray-100 flex items-center justify-between ${
-                        selectedToken === token.symbol ? "bg-[#FFFF66]" : ""
-                      }`}
+                      onClick={() => { setSelectedToken(token.symbol); setShowTokenDropdown(false) }}
+                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-balaio-surface transition-colors flex items-center justify-between ${selectedToken === token.symbol ? "font-semibold text-balaio-sage" : "text-balaio-ink"}`}
                     >
-                      <span>
-                        <span className="font-bold">{token.symbol}</span>
-                        <span className="text-[#666666] text-sm ml-2">({token.name})</span>
-                      </span>
-                      <span className="text-sm text-[#666666]">
-                        {tokenBalances[token.symbol]} {token.symbol}
-                      </span>
+                      <span>{token.symbol} <span className="text-balaio-muted font-normal">({token.name})</span></span>
+                      <span className="text-balaio-muted text-xs">{tokenBalances[token.symbol]}</span>
                     </button>
                   ))}
                 </div>
@@ -396,39 +383,26 @@ export function CreateTaskModal({
             </div>
           </div>
 
-          <div>
-            <label className="block font-bold mb-2 text-xs">
-              {t.reward} ({selectedToken})
-            </label>
-            <input
-              type="number"
-              value={rewardPerSlot}
-              onChange={(e) => setRewardPerSlot(e.target.value)}
-              placeholder="10"
-              className="w-full p-2.5 border-2 border-[#111111] rounded-xl font-mono"
-            />
-          </div>
-
-          {/* TEMPORARY: Slots field removed - hardcoded to 1 until contract multi-slot approval is fixed */}
-
+          {/* Cost summary */}
           {totalCost && (
-            <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-3">
-              <div className="font-bold text-xs text-[#111111]">{t.totalCostBrl}</div>
-              <div className="text-lg font-bold text-[#111111]">
+            <div className="bg-balaio-surface rounded-balaio-lg p-4 flex items-center justify-between">
+              <div className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">{t.totalCostBrl}</div>
+              <div className="text-lg font-semibold text-balaio-ink">
                 {totalCost} {selectedToken}
               </div>
             </div>
           )}
 
+          {/* Submit */}
           <button
             onClick={submitTaskForm}
             disabled={loading || validTaskIds.length === 0 || !taskTitle || !totalSlots || !rewardPerSlot}
-            className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl w-full disabled:opacity-50 hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+            className="bg-balaio-ink text-white px-6 py-3.5 font-semibold rounded-balaio-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
           >
-            {loading ? (language === "en" ? "CREATING..." : "CRIANDO...") : t.createTaskButton}
+            {loading ? (language === "en" ? "Creating..." : "Criando...") : t.createTaskButton}
           </button>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   )
 }

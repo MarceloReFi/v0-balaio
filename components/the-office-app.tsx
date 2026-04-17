@@ -983,56 +983,38 @@ export function TheOfficeApp() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <header className="sticky top-0 bg-[#111111] px-4 py-3 border-b-2 border-[#111111] z-40">
+      <header className="sticky top-0 bg-white px-[22px] py-3 border-b border-balaio-rule z-40">
         <div className="flex items-center justify-between">
           {account && currentPage !== "home" && (
-            <button onClick={() => setCurrentPage("home")} className="text-white p-1 hover:opacity-80">
+            <button onClick={() => setCurrentPage("home")} className="text-balaio-ink p-1 hover:opacity-70 mr-2">
               <ArrowLeft size={20} />
             </button>
           )}
 
-          <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 border-2 border-[#111111] rounded-xl flex items-center justify-center bg-white">
-              <img src="/logo.png" alt="Balaio Logo" className="w-full h-full object-contain rounded-lg" />
+          <div className="flex items-center gap-2 flex-1">
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+              <img src="/logo.png" alt="Balaio Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="font-bold text-white text-lg">{t.appName}</span>
+            <span className="font-display italic text-balaio-ink text-xl">{t.appName}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={toggleLanguage}
-              className="bg-[#FF99CC] px-2 py-1.5 text-xs border-2 border-[#111111] rounded-lg text-[#111111] font-bold hover:opacity-90 flex items-center gap-1"
+              className="bg-balaio-surface px-2.5 py-1.5 text-xs rounded-balaio-pill text-balaio-muted font-semibold hover:bg-balaio-rule transition-colors flex items-center gap-1"
               title={language === "en" ? "Português" : "English"}
             >
-              <Languages size={14} />
+              <Languages size={13} />
               {language === "en" ? "PT" : "EN"}
             </button>
             {account && (
-              <>
-                <div className="bg-[#99FF99] px-3 py-1.5 text-xs border-2 border-[#111111] rounded-lg text-[#111111] font-bold">
-                  {displayBalance}
-                </div>
-                <button onClick={logout} className="text-white hover:opacity-80">
-                  <LogOut size={20} />
-                </button>
-              </>
+              <button onClick={handleDisconnect} className="text-balaio-muted hover:text-balaio-ink transition-colors">
+                <LogOut size={18} />
+              </button>
             )}
           </div>
         </div>
       </header>
-
-      {account && (
-        <div className="bg-[#111111] border-2 border-[#111111] p-8 mb-5 text-center">
-          <h2 className="text-2xl font-bold mb-2 text-white text-left">{t.welcome}</h2>
-          <p className="text-sm mb-4 text-white/90 text-left">{t.subtitle}</p>
-          <button
-            onClick={connectWallet}
-            className="bg-[#FFFF66] text-[#111111] px-6 py-3 font-bold border-2 border-[#111111] rounded-xl hover:shadow-[3px_3px_0px_0px_rgba(17,17,17,1)] transition-shadow"
-          >
-            {t.walletConnected}
-          </button>
-        </div>
-      )}
 
       <main className="flex-1 overflow-y-auto pb-16">
         {!account && <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} />}
@@ -1087,37 +1069,28 @@ export function TheOfficeApp() {
       </main>
 
       {account && (
-        <div className="bg-white border-2 border-[#111111] p-6 text-center">
-          <h3 className="text-xl font-bold mb-2">{t.getStarted}</h3>
-          <p className="text-sm text-[#666666] mb-4">{t.getStartedDesc}</p>
-          <button
-            onClick={connectWallet}
-            className="bg-[#111111] text-white px-6 py-3 font-bold border-2 border-[#111111] rounded-xl hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
-          >
-            {t.walletConnected}
-          </button>
-        </div>
-      )}
-
-      {account && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-[#111111] border-t-2 border-[#111111] flex z-40">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-balaio-rule flex z-40" style={{ height: 56 }}>
           {[
             { id: "home" as const, icon: Home, label: t.home },
             { id: "tasks" as const, icon: Clipboard, label: t.tasks },
             { id: "profile" as const, icon: User, label: t.profile },
-            { id: "stats" as const, icon: TrendingUp, label: "STATS" },
+            { id: "stats" as const, icon: TrendingUp, label: "Stats" },
           ].map((tab) => {
             const Icon = tab.icon
+            const isActive = currentPage === tab.id
             return (
               <button
                 key={tab.id}
                 onClick={() => setCurrentPage(tab.id)}
-                className={`flex-1 py-3.5 flex flex-col items-center gap-1 ${
-                  currentPage === tab.id ? "bg-[#FF99CC]" : ""
-                }`}
+                className="flex-1 py-2 flex flex-col items-center gap-0.5"
               >
-                {Icon && <Icon size={22} className={currentPage === tab.id ? "text-[#111111]" : "text-white"} />}
-                <span className={`text-xs ${currentPage === tab.id ? "text-[#111111]" : "text-white"}`}>{tab.label}</span>
+                <Icon
+                  size={20}
+                  className={isActive ? "text-balaio-sage" : "text-balaio-muted opacity-60"}
+                />
+                <span className={`text-[10px] font-semibold ${isActive ? "text-balaio-sage" : "text-balaio-muted opacity-60"}`}>
+                  {tab.label}
+                </span>
               </button>
             )
           })}

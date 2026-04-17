@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Settings, X } from "lucide-react"
+import { Settings, X, ChevronRight } from "lucide-react"
+import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task, TaskClaim } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 
@@ -62,64 +63,77 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
   }
 
   return (
-    <div className="p-5 pb-24">
-      <div className="bg-[#FF99CC] border-2 border-[#111111] rounded-xl p-5 mb-5 text-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-15 h-15 bg-[#FFFF66] border-2 border-[#111111] rounded-xl flex items-center justify-center text-xl font-bold">
-            🧺
+    <div className="px-[22px] py-5 pb-24">
+      {/* Identity card */}
+      <div className="bg-balaio-surface rounded-balaio-xl p-5 mb-5">
+        <div className="flex items-center gap-4 mb-5">
+          <div className="w-12 h-12 bg-white rounded-balaio-lg flex items-center justify-center shadow-balaio-card flex-shrink-0">
+            <img src="/logo.png" alt="Balaio" className="w-8 h-8 object-contain" />
           </div>
           <div>
-            <div className="text-xs opacity-80">{language === "en" ? "WALLET ADDRESS" : "ENDEREÇO DA CARTEIRA"}</div>
-            <div className="font-bold text-sm font-mono">
+            <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
+              {language === "en" ? "Wallet" : "Carteira"}
+            </p>
+            <div className="font-semibold text-sm text-balaio-ink">
               {account.slice(0, 8)}...{account.slice(-6)}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="bg-white border-2 border-[#111111] rounded-xl text-center p-3">
-            <div className="text-xl font-bold text-[#111111]">{completedTasks.length}</div>
-            <div className="text-xs text-[#666666]">{t.tasksCompleted}</div>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-white rounded-balaio-md text-center p-3 shadow-balaio-card">
+            <div className="text-xl font-semibold text-balaio-ink">{completedTasks.length}</div>
+            <div className="text-xs text-balaio-muted mt-0.5">{t.tasksCompleted}</div>
           </div>
-          <div className="bg-white border-2 border-[#111111] rounded-xl text-center p-3">
-            <div className="text-xl font-bold text-[#99FF99]">{totalEarned.toFixed(2)}</div>
-            <div className="text-xs text-[#666666]">{t.totalEarned}</div>
+          <div className="bg-white rounded-balaio-md text-center p-3 shadow-balaio-card">
+            <div className="text-xl font-semibold text-balaio-sage">{totalEarned.toFixed(2)}</div>
+            <div className="text-xs text-balaio-muted mt-0.5">{t.totalEarned}</div>
+          </div>
+          <div className="bg-white rounded-balaio-md text-center p-3 shadow-balaio-card">
+            <div className="text-xl font-semibold text-balaio-ink">{userActivity.created.length}</div>
+            <div className="text-xs text-balaio-muted mt-0.5">{language === "en" ? "Created" : "Criadas"}</div>
           </div>
         </div>
       </div>
 
+      {/* DB update notice */}
       {!noticeDismissed && (
-        <div className="bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] relative">
+        <div className="bg-balaio-pending-bg border border-balaio-rule rounded-balaio-xl p-4 mb-5 relative">
           <button
             onClick={dismissNotice}
-            className="absolute top-2 right-2 p-1 hover:opacity-70"
+            className="absolute top-3 right-3 p-0.5 hover:opacity-70 text-balaio-muted"
             aria-label="Dismiss"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
-          <h4 className="font-bold text-sm mb-1 pr-6">{t.dbUpdateNoticeTitle}</h4>
-          <p className="text-xs text-[#333333] leading-relaxed">{t.dbUpdateNoticeBody}</p>
+          <h4 className="font-semibold text-sm text-balaio-ink mb-1 pr-6">{t.dbUpdateNoticeTitle}</h4>
+          <p className="text-xs text-balaio-muted leading-relaxed">{t.dbUpdateNoticeBody}</p>
           <button
             onClick={dismissNotice}
-            className="mt-3 bg-[#111111] text-white px-4 py-1.5 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+            className="mt-3 bg-balaio-ink text-white px-4 py-1.5 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity"
           >
             {t.dbUpdateNoticeDismiss}
           </button>
         </div>
       )}
 
-      <div className="bg-white border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-        <h3 className="font-bold mb-3 flex items-center gap-2">📊 {t.recentActivity}</h3>
+      {/* Recent Activity */}
+      <div className="bg-white border border-balaio-rule rounded-balaio-xl p-4 mb-5 shadow-balaio-card">
+        <h3 className="font-semibold text-sm text-balaio-ink mb-4 flex items-center gap-2">
+          {t.recentActivity}
+        </h3>
 
         {userActivity.created.length > 0 && (
-          <div className="mb-4">
-            <div className="text-xs font-bold text-[#111111] mb-2 flex items-center gap-1 justify-between">
-              <span className="flex items-center gap-1">✨ {t.tasksYouCreated}</span>
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
+                {t.tasksYouCreated}
+              </p>
               <button
                 onClick={onRefreshClaims}
-                className="text-xs font-bold px-2 py-1 border-2 border-[#111111] rounded-lg bg-white hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+                className="text-xs font-semibold text-balaio-sage hover:opacity-70 transition-opacity"
               >
-                🔄 {language === "en" ? "Refresh Claims" : "Atualizar"}
+                {language === "en" ? "Refresh" : "Atualizar"}
               </button>
             </div>
             <div className="space-y-3">
@@ -127,51 +141,49 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                 const claims = task.claims || []
                 const hasClaims = claims.length > 0
                 return (
-                  <div key={`created-${task.id}`} className="border-2 border-gray-200 rounded-lg p-3">
+                  <div key={`created-${task.id}`} className="border border-balaio-rule rounded-balaio-lg p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-bold truncate max-w-[60%]">{task.title}</span>
-                      <span className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${task.active ? "bg-[#99FF99] border-[#111111]" : "bg-gray-200 border-[#666666]"}`}>
+                      <span className="text-sm font-semibold text-balaio-ink truncate max-w-[60%]">{task.title}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${task.active ? "bg-balaio-open-bg text-balaio-open-text" : "bg-balaio-claimed-bg text-balaio-claimed-text"}`}>
                         {task.active ? t.open : t.completed}
                       </span>
                     </div>
-                    <div className="text-xs text-[#666666] mb-2">
+                    <div className="text-xs text-balaio-muted mb-2 flex items-center gap-1">
                       {task.claimedSlots}/{task.totalSlots} {language === "en" ? "slots claimed" : "vagas ocupadas"}
-                      {" · "}{task.reward} {task.token || "cUSD"}
+                      {" · "}{task.reward} <TokenBadge symbol={task.token || "cUSD"} />
                     </div>
 
                     {hasClaims ? (
                       <div className="space-y-2 mt-2">
                         {claims.map((claim) => (
-                          <div key={claim.id} className="bg-gray-50 border border-gray-200 rounded-lg p-2.5">
+                          <div key={claim.id} className="bg-balaio-surface rounded-balaio-md p-2.5">
                             <div className="flex items-center justify-between mb-1">
-                              <div className="text-xs font-mono font-bold text-[#111111]">
+                              <div className="text-xs font-semibold text-balaio-ink">
                                 {t.workerAddressLabel}: {claim.workerAddress.slice(0, 6)}...{claim.workerAddress.slice(-4)}
                               </div>
-                              <span
-                                className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
-                                  claim.approvedAt
-                                    ? "bg-[#99FF99] border-[#111111]"
-                                    : claim.submittedAt
-                                      ? "bg-[#FFFF66] border-[#111111]"
-                                      : "bg-white border-[#666666]"
-                                }`}
-                              >
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                claim.approvedAt
+                                  ? "bg-balaio-open-bg text-balaio-open-text"
+                                  : claim.submittedAt
+                                    ? "bg-balaio-pending-bg text-balaio-pending-text"
+                                    : "bg-balaio-claimed-bg text-balaio-claimed-text"
+                              }`}>
                                 {claim.approvedAt ? t.approved : claim.submittedAt ? t.pendingReview : t.claimed}
                               </span>
                             </div>
-                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-[#666666]">
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-balaio-muted">
                               <span>{t.claimedAtLabel}: {formatTimestamp(claim.claimedAt)}</span>
                               {claim.submittedAt && <span>{t.submittedAtLabel}: {formatTimestamp(claim.submittedAt)}</span>}
                               {claim.approvedAt && <span>{t.approvedAtLabel}: {formatTimestamp(claim.approvedAt)}</span>}
                             </div>
                             {claim.submissionLink && (
                               <div className="text-xs mt-1">
-                                <span className="text-[#666666]">{t.submissionLinkLabel}: </span>
+                                <span className="text-balaio-muted">{t.submissionLinkLabel}: </span>
                                 <a
                                   href={claim.submissionLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-600 underline break-all"
+                                  className="text-balaio-sage underline break-all"
                                 >
                                   {claim.submissionLink.length > 50
                                     ? claim.submissionLink.slice(0, 50) + "..."
@@ -183,13 +195,11 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                               <div className="flex gap-2 mt-2">
                                 <button
                                   onClick={() => onApproveTask(task.id, claim.workerAddress)}
-                                  className="bg-[#99FF99] text-[#111111] px-3 py-1 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
+                                  className="bg-balaio-sage text-white px-3 py-1 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity"
                                 >
                                   {t.approveSubmission}
                                 </button>
-                                <button
-                                  className="bg-[#FF6666] text-white px-3 py-1 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow"
-                                >
+                                <button className="bg-red-500 text-white px-3 py-1 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity">
                                   {t.rejectSubmission}
                                 </button>
                               </div>
@@ -198,47 +208,47 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                         ))}
                       </div>
                     ) : (
-                      <div className="text-xs text-[#666666] italic mt-1">{t.noClaimsYet}</div>
+                      <div className="text-xs text-balaio-muted italic mt-1">{t.noClaimsYet}</div>
                     )}
                     {(() => {
                       const step = getWithdrawStep(task.id)
                       if (step === "done") return (
-                        <div className="mt-2 pt-2 border-t border-gray-100 text-xs font-bold text-[#666666]">
-                          ✅ {t.tokensWithdrawn}
+                        <div className="mt-2 pt-2 border-t border-balaio-rule text-xs font-semibold text-balaio-sage">
+                          {t.tokensWithdrawn}
                         </div>
                       )
                       const stepConfig = {
                         cancel: {
                           label: t.cancelTask,
-                          style: "bg-[#FFFF66] text-[#111111]",
+                          className: "bg-balaio-surface text-balaio-ink",
                           action: () => onWithdrawClaim(task.id),
                         },
                         authorize: {
                           label: t.authorizeWithdraw,
-                          style: "bg-[#FF99CC] text-[#111111]",
+                          className: "bg-balaio-ink text-white",
                           action: () => onAuthorizeWithdraw(task.id),
                         },
                         withdraw: {
                           label: t.withdrawFunds,
-                          style: "bg-[#FF99CC] text-[#111111]",
+                          className: "bg-balaio-ink text-white",
                           action: () => onWithdraw(task.id, account),
                         },
                         claim: {
                           label: t.claimTokens,
-                          style: "bg-[#99FF99] text-[#111111]",
+                          className: "bg-balaio-sage text-white",
                           action: () => onClaimTokens(task.id),
                         },
                       }[step]
                       return (
-                        <div className="mt-2 pt-2 border-t border-gray-100">
+                        <div className="mt-2 pt-2 border-t border-balaio-rule">
                           {step !== "cancel" && (
-                            <div className="text-xs text-[#666666] mb-1">
-                              🔄 {t.withdrawInProgress}
+                            <div className="text-xs text-balaio-muted mb-1">
+                              {t.withdrawInProgress}
                             </div>
                           )}
                           <button
                             onClick={stepConfig.action}
-                            className={`${stepConfig.style} px-3 py-1 text-xs font-bold border-2 border-[#111111] rounded-lg hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow`}
+                            className={`${stepConfig.className} px-3 py-1.5 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity`}
                           >
                             {stepConfig.label}
                           </button>
@@ -254,28 +264,26 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
 
         {userActivity.worked.length > 0 && (
           <div className="mb-4">
-            <div className="text-xs font-bold text-[#99FF99] mb-2 flex items-center gap-1">
-              💼 {t.tasksYouWorkedOn}
-            </div>
-            <div className="space-y-2">
+            <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-3">
+              {t.tasksYouWorkedOn}
+            </p>
+            <div className="space-y-0">
               {userActivity.worked.map((task) => (
-                <div key={`worked-${task.id}`} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs truncate max-w-[50%]">{task.title}</span>
+                <div key={`worked-${task.id}`} className="flex items-center justify-between py-3 border-b border-balaio-rule">
+                  <span className="text-sm text-balaio-ink truncate max-w-[50%]">{task.title}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold">
-                      {task.reward} {task.token || "cUSD"}
+                    <span className="text-xs font-semibold text-balaio-ink flex items-center gap-1">
+                      {task.reward} <TokenBadge symbol={task.token || "cUSD"} />
                     </span>
-                    <span
-                      className={`text-xs font-bold px-1.5 py-0.5 border-2 rounded-lg ${
-                        task.approvedAt
-                          ? "bg-[#99FF99] border-[#111111]"
-                          : task.submittedAt
-                            ? "bg-[#FFFF66] border-[#111111]"
-                            : task.claimedAt
-                              ? "bg-white border-[#666666]"
-                              : "bg-gray-100 border-[#666666]"
-                      }`}
-                    >
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      task.approvedAt
+                        ? "bg-balaio-open-bg text-balaio-open-text"
+                        : task.submittedAt
+                          ? "bg-balaio-pending-bg text-balaio-pending-text"
+                          : task.claimedAt
+                            ? "bg-balaio-claimed-bg text-balaio-claimed-text"
+                            : "bg-balaio-claimed-bg text-balaio-claimed-text"
+                    }`}>
                       {task.approvedAt
                         ? t.approved
                         : task.submittedAt
@@ -292,22 +300,20 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         )}
 
         {userActivity.created.length === 0 && userActivity.worked.length === 0 && (
-          <div className="space-y-2">
+          <div className="space-y-0">
             {tasks
               .filter((t) => t.mySlot)
               .slice(0, 3)
               .map((task) => (
-                <div key={task.id} className="flex items-center justify-between text-sm border-b border-gray-200 pb-2">
-                  <span className="text-xs">{task.title}</span>
-                  <span
-                    className={`text-xs font-bold ${
-                      task.mySlot?.approved
-                        ? "text-[#99FF99]"
-                        : task.mySlot?.submitted
-                          ? "text-[#FFFF66]"
-                          : "text-[#666666]"
-                    }`}
-                  >
+                <div key={task.id} className="flex items-center justify-between py-3 border-b border-balaio-rule">
+                  <span className="text-sm text-balaio-ink">{task.title}</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    task.mySlot?.approved
+                      ? "bg-balaio-open-bg text-balaio-open-text"
+                      : task.mySlot?.submitted
+                        ? "bg-balaio-pending-bg text-balaio-pending-text"
+                        : "bg-balaio-claimed-bg text-balaio-claimed-text"
+                  }`}>
                     {task.mySlot?.approved
                       ? t.approved
                       : task.mySlot?.submitted
@@ -319,7 +325,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                 </div>
               ))}
             {tasks.filter((t) => t.mySlot).length === 0 && (
-              <p className="text-xs text-[#666666]">
+              <p className="text-xs text-balaio-muted">
                 {language === "en" ? "No recent activity" : "Nenhuma atividade recente"}
               </p>
             )}
@@ -327,45 +333,46 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
         )}
       </div>
 
-      <div className="bg-white border-2 border-[#111111] rounded-xl p-4 mb-5 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-        <h3 className="font-bold mb-3 flex items-center gap-2">💡 {t.levelUpSkills}</h3>
-        <div className="flex items-start gap-3 mb-3">
-          <div className="w-20 h-20 bg-[#FFFF66] border-2 border-[#111111] rounded-xl flex items-center justify-center text-2xl">
-            🎓
+      {/* Level Up / Blog */}
+      <div className="bg-white border border-balaio-rule rounded-balaio-xl p-4 mb-5 shadow-balaio-card">
+        <h3 className="font-semibold text-sm text-balaio-ink mb-3">{t.levelUpSkills}</h3>
+        <div className="flex items-start gap-3">
+          <div className="w-14 h-14 bg-balaio-surface rounded-balaio-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-2xl">🎓</span>
           </div>
           <div className="flex-1">
-            <h4 className="font-bold text-sm mb-1">
+            <h4 className="font-semibold text-sm text-balaio-ink mb-1">
               {language === "en" ? "The Future of Learn2Earn in Web3" : "O Futuro do Learn2Earn na Web3"}
             </h4>
-            <p className="text-xs text-[#666666] mb-2">{t.visitBlogDesc}</p>
+            <p className="text-xs text-balaio-muted mb-3">{t.visitBlogDesc}</p>
             <button
               onClick={onNavigateToBlog}
-              className="bg-[#111111] text-white px-4 py-2 text-xs font-bold border-2 border-[#111111] rounded-xl hover:shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] transition-shadow inline-flex items-center gap-1"
+              className="bg-balaio-ink text-white px-4 py-2 text-xs font-semibold rounded-balaio-pill hover:opacity-90 transition-opacity inline-flex items-center gap-1"
             >
-              📖 {t.readMore} →
+              {t.readMore} →
             </button>
           </div>
         </div>
       </div>
 
-      <div className="bg-white border-2 border-[#111111] rounded-xl p-4 shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-        <h3 className="font-bold mb-3 flex items-center gap-2">
-          <Settings size={18} />
+      {/* Settings */}
+      <div className="bg-white border border-balaio-rule rounded-balaio-xl p-4 shadow-balaio-card">
+        <h3 className="font-semibold text-sm text-balaio-ink mb-3 flex items-center gap-2">
+          <Settings size={15} className="text-balaio-muted" />
           {t.settings}
         </h3>
-        <div className="space-y-2">
-          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm flex items-center justify-between">
-            <span>{t.notificationSettings}</span>
-          </button>
-          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm flex items-center justify-between">
-            <span>{t.securitySettings}</span>
-          </button>
-          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm">
-            {t.exportData}
-          </button>
-          <button className="w-full text-left p-3 border-2 border-[#111111] rounded-xl hover:bg-gray-50 text-sm flex items-center justify-between">
-            <span>{t.adminSettings}</span>
-          </button>
+        <div className="space-y-0">
+          {[
+            t.notificationSettings,
+            t.securitySettings,
+            t.exportData,
+            t.adminSettings,
+          ].map((label, i) => (
+            <button key={i} className="w-full text-left py-3 border-b border-balaio-rule last:border-0 text-sm text-balaio-ink flex items-center justify-between hover:text-balaio-sage transition-colors">
+              <span>{label}</span>
+              <ChevronRight size={15} className="text-balaio-muted" />
+            </button>
+          ))}
         </div>
       </div>
     </div>
