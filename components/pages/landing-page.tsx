@@ -1,7 +1,9 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import { Building2, Users, Bot, ArrowRight, Check } from "lucide-react"
+import { isMiniPay } from "@/lib/minipay"
 
 interface LandingPageProps {
   onConnect: () => void
@@ -57,6 +59,8 @@ const AUDIENCES = [
 // ── Component ────────────────────────────────────────────────────────
 export function LandingPage({ onConnect, onOpenWallet, language }: LandingPageProps) {
   const t = useTranslations(language)
+  const [inMiniPay, setInMiniPay] = useState(false)
+  useEffect(() => { setInMiniPay(isMiniPay()) }, [])
 
   return (
     <div className="bg-surface text-on-surface">
@@ -72,20 +76,22 @@ export function LandingPage({ onConnect, onOpenWallet, language }: LandingPagePr
           <p className="text-base text-on-surface-variant leading-relaxed max-w-md">
             Conecte organizações, talentos e agentes de IA em um fluxo de execução com pagamento por tarefa.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={onConnect}
-              className="bg-marigold text-on-tertiary-fixed px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-primary-container hover:text-white transition-all flex items-center gap-2"
-            >
-              Explorar Tarefas <ArrowRight size={16} />
-            </button>
-            <button
-              onClick={onOpenWallet}
-              className="border-2 border-primary-container/20 text-primary-container px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-surface-container-low transition-all"
-            >
-              Criar Projeto
-            </button>
-          </div>
+          {!inMiniPay && (
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={onConnect}
+                className="bg-marigold text-on-tertiary-fixed px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-primary-container hover:text-white transition-all flex items-center gap-2"
+              >
+                Explorar Tarefas <ArrowRight size={16} />
+              </button>
+              <button
+                onClick={onOpenWallet}
+                className="border-2 border-primary-container/20 text-primary-container px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-surface-container-low transition-all"
+              >
+                Criar Projeto
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right side: trust signals */}
@@ -167,13 +173,15 @@ export function LandingPage({ onConnect, onOpenWallet, language }: LandingPagePr
                 Reduza o overhead administrativo e acelere a execução das suas iniciativas.
               </p>
             </div>
-            <button
-              onClick={onConnect}
-              className="flex-shrink-0 bg-primary-container text-white px-8 py-4 rounded-xl font-bold text-base hover:bg-black transition-all"
-              style={{ boxShadow: "0 8px 24px rgba(28,28,23,0.06)" }}
-            >
-              Começar a Coordenar
-            </button>
+            {!inMiniPay && (
+              <button
+                onClick={onConnect}
+                className="flex-shrink-0 bg-primary-container text-white px-8 py-4 rounded-xl font-bold text-base hover:bg-black transition-all"
+                style={{ boxShadow: "0 8px 24px rgba(28,28,23,0.06)" }}
+              >
+                Começar a Coordenar
+              </button>
+            )}
           </div>
           <Thread />
         </div>
