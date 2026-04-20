@@ -953,7 +953,7 @@ export function TheOfficeApp() {
     setAccount("")
     setContract(null)
     setTokenContracts({ cUSD: null, USDC: null })
-    setCurrentPage("landing")
+    setCurrentPage("home")
     setTasks([])
     setUserActivity({ created: [], worked: [] })
     toast("Disconnected")
@@ -982,28 +982,26 @@ export function TheOfficeApp() {
   }, [account, tasks, loadUserActivity])
 
   useEffect(() => {
-    async function initializeWagmiContracts() {
-      if (wagmiConnected && wagmiAddress && signer && !account) {
-        try {
-          const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
-          const contracts: Record<TokenSymbol, ethers.Contract | null> = {
-            cUSD: null,
-            USDC: null,
-          }
-          for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
-            contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
-          }
-          setAccount(wagmiAddress)
-          setContract(taskContract)
-          setTokenContracts(contracts)
-          toast("Wallet connected via WalletConnect!")
-        } catch (error) {
-          console.error("Wagmi contract init error:", error)
-        }
-      }
+    if (wagmiConnected && wagmiAddress && !account) {
+      setAccount(wagmiAddress)
+      toast("Wallet connected via WalletConnect!")
     }
-    initializeWagmiContracts()
-  }, [wagmiConnected, wagmiAddress, signer, account])
+  }, [wagmiConnected, wagmiAddress, account])
+
+  useEffect(() => {
+    if (!wagmiConnected || !wagmiAddress || !signer || contract) return
+    try {
+      const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+      const contracts: Record<TokenSymbol, ethers.Contract | null> = { cUSD: null, USDC: null }
+      for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
+        contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
+      }
+      setContract(taskContract)
+      setTokenContracts(contracts)
+    } catch (error) {
+      console.error("Wagmi contract init error:", error)
+    }
+  }, [wagmiConnected, wagmiAddress, signer, contract])
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
