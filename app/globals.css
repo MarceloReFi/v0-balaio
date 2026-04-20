@@ -3,102 +3,121 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ─── Google Fonts ──────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ─── Digital Loom — Design Tokens ─────────────────────── */
 :root {
-  --background: #FFFFFF;
-  --foreground: #16161A;
-  --card: #FFFFFF;
-  --card-foreground: #16161A;
-  --popover: #FFFFFF;
-  --popover-foreground: #16161A;
-  --primary: #16161A;
-  --primary-foreground: #FFFFFF;
-  --secondary: #F2F4F1;
-  --secondary-foreground: #16161A;
-  --muted: #F2F4F1;
-  --muted-foreground: #7A8784;
-  --accent: #4A7B5E;
-  --accent-foreground: #FFFFFF;
-  --destructive: #DC2626;
-  --destructive-foreground: #FFFFFF;
-  --border: #E4E8E5;
-  --input: #F2F4F1;
-  --ring: #4A7B5E;
-  --radius: 12px;
-}
+  /* Surface scale */
+  --surface:                  #fcf9f1;
+  --surface-container-low:    #f6f3eb;
+  --surface-container:        #f1eee6;
+  --surface-container-high:   #ebe8e0;
+  --surface-container-highest:#e5e2da;
+  --surface-dim:              #dcdad2;
 
-@theme inline {
-  --font-sans: var(--font-sans);
-  --font-display: var(--font-display);
+  /* Core palette */
+  --primary:                  #030703;
+  --primary-container:        #1b201a;
+  --secondary:                #a83900;
+  --secondary-container:      #ff6f32;
+  --secondary-fixed:          #ffdbce;
+  --marigold:                 #f6be2f;          /* CTA only */
 
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  /* On-colors */
+  --on-surface:               #1c1c17;
+  --on-surface-variant:       #444843;
+  --on-primary:               #ffffff;
+  --on-primary-container:     #838880;
+  --on-secondary:             #ffffff;
+  --on-secondary-fixed:       #380d00;
+  --on-secondary-fixed-dim:   #802a00;
+  --on-tertiary-fixed:        #261a00;
+  --on-background:            #1c1c17;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
+  /* Utility */
+  --outline:                  #757872;
+  --outline-variant:          #c5c7c1;
+  --error:                    #ba1a1a;
+  --inverse-surface:          #31312b;
+  --inverse-primary:          #c3c8bf;
+  --surface-tint:             #5b6058;
 
-@theme {
-  /* Colors */
-  --color-balaio-ink:     #16161A;
-  --color-balaio-sage:    #4A7B5E;
-  --color-balaio-bg:      #FFFFFF;
-  --color-balaio-surface: #F2F4F1;
-  --color-balaio-rule:    #E4E8E5;
-  --color-balaio-muted:   #7A8784;
-
-  /* Status */
-  --color-balaio-open-bg:      #EAF4EE;
-  --color-balaio-open-text:    #4A7B5E;
-  --color-balaio-pending-bg:   #FEF9E7;
-  --color-balaio-pending-text: #8A6D00;
-  --color-balaio-claimed-bg:   #F2F4F1;
-  --color-balaio-claimed-text: #7A8784;
-
-  /* Crypto token colors */
-  --color-balaio-token-g:    #00B4A0;
-  --color-balaio-token-celo: #FCFF52;
-  --color-balaio-token-usdt: #26A17B;
-
-  /* Shadows */
-  --shadow-balaio-card:  0 2px 12px rgba(22, 22, 26, 0.06);
-  --shadow-balaio-sheet: 0 -4px 24px rgba(22, 22, 26, 0.10);
+  /* Ambient shadow (no Material shadows) */
+  --shadow-ambient:           0 8px 24px rgba(28, 28, 23, 0.06);
 
   /* Border radius */
-  --radius-balaio-sm:    8px;
-  --radius-balaio-md:    10px;
-  --radius-balaio-lg:    12px;
-  --radius-balaio-xl:    14px;
-  --radius-balaio-pill:  20px;
-  --radius-balaio-sheet: 18px;
+  --radius-sm:  0.25rem;
+  --radius-md:  0.5rem;
+  --radius-lg:  0.75rem;
+  --radius-xl:  1rem;
+  --radius-full: 9999px;
 }
 
+/* ─── Tailwind v4 Theme ─────────────────────────────────── */
+@theme inline {
+  /* Fonts */
+  --font-headline: 'Noto Serif', serif;
+  --font-body:     'Plus Jakarta Sans', sans-serif;
+  --font-sans:     'Plus Jakarta Sans', sans-serif;
+
+  /* Colors — map every token above to Tailwind utilities */
+  --color-surface:                   var(--surface);
+  --color-surface-container-low:     var(--surface-container-low);
+  --color-surface-container:         var(--surface-container);
+  --color-surface-container-high:    var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-dim:               var(--surface-dim);
+  --color-background:                var(--surface);
+
+  --color-primary:                   var(--primary);
+  --color-primary-container:         var(--primary-container);
+  --color-secondary:                 var(--secondary);
+  --color-secondary-container:       var(--secondary-container);
+  --color-secondary-fixed:           var(--secondary-fixed);
+  --color-marigold:                  var(--marigold);
+  --color-foreground:                var(--on-surface);
+
+  --color-on-surface:                var(--on-surface);
+  --color-on-surface-variant:        var(--on-surface-variant);
+  --color-on-primary:                var(--on-primary);
+  --color-on-primary-container:      var(--on-primary-container);
+  --color-on-secondary:              var(--on-secondary);
+  --color-on-secondary-fixed:        var(--on-secondary-fixed);
+  --color-on-tertiary-fixed:         var(--on-tertiary-fixed);
+  --color-on-background:             var(--on-background);
+
+  --color-outline:                   var(--outline);
+  --color-outline-variant:           var(--outline-variant);
+  --color-error:                     var(--error);
+  --color-inverse-surface:           var(--inverse-surface);
+  --color-surface-tint:              var(--surface-tint);
+
+  /* Radius */
+  --radius-sm:   var(--radius-sm);
+  --radius-md:   var(--radius-md);
+  --radius-lg:   var(--radius-lg);
+  --radius-xl:   var(--radius-xl);
+  --radius-full: var(--radius-full);
+}
+
+/* ─── Base Layer ────────────────────────────────────────── */
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-outline-variant/15 outline-outline-variant/30;
+    box-sizing: border-box;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-sans, 'DM Sans', system-ui, sans-serif);
+    background-color: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--font-body);
     font-size: 16px;
-    line-height: 1.5;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-headline);
+    letter-spacing: -0.02em;
+    color: var(--primary-container);
   }
 }

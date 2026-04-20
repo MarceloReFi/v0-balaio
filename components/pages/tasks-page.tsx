@@ -33,19 +33,19 @@ export function TasksPage({
   const [loading, setLoading] = useState(false)
 
   const getStatusBadge = (task: Task) => {
-    if (!task.mySlot) return { text: t.open, className: "bg-balaio-open-bg text-balaio-open-text" }
-    if (task.mySlot.withdrawn) return { text: t.completed, className: "bg-balaio-claimed-bg text-balaio-claimed-text" }
-    if (task.mySlot.approved) return { text: t.approved, className: "bg-balaio-open-bg text-balaio-open-text" }
-    if (task.mySlot.submitted) return { text: t.submitted, className: "bg-balaio-pending-bg text-balaio-pending-text" }
-    if (task.mySlot.claimed) return { text: t.claimed, className: "bg-balaio-claimed-bg text-balaio-claimed-text" }
-    return { text: t.open, className: "bg-balaio-open-bg text-balaio-open-text" }
+    if (!task.mySlot) return { text: t.open, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
+    if (task.mySlot.withdrawn) return { text: t.completed, className: "bg-surface-container-high text-on-surface-variant" }
+    if (task.mySlot.approved) return { text: t.approved, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
+    if (task.mySlot.submitted) return { text: t.submitted, className: "bg-marigold/20 text-on-tertiary-fixed" }
+    if (task.mySlot.claimed) return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
+    return { text: t.open, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
   }
 
   const getSlotDotColor = (task: Task) => {
     const available = Number(task.availableSlots)
     const total = Number(task.totalSlots)
     if (!task.active || available === 0) return "bg-red-400"
-    if (available === total) return "bg-balaio-sage"
+    if (available === total) return "bg-marigold"
     return "bg-yellow-400"
   }
 
@@ -56,9 +56,9 @@ export function TasksPage({
     const diffMs = deadlineDate.getTime() - now.getTime()
     const diffDays = diffMs / (1000 * 60 * 60 * 24)
     if (diffMs < 0) return { color: "text-red-500", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-balaio-ink", text: language === "en" ? "1 day left" : "1 dia restante" }
-    if (diffDays <= 7) return { color: "text-balaio-ink", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
-    return { color: "text-balaio-muted", text: deadlineDate.toLocaleDateString() }
+    if (diffDays <= 1) return { color: "text-on-surface", text: language === "en" ? "1 day left" : "1 dia restante" }
+    if (diffDays <= 7) return { color: "text-on-surface", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
+    return { color: "text-on-surface-variant", text: deadlineDate.toLocaleDateString() }
   }
 
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -106,16 +106,16 @@ export function TasksPage({
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
+          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant">
             {language === "en" ? "Browse" : "Explorar"}
           </p>
-          <h2 className="font-display text-2xl text-balaio-ink">
+          <h2 className="font-headline text-2xl text-on-surface">
             {t.tasks}
           </h2>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="bg-balaio-sage text-white px-4 py-2 font-semibold rounded-balaio-pill text-sm hover:opacity-90 transition-opacity"
+          className="bg-marigold text-on-tertiary-fixed px-4 py-2 font-semibold rounded-full text-sm hover:opacity-90 transition-opacity"
         >
           + {t.create}
         </button>
@@ -128,12 +128,12 @@ export function TasksPage({
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && searchTasks()}
           placeholder={t.searchTask}
-          className="flex-1 px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm outline-none focus:ring-1 focus:ring-balaio-sage"
+          className="flex-1 px-4 py-2.5 bg-surface-container-low rounded-xl text-sm outline-none focus:ring-1 focus:ring-secondary"
         />
         <button
           onClick={searchTasks}
           disabled={loading}
-          className="bg-balaio-surface text-balaio-ink px-4 py-2.5 rounded-balaio-lg hover:bg-balaio-rule transition-colors"
+          className="bg-surface-container-low text-on-surface px-4 py-2.5 rounded-xl hover:bg-surface-container-high transition-colors"
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
         </button>
@@ -145,10 +145,10 @@ export function TasksPage({
           <button
             key={filter}
             onClick={() => setTaskFilter(filter)}
-            className={`px-4 py-1.5 font-semibold text-xs rounded-balaio-pill transition-colors ${
+            className={`px-4 py-1.5 font-semibold text-xs rounded-full transition-colors ${
               taskFilter === filter
-                ? "bg-balaio-ink text-white"
-                : "bg-balaio-surface text-balaio-muted hover:bg-balaio-rule"
+                ? "bg-primary-container text-white"
+                : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
             }`}
           >
             {filterLabels[filter]}
@@ -157,22 +157,22 @@ export function TasksPage({
         <button
           onClick={refreshTasks}
           disabled={loading}
-          className="bg-balaio-surface text-balaio-muted px-4 py-1.5 font-semibold text-xs rounded-balaio-pill hover:bg-balaio-rule transition-colors disabled:opacity-50"
+          className="bg-surface-container-low text-on-surface-variant px-4 py-1.5 font-semibold text-xs rounded-full hover:bg-surface-container-high transition-colors disabled:opacity-50"
         >
           {language === "en" ? "Refresh" : "Atualizar"}
         </button>
       </div>
 
       {/* Count label */}
-      <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-3">
+      <p className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-3">
         {filteredTasks.length} {language === "en" ? "tasks" : "tarefas"}
       </p>
 
       {/* Task list */}
       {filteredTasks.length === 0 ? (
-        <div className="bg-balaio-surface rounded-balaio-xl p-10 text-center">
-          <p className="font-semibold text-balaio-ink mb-1">{t.noTasks}</p>
-          <p className="text-xs text-balaio-muted">{t.noTasksDesc}</p>
+        <div className="bg-surface-container-low rounded-2xl p-10 text-center">
+          <p className="font-semibold text-on-surface mb-1">{t.noTasks}</p>
+          <p className="text-xs text-on-surface-variant">{t.noTasksDesc}</p>
         </div>
       ) : (
         <div className="flex flex-col">
@@ -186,17 +186,17 @@ export function TasksPage({
                   setSelectedTask(task)
                   setShowTaskModal(true)
                 }}
-                className="py-4 border-b border-balaio-rule cursor-pointer hover:bg-balaio-surface/50 transition-colors -mx-[22px] px-[22px]"
+                className="py-4 border-b border-outline-variant/20 cursor-pointer hover:bg-surface-container-low/50 transition-colors -mx-[22px] px-[22px]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getSlotDotColor(task)}`} />
-                      <h3 className="font-semibold text-sm text-balaio-ink truncate">{task.title}</h3>
+                      <h3 className="font-semibold text-sm text-on-surface truncate">{task.title}</h3>
                     </div>
-                    <p className="text-xs text-balaio-muted mb-2 line-clamp-1">{task.description}</p>
+                    <p className="text-xs text-on-surface-variant mb-2 line-clamp-1">{task.description}</p>
 
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-balaio-muted">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
                       <span>{shortenAddress(task.creator)}</span>
                       <span>·</span>
                       <span className="flex items-center gap-1">
@@ -216,7 +216,7 @@ export function TasksPage({
                   </div>
 
                   <div className="flex-shrink-0 flex flex-col items-end gap-1">
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-balaio-pill ${status.className}`}>
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${status.className}`}>
                       {status.text}
                     </span>
                     {task.validationMethod && task.validationMethod.startsWith('http') && (
@@ -225,7 +225,7 @@ export function TasksPage({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="text-xs text-balaio-sage hover:underline"
+                        className="text-xs text-secondary hover:underline"
                       >
                         {language === "en" ? "Details" : "Detalhes"}
                       </a>
