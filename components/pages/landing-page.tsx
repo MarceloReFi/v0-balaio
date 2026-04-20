@@ -1,8 +1,7 @@
 "use client"
 
-import { useAppKit } from '@reown/appkit/react'
 import { useTranslations, type Language } from "@/lib/translations"
-import { Wallet, Users, Building2, Handshake, CheckCircle, Globe, Shield, Zap, Smartphone, Mail } from "lucide-react"
+import { Building2, Users, Bot, ArrowRight, Check } from "lucide-react"
 
 interface LandingPageProps {
   onConnect: () => void
@@ -10,424 +9,176 @@ interface LandingPageProps {
   language: Language
 }
 
+// ── Reusable primitives ──────────────────────────────────────────────
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-secondary">
+      {children}
+    </span>
+  )
+}
+
+function Thread() {
+  return <div className="w-full h-px bg-secondary/20 my-8" />
+}
+
+// ── Step card (no box border — tonal bg only) ────────────────────────
+const STEPS = [
+  { num: "01", title: "Definição & Orçamento",    body: "Parametrize tarefas, critérios de aprovação e aloque o orçamento do projeto." },
+  { num: "02", title: "Atribuição de Trabalho",   body: "Talentos ou agentes de IA assumem a execução com base em suas qualificações." },
+  { num: "03", title: "Aprovação de Entregas",    body: "Valide o trabalho concluído de acordo com os requisitos estabelecidos." },
+  { num: "04", title: "Pagamento Automático",     body: "Liberação imediata dos fundos atrelada à aprovação, eliminando burocracia." },
+]
+
+const AUDIENCES = [
+  {
+    icon: Building2,
+    label: "Empresas e Projetos",
+    body: "Converta orçamento em execução. Aloque capital diretamente em tarefas e pague apenas por resultados aprovados.",
+    cta: "Saiba mais",
+    dark: true,
+  },
+  {
+    icon: Users,
+    label: "Contribuidores",
+    body: "Execute tarefas com escopo claro e garanta o recebimento automático após a aprovação do seu trabalho.",
+    cta: "Explorar",
+    dark: false,
+  },
+  {
+    icon: Bot,
+    label: "Equipes de IA",
+    body: "Integre agentes autônomos a fluxos de trabalho humanos, automatizando micro-tarefas com liquidação direta.",
+    cta: "Documentação",
+    dark: false,
+  },
+]
+
+// ── Component ────────────────────────────────────────────────────────
 export function LandingPage({ onConnect, onOpenWallet, language }: LandingPageProps) {
   const t = useTranslations(language)
 
   return (
-    <div className="pb-8">
-      {/* Hero Section */}
-      <section className="px-[22px] py-12 bg-white border-b border-balaio-rule">
-        <div className="max-w-lg mx-auto">
-          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-3">
-            {language === "en" ? "Web3 Task Platform on Celo" : "Plataforma de Tarefas Web3 no Celo"}
-          </p>
-          <h1 className="font-display text-4xl text-balaio-ink mb-4 leading-tight">
-            {language === "en"
-              ? <>Simple. Functional. <em>Useful.</em></>
-              : <>Simples. Funcional. <em>Útil.</em></>}
+    <div className="bg-surface text-on-surface">
+
+      {/* ── HERO ─────────────────────────────────────────── */}
+      <section className="max-w-5xl mx-auto px-6 py-20 md:py-32 grid md:grid-cols-2 gap-12 items-center">
+        <div className="flex flex-col gap-8">
+          <SectionLabel>Plataforma B2B · Celo Mainnet</SectionLabel>
+          <h1 className="text-4xl md:text-5xl font-bold text-primary-container leading-tight" style={{ fontFamily: "'Noto Serif', serif", letterSpacing: "-0.02em" }}>
+            Trabalho inteligente.<br />
+            <span className="text-secondary">Coordenação eficiente.</span>
           </h1>
-          <p className="text-sm text-balaio-muted mb-8" style={{ lineHeight: 1.7 }}>
-            {language === "en"
-              ? "A mobile-first task management Dapp where people earn by completing tasks, and projects can execute their budget with transparency and accountability."
-              : "Um Dapp de gerenciamento de tarefas mobile-first onde pessoas ganham completando tarefas, e projetos podem executar seu orçamento com transparência e responsabilidade."}
+          <p className="text-base text-on-surface-variant leading-relaxed max-w-md">
+            Conecte organizações, talentos e agentes de IA em um fluxo de execução com pagamento por tarefa.
           </p>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={onConnect}
-              className="bg-balaio-ink text-white px-6 py-3.5 font-semibold rounded-balaio-lg hover:opacity-90 transition-opacity flex items-center justify-between w-full"
+              className="bg-marigold text-on-tertiary-fixed px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-primary-container hover:text-white transition-all flex items-center gap-2"
             >
-              <span>{t.connectWallet} (MetaMask)</span>
-              <span>→</span>
+              Explorar Tarefas <ArrowRight size={16} />
             </button>
             <button
-              onClick={() => onOpenWallet()}
-              className="bg-balaio-surface text-balaio-ink px-6 py-3.5 font-semibold rounded-balaio-lg hover:bg-balaio-rule transition-colors flex items-center justify-between w-full"
+              onClick={onOpenWallet}
+              className="border-2 border-primary-container/20 text-primary-container px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-surface-container-low transition-all"
             >
-              <span>{t.connectWallet} (WalletConnect)</span>
-              <span>→</span>
+              Criar Projeto
             </button>
           </div>
         </div>
+
+        {/* Right side: trust signals */}
+        <div className="bg-surface-container rounded-2xl p-8 flex flex-col gap-5">
+          {["Pagamento por resultado aprovado", "Escrow onchain — sem intermediários", "Compatível com agentes de IA", "Verificação de identidade via GoodDollar"].map((item) => (
+            <div key={item} className="flex items-center gap-3">
+              <span className="w-5 h-5 rounded-full bg-marigold flex items-center justify-center flex-shrink-0">
+                <Check size={12} className="text-on-tertiary-fixed" />
+              </span>
+              <span className="text-sm text-on-surface-variant">{item}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* What is Balaio Section */}
-      <section className="px-[22px] py-10 bg-white border-b border-balaio-rule">
-        <div className="max-w-lg mx-auto">
-          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">
-            {language === "en" ? "About" : "Sobre"}
-          </p>
-          <h2 className="font-display text-2xl text-balaio-ink mb-5">
-            {language === "en" ? <>What is <em>Balaio?</em></> : <>O que é o <em>Balaio?</em></>}
-          </h2>
-
-          <p className="text-sm text-balaio-muted mb-6" style={{ lineHeight: 1.7 }}>
-            {language === "en"
-              ? "Balaio is a task-based coordination app built by ReFaz0x, Felipe Farias, Pedro Parrachia, and CeLatam."
-              : "Balaio é um app de coordenação baseado em tarefas construído por ReFaz0x, Felipe Farias, Pedro Parrachia e CeLatam."}
-          </p>
-
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start gap-3 py-4 border-b border-balaio-rule">
-              <CheckCircle className="w-4 h-4 text-balaio-sage flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-balaio-ink">
-                {language === "en"
-                  ? "People complete real-world or online tasks and get paid onchain."
-                  : "Pessoas completam tarefas do mundo real ou online e são pagas onchain."}
-              </span>
-            </div>
-            <div className="flex items-start gap-3 py-4 border-b border-balaio-rule">
-              <CheckCircle className="w-4 h-4 text-balaio-sage flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-balaio-ink">
-                {language === "en"
-                  ? "Projects and organizations create and manage tasks with transparent, verifiable payouts."
-                  : "Projetos e organizações criam e gerenciam tarefas com pagamentos transparentes e verificáveis."}
-              </span>
-            </div>
+      {/* ── STEPS ────────────────────────────────────────── */}
+      <section className="bg-surface-container-low py-20">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="mb-12">
+            <SectionLabel>Como funciona</SectionLabel>
+            <h2 className="mt-3 text-3xl font-bold text-primary-container" style={{ fontFamily: "'Noto Serif', serif", letterSpacing: "-0.02em" }}>
+              Execução sem fricção
+            </h2>
+            <p className="mt-2 text-on-surface-variant">
+              Substitua a burocracia por um fluxo de coordenação ágil e focado em resultados.
+            </p>
           </div>
-
-          {/* Micro-work Benefits */}
-          <div className="bg-balaio-surface rounded-balaio-lg p-5 mt-6">
-            <h3 className="font-semibold text-sm text-balaio-ink mb-4">
-              {language === "en" ? "Micro-work, but smarter:" : "Micro-trabalho, mas mais inteligente:"}
-            </h3>
-            <div className="grid grid-cols-1 gap-3">
-              <div className="flex items-center gap-3">
-                <Wallet className="w-4 h-4 text-balaio-sage" />
-                <span className="text-sm text-balaio-muted">{language === "en" ? "No bank account needed" : "Sem necessidade de conta bancária"}</span>
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {STEPS.map(({ num, title, body }) => (
+              <div key={num} className="bg-surface rounded-xl p-6 flex flex-col gap-3" style={{ boxShadow: "0 8px 24px rgba(28,28,23,0.06)" }}>
+                <span className="text-secondary font-extrabold text-xs tracking-widest uppercase">Passo {num}</span>
+                <h3 className="font-bold text-primary-container text-base" style={{ fontFamily: "'Noto Serif', serif" }}>{title}</h3>
+                <p className="text-on-surface-variant text-sm leading-relaxed">{body}</p>
               </div>
-              <div className="flex items-center gap-3">
-                <Zap className="w-4 h-4 text-balaio-sage" />
-                <span className="text-sm text-balaio-muted">{language === "en" ? "Low fees, fast settlement" : "Taxas baixas, liquidação rápida"}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Smartphone className="w-4 h-4 text-balaio-sage" />
-                <span className="text-sm text-balaio-muted">{language === "en" ? "Designed for low-connectivity" : "Projetado para baixa conectividade"}</span>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="px-[22px] py-10 bg-white border-b border-balaio-rule">
-        <div className="max-w-lg mx-auto">
-          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">
-            {language === "en" ? "How it works" : "Como funciona"}
-          </p>
-          <h2 className="font-display text-2xl text-balaio-ink mb-7">
-            {language === "en" ? <>How Balaio <em>Works</em></> : <>Como o Balaio <em>Funciona</em></>}
-          </h2>
-
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Users className="w-4 h-4 text-balaio-sage" />
-              <h3 className="font-semibold text-sm text-balaio-ink">
-                {language === "en" ? "For Contributors" : "Para Colaboradores"}
-              </h3>
+      {/* ── AUDIENCE CARDS ───────────────────────────────── */}
+      <section className="py-24 max-w-5xl mx-auto px-6">
+        <div className="mb-12">
+          <SectionLabel>Para quem é</SectionLabel>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {AUDIENCES.map(({ icon: Icon, label, body, cta, dark }) => (
+            <div
+              key={label}
+              className={`rounded-2xl p-8 flex flex-col justify-between gap-8 ${
+                dark
+                  ? "bg-primary-container text-surface"
+                  : "bg-surface-container-highest text-on-surface"
+              }`}
+            >
+              <div className="flex flex-col gap-4">
+                <Icon size={32} className={dark ? "text-marigold" : "text-secondary"} />
+                <h3 className="text-xl font-bold" style={{ fontFamily: "'Noto Serif', serif" }}>{label}</h3>
+                <p className={`text-sm leading-relaxed ${dark ? "text-on-primary-container" : "text-on-surface-variant"}`}>{body}</p>
+              </div>
+              <button className={`flex items-center gap-2 text-sm font-semibold ${dark ? "text-marigold" : "text-secondary"}`}>
+                {cta} <ArrowRight size={14} />
+              </button>
             </div>
-            <ol className="flex flex-col gap-0">
-              {[
-                { step: "1", title: language === "en" ? "Sign up:" : "Cadastre-se:", desc: language === "en" ? "Connect your wallet." : "Conecte sua carteira." },
-                { step: "2", title: language === "en" ? "Choose tasks:" : "Escolha tarefas:", desc: language === "en" ? "Filter by type, reward, or location." : "Filtre por tipo, recompensa ou localização." },
-                { step: "3", title: language === "en" ? "Submit and get paid:" : "Envie e seja pago:", desc: language === "en" ? "Complete the task, submit proof, and receive onchain payment once approved." : "Complete a tarefa, envie prova e receba pagamento onchain após aprovação." },
-              ].map((item) => (
-                <li key={item.step} className="flex gap-4 py-4 border-b border-balaio-rule">
-                  <span className="w-7 h-7 rounded-full bg-balaio-sage text-white text-xs font-semibold flex items-center justify-center flex-shrink-0">
-                    {item.step}
-                  </span>
-                  <div>
-                    <span className="font-semibold text-sm text-balaio-ink">{item.title}</span>
-                    <p className="text-xs text-balaio-muted mt-0.5">{item.desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
+          ))}
+        </div>
+      </section>
 
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-4 h-4 text-balaio-ink" />
-              <h3 className="font-semibold text-sm text-balaio-ink">
-                {language === "en" ? "For Organizations" : "Para Organizações"}
-              </h3>
+      {/* ── FINAL CTA ────────────────────────────────────── */}
+      <section className="bg-surface-container-low py-20">
+        <div className="max-w-5xl mx-auto px-6">
+          <Thread />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex flex-col gap-3">
+              <SectionLabel>Comece agora</SectionLabel>
+              <h2 className="text-3xl font-bold text-primary-container" style={{ fontFamily: "'Noto Serif', serif", letterSpacing: "-0.02em" }}>
+                Pronto para otimizar sua operação?
+              </h2>
+              <p className="text-on-surface-variant max-w-md">
+                Reduza o overhead administrativo e acelere a execução das suas iniciativas.
+              </p>
             </div>
-            <ol className="flex flex-col gap-0">
-              {[
-                { step: "1", title: language === "en" ? "Design tasks:" : "Crie tarefas:", desc: language === "en" ? "Define what needs to be done and how much you'll pay." : "Defina o que precisa ser feito e quanto você pagará." },
-                { step: "2", title: language === "en" ? "Publish to Balaio:" : "Publique no Balaio:", desc: language === "en" ? "Your tasks appear to contributors." : "Suas tarefas aparecem para colaboradores." },
-                { step: "3", title: language === "en" ? "Approve and pay:" : "Aprove e pague:", desc: language === "en" ? "Review submissions and trigger on-chain payouts in one click." : "Revise envios e acione pagamentos onchain em um clique." },
-              ].map((item) => (
-                <li key={item.step} className="flex gap-4 py-4 border-b border-balaio-rule">
-                  <span className="w-7 h-7 rounded-full bg-balaio-ink text-white text-xs font-semibold flex items-center justify-center flex-shrink-0">
-                    {item.step}
-                  </span>
-                  <div>
-                    <span className="font-semibold text-sm text-balaio-ink">{item.title}</span>
-                    <p className="text-xs text-balaio-muted mt-0.5">{item.desc}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <div className="mt-7 text-center">
             <button
               onClick={onConnect}
-              className="bg-balaio-ink text-white px-8 py-3 font-semibold rounded-balaio-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
+              className="flex-shrink-0 bg-primary-container text-white px-8 py-4 rounded-xl font-bold text-base hover:bg-black transition-all"
+              style={{ boxShadow: "0 8px 24px rgba(28,28,23,0.06)" }}
             >
-              {language === "en" ? "Get Started →" : "Começar →"}
+              Começar a Coordenar
             </button>
           </div>
+          <Thread />
         </div>
       </section>
 
-      {/* Why Onchain Section */}
-      <section className="px-[22px] py-10 bg-balaio-surface border-b border-balaio-rule">
-        <div className="max-w-lg mx-auto">
-          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">
-            {language === "en" ? "Why onchain" : "Por que onchain"}
-          </p>
-          <h2 className="font-display text-2xl text-balaio-ink mb-2">
-            {language === "en" ? <>Why <em>Onchain?</em></> : <>Por que <em>Onchain?</em></>}
-          </h2>
-          <p className="text-sm text-balaio-muted mb-7">
-            {language === "en"
-              ? "Tasks and payments you can verify, not just \"trust\""
-              : "Tarefas e pagamentos que você pode verificar, não apenas \"confiar\""}
-          </p>
-
-          <div className="grid grid-cols-1 gap-0">
-            {[
-              { icon: Zap, title: language === "en" ? "Low fees, high efficiency" : "Taxas baixas, alta eficiência", desc: language === "en" ? "Ideal for small, frequent task payments." : "Ideal para pagamentos de tarefas pequenas e frequentes." },
-              { icon: Globe, title: language === "en" ? "Borderless by design" : "Sem fronteiras por design", desc: language === "en" ? "Pay and coordinate contributors across regions without complex banking." : "Pague e coordene colaboradores de várias regiões sem burocracia bancária." },
-              { icon: Shield, title: language === "en" ? "Transparent history" : "Histórico transparente", desc: language === "en" ? "Every task and payout leaves an onchain trace." : "Toda tarefa e pagamento deixa um rastro onchain." },
-              { icon: CheckCircle, title: language === "en" ? "Fair and predictable" : "Justo e previsível", desc: language === "en" ? "Rewards are defined upfront and cannot be silently changed." : "Recompensas são definidas antecipadamente e não podem ser alteradas silenciosamente." },
-            ].map((item, i) => {
-              const Icon = item.icon
-              return (
-                <div key={i} className="flex items-start gap-4 py-4 border-b border-balaio-rule">
-                  <Icon className="w-4 h-4 text-balaio-sage flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-semibold text-sm text-balaio-ink">{item.title}</h3>
-                    <p className="text-xs text-balaio-muted mt-0.5">{item.desc}</p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* For Projects Section */}
-      <section className="px-[22px] py-10 bg-white border-b border-balaio-rule">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 className="w-4 h-4 text-balaio-ink" />
-            <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
-              {language === "en" ? "For projects" : "Para projetos"}
-            </p>
-          </div>
-          <h2 className="font-display text-2xl text-balaio-ink mb-2">
-            {language === "en" ? <>For <em>Projects</em></> : <>Para <em>Projetos</em></>}
-          </h2>
-          <p className="text-sm text-balaio-muted mb-6">
-            {language === "en"
-              ? "Coordinate contributors and payouts in one place"
-              : "Coordene colaboradores e pagamentos em um só lugar"}
-          </p>
-
-          <p className="text-sm text-balaio-muted mb-6" style={{ lineHeight: 1.7 }}>
-            {language === "en"
-              ? "Balaio lets your project publish tasks onchain, verify work, and pay contributors directly."
-              : "O Balaio permite que seu projeto compartilhe tarefas onchain, verifique trabalhos e pague colaboradores onchain com total transparência."}
-          </p>
-
-          <h4 className="font-semibold text-sm text-balaio-ink mb-3">{language === "en" ? "What you can do:" : "O que você pode fazer:"}</h4>
-          <ul className="flex flex-col gap-0 mb-6">
-            {[
-              language === "en" ? "Create task lists in minutes: Define rewards, deadlines, and requirements." : "Crie listas de tarefas em minutos: Defina recompensas, prazos e requisitos.",
-              language === "en" ? "Work with contributors from all over the world." : "Trabalhe com colaboradores de todo o mundo.",
-              language === "en" ? "Review and approve work: Track submissions, request edits, and pay at your own pace." : "Revise e aprove trabalhos: Acompanhe envios, solicite edições e aprove em escala.",
-              language === "en" ? "Automate payouts: Once tasks are approved, contributors receive onchain payments." : "Automatize pagamentos: Após aprovação das tarefas, colaboradores recebem pagamentos onchain.",
-            ].map((text, i) => (
-              <li key={i} className="flex items-start gap-3 py-3 border-b border-balaio-rule">
-                <CheckCircle className="w-4 h-4 text-balaio-sage flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-balaio-muted">{text}</span>
-              </li>
-            ))}
-          </ul>
-
-          <h4 className="font-semibold text-sm text-balaio-ink mb-3">{language === "en" ? "Ideal for:" : "Ideal para:"}</h4>
-          <div className="flex flex-wrap gap-2 mb-7">
-            {[
-              language === "en" ? "Web3 ecosystem growth" : "Crescimento de ecossistemas Web3",
-              language === "en" ? "Local research" : "Pesquisa local",
-              language === "en" ? "Education & onboarding" : "Educação & onboarding",
-              language === "en" ? "Community missions" : "Missões de comunidade",
-            ].map((tag) => (
-              <span key={tag} className="bg-balaio-surface text-balaio-muted px-3 py-1 text-xs font-semibold rounded-full">
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <a
-            href="mailto:talkbalaio@gmail.com"
-            className="bg-balaio-sage text-white px-6 py-3 font-semibold rounded-balaio-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
-          >
-            <Mail className="w-4 h-4" />
-            {language === "en" ? "Talk to us about launching your tasks →" : "Fale conosco sobre lançar suas tarefas →"}
-          </a>
-        </div>
-      </section>
-
-      {/* For Contributors Section */}
-      <section className="px-[22px] py-10 bg-balaio-open-bg border-b border-balaio-rule">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-balaio-sage" />
-            <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
-              {language === "en" ? "For contributors" : "Para colaboradores"}
-            </p>
-          </div>
-          <h2 className="font-display text-2xl text-balaio-ink mb-2">
-            {language === "en" ? <>For <em>Contributors</em></> : <>Para <em>Colaboradores</em></>}
-          </h2>
-          <p className="text-sm text-balaio-muted mb-6">
-            {language === "en"
-              ? "Earn with tasks, paid directly to your crypto wallet"
-              : "Ganhe com tarefas, pago diretamente na sua carteira crypto"}
-          </p>
-
-          <p className="text-sm text-balaio-muted mb-6" style={{ lineHeight: 1.7 }}>
-            {language === "en"
-              ? "Use your phone to complete tasks for companies, communities, and Web3 projects: from surveys and content to local field work. Get paid onchain with stable digital dollars you can spend, save, or cash out."
-              : "Use seu celular para completar tarefas para empresas, comunidades e projetos Web3: de pesquisas e conteúdo a trabalho de campo local. Seja pago onchain com dólares digitais estáveis que você pode gastar, economizar ou sacar."}
-          </p>
-
-          <div className="grid grid-cols-2 gap-3 mb-7">
-            {[
-              { icon: Wallet, title: language === "en" ? "Easy to start" : "Fácil de começar", desc: language === "en" ? "Connect a wallet, create your account, and pick your first task." : "Conecte uma carteira, crie sua conta e escolha sua primeira tarefa." },
-              { icon: CheckCircle, title: language === "en" ? "Real pay for real work" : "Pagamento real por trabalho real", desc: language === "en" ? "Every approved task is paid. No points, no hidden rules." : "Toda tarefa aprovada é paga. Sem pontos, sem regras ocultas." },
-              { icon: Zap, title: language === "en" ? "Fast payouts" : "Pagamentos rápidos", desc: language === "en" ? "Onchain transfers arrive in minutes, not weeks." : "Transferências onchain chegam em minutos, não semanas." },
-              { icon: Smartphone, title: language === "en" ? "Built for mobile" : "Feito para mobile", desc: language === "en" ? "Lightweight experience that works even on basic smartphones." : "Experiência leve que funciona até em smartphones básicos." },
-            ].map((item, i) => {
-              const Icon = item.icon
-              return (
-                <div key={i} className="bg-white rounded-balaio-lg p-4 shadow-balaio-card">
-                  <Icon className="w-4 h-4 text-balaio-sage mb-2" />
-                  <h5 className="font-semibold text-xs text-balaio-ink mb-1">{item.title}</h5>
-                  <p className="text-xs text-balaio-muted">{item.desc}</p>
-                </div>
-              )
-            })}
-          </div>
-
-          <button
-            onClick={onConnect}
-            className="bg-balaio-ink text-white px-6 py-3 font-semibold rounded-balaio-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
-          >
-            <Wallet className="w-4 h-4" />
-            {language === "en" ? "Start Earning →" : "Comece a Ganhar →"}
-          </button>
-        </div>
-      </section>
-
-      {/* For Partners Section */}
-      <section className="px-[22px] py-10 bg-white border-b border-balaio-rule">
-        <div className="max-w-lg mx-auto">
-          <div className="flex items-center gap-2 mb-2">
-            <Handshake className="w-4 h-4 text-balaio-ink" />
-            <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">
-              {language === "en" ? "For partners" : "Para parceiros"}
-            </p>
-          </div>
-          <h2 className="font-display text-2xl text-balaio-ink mb-2">
-            {language === "en" ? <>For <em>Partners</em></> : <>Para <em>Parceiros</em></>}
-          </h2>
-          <p className="text-sm text-balaio-muted mb-6">
-            {language === "en"
-              ? "Partner with Balaio to activate communities at scale"
-              : "Seja parceiro do Balaio para ativar comunidades em escala"}
-          </p>
-
-          <p className="text-sm text-balaio-muted mb-6" style={{ lineHeight: 1.7 }}>
-            {language === "en"
-              ? "We collaborate with ecosystems, NGOs, universities, and accelerator programs to turn funding into measurable, onchain work done by real people."
-              : "Colaboramos com ecossistemas, ONGs, universidades e programas aceleradores para transformar financiamento em trabalho mensurável e onchain feito por pessoas reais."}
-          </p>
-
-          <h4 className="font-semibold text-sm text-balaio-ink mb-3">{language === "en" ? "How we co-create:" : "Como co-criamos:"}</h4>
-          <ul className="flex flex-col gap-0 mb-6">
-            {[
-              language === "en" ? "Design pilot programs in specific regions or communities" : "Projetamos programas piloto em regiões ou comunidades específicas",
-              language === "en" ? "Integrate Balaio tasks into your existing education or impact programs" : "Integramos tarefas do Balaio em seus programas de educação ou impacto existentes",
-              language === "en" ? "Provide dashboards to track activity, payouts, and outcomes" : "Fornecemos dashboards para acompanhar atividade, pagamentos e resultados",
-              language === "en" ? "Support local onboarding and collect product feedback" : "Apoiamos com onboarding local e ciclos de feedback do produto",
-            ].map((text, i) => (
-              <li key={i} className="flex items-start gap-3 py-3 border-b border-balaio-rule">
-                <CheckCircle className="w-4 h-4 text-balaio-sage flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-balaio-muted">{text}</span>
-              </li>
-            ))}
-          </ul>
-
-          <h4 className="font-semibold text-sm text-balaio-ink mb-3">{language === "en" ? "Perfect if you are:" : "Perfeito se você é:"}</h4>
-          <div className="flex flex-wrap gap-2 mb-7">
-            {[
-              language === "en" ? "Blockchain ecosystem or foundation" : "Ecossistema ou fundação blockchain",
-              language === "en" ? "Impact fund, NGO, or agency" : "Fundo de impacto, ONG ou agência",
-              language === "en" ? "University or accelerator" : "Universidade ou aceleradora",
-            ].map((tag) => (
-              <span key={tag} className="bg-balaio-surface text-balaio-muted px-3 py-1 text-xs font-semibold rounded-full">
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <a
-            href="mailto:talkbalaio@gmail.com"
-            className="bg-balaio-ink text-white px-6 py-3 font-semibold rounded-balaio-lg hover:opacity-90 transition-opacity inline-flex items-center gap-2"
-          >
-            <Handshake className="w-4 h-4" />
-            {language === "en" ? "Work with us →" : "Fale com a gente →"}
-          </a>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="px-[22px] py-12 bg-balaio-surface">
-        <div className="max-w-lg mx-auto text-center">
-          <img src="/logo.png" alt="Balaio" className="w-16 h-16 mx-auto mb-5 bg-white rounded-balaio-lg p-2 shadow-balaio-card" />
-          <h2 className="font-display text-2xl text-balaio-ink mb-2">
-            {language === "en" ? <>Ready to get <em>started?</em></> : <>Pronto para <em>começar?</em></>}
-          </h2>
-          <p className="text-sm text-balaio-muted mb-7">
-            {language === "en"
-              ? "Connect your wallet and start using Balaio today."
-              : "Conecte sua carteira e comece a usar o Balaio hoje."}
-          </p>
-          <div className="flex flex-col gap-3 max-w-xs mx-auto">
-            <button
-              onClick={onConnect}
-              className="bg-balaio-ink text-white px-6 py-3.5 font-semibold rounded-balaio-lg hover:opacity-90 transition-opacity flex items-center justify-between w-full"
-            >
-              <span>{t.connectWallet} (MetaMask)</span>
-              <span>→</span>
-            </button>
-            <button
-              onClick={() => onOpenWallet()}
-              className="bg-white text-balaio-ink px-6 py-3.5 font-semibold rounded-balaio-lg hover:bg-balaio-rule transition-colors flex items-center justify-between w-full border border-balaio-rule"
-            >
-              <span>{t.connectWallet} (WalletConnect)</span>
-              <span>→</span>
-            </button>
-          </div>
-          <p className="text-xs text-balaio-muted mt-6">
-            {language === "en" ? "Built on Celo Mainnet · Open source" : "Construído na Celo Mainnet · Código aberto"}
-          </p>
-        </div>
-      </section>
     </div>
   )
 }
