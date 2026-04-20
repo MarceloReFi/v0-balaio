@@ -28,6 +28,7 @@ import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
+import { isMiniPay } from "@/lib/minipay"
 import { useAccount, useDisconnect } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
@@ -387,6 +388,10 @@ export function TheOfficeApp() {
     }
   }, [toast])
 
+  useEffect(() => {
+    if (isMiniPay()) connectWallet()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     const fetchBalances = async () => {
