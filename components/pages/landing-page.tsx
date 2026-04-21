@@ -9,6 +9,7 @@ interface LandingPageProps {
   onConnect: () => void
   onOpenWallet: () => void
   language: Language
+  onNavigateToAgents: () => void
 }
 
 // ── Reusable primitives ──────────────────────────────────────────────
@@ -57,7 +58,7 @@ const AUDIENCES = [
 ]
 
 // ── Component ────────────────────────────────────────────────────────
-export function LandingPage({ onConnect, onOpenWallet, language }: LandingPageProps) {
+export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAgents }: LandingPageProps) {
   const t = useTranslations(language)
   const [inMiniPay, setInMiniPay] = useState(false)
   useEffect(() => { setInMiniPay(isMiniPay()) }, [])
@@ -151,7 +152,10 @@ export function LandingPage({ onConnect, onOpenWallet, language }: LandingPagePr
                 <h3 className="text-xl font-bold" style={{ fontFamily: "'Noto Serif', serif" }}>{label}</h3>
                 <p className={`text-sm leading-relaxed ${dark ? "text-on-primary-container" : "text-on-surface-variant"}`}>{body}</p>
               </div>
-              <button className={`flex items-center gap-2 text-sm font-semibold ${dark ? "text-marigold" : "text-secondary"}`}>
+              <button
+                onClick={label === "Equipes de IA" ? onNavigateToAgents : undefined}
+                className={`flex items-center gap-2 text-sm font-semibold ${dark ? "text-marigold" : "text-secondary"}`}
+              >
                 {cta} <ArrowRight size={14} />
               </button>
             </div>

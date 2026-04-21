@@ -25,6 +25,7 @@ import { TasksPage } from "@/components/pages/tasks-page"
 import { ProfilePage } from "@/components/pages/profile-page"
 import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
+import { AgentsPage } from "@/components/pages/agents-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
@@ -152,7 +153,7 @@ export function TheOfficeApp() {
     cUSD: null,
     USDC: null,
   })
-  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats">("home")
+  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -1044,7 +1045,12 @@ export function TheOfficeApp() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-16">
-        {!account && <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} />}
+        {!account && currentPage !== "agents" && (
+          <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
+        )}
+        {currentPage === "agents" && (
+          <AgentsPage onBack={() => setCurrentPage("home")} language={language} />
+        )}
         {account && currentPage === "home" && (
           <HomePage
             onConnect={connectWallet}
