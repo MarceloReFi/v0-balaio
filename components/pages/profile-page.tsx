@@ -63,7 +63,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
   }
 
   return (
-    <div className="px-[22px] py-5 pb-24">
+    <div className="max-w-3xl mx-auto px-[22px] py-5 pb-24">
       {/* Identity card */}
       <div className="bg-balaio-surface rounded-balaio-xl p-5 mb-5">
         <div className="flex items-center gap-4 mb-5">
