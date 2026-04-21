@@ -61,6 +61,7 @@ const PARTNERS = [
   { name: "GoodDollar",           src: "/GoodDapp_Primary.webp" },
   { name: "Green Pill Brasil",    src: "/greenpill-logo.png" },
   { name: "Blockchain na Escola", src: "/blockchain na escola.png" },
+  { name: "UNIFACS",              src: "https://www.unifacs.br/assets/img/logo-unifacs.svg" },
 ]
 
 // ── Component ────────────────────────────────────────────────────────
@@ -192,9 +193,6 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
                 className="h-10 object-contain opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300"
               />
             ))}
-            <span className="text-on-surface-variant text-sm font-semibold opacity-60 hover:opacity-100 transition-opacity">
-              UNIFACS
-            </span>
           </div>
         </div>
       </section>
