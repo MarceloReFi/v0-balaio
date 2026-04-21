@@ -190,7 +190,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
                 key={name}
                 src={src}
                 alt={name}
-                className="h-10 object-contain opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300"
+                className="h-[52px] object-contain opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300"
               />
             ))}
           </div>
