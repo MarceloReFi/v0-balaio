@@ -1010,11 +1010,11 @@ export function TheOfficeApp() {
   }, [wagmiConnected, wagmiAddress, signer, contract])
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <header className="sticky top-0 bg-white px-[22px] py-3 border-b border-balaio-rule z-40">
+    <div className="min-h-screen bg-surface flex flex-col">
+      <header className="sticky top-0 bg-surface px-[22px] py-3 border-b border-outline-variant/20 z-40">
         <div className="flex items-center justify-between">
           {account && currentPage !== "home" && (
-            <button onClick={() => setCurrentPage("home")} className="text-balaio-ink p-1 hover:opacity-70 mr-2">
+            <button onClick={() => setCurrentPage("home")} className="text-on-surface p-1 hover:opacity-70 mr-2">
               <ArrowLeft size={20} />
             </button>
           )}
@@ -1023,20 +1023,20 @@ export function TheOfficeApp() {
             <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
               <img src="/logo.png" alt="Balaio Logo" className="w-full h-full object-contain" />
             </div>
-            <span className="font-display italic text-balaio-ink text-xl">{t.appName}</span>
+            <span className="font-headline italic text-on-surface text-xl">{t.appName}</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={toggleLanguage}
-              className="bg-balaio-surface px-2.5 py-1.5 text-xs rounded-balaio-pill text-balaio-muted font-semibold hover:bg-balaio-rule transition-colors flex items-center gap-1"
+              className="bg-surface-container-low px-2.5 py-1.5 text-xs rounded-full text-on-surface-variant font-semibold hover:bg-surface-container-high transition-colors flex items-center gap-1"
               title={language === "en" ? "Português" : "English"}
             >
               <Languages size={13} />
               {language === "en" ? "PT" : "EN"}
             </button>
             {account && (
-              <button onClick={handleDisconnect} className="text-balaio-muted hover:text-balaio-ink transition-colors">
+              <button onClick={handleDisconnect} className="text-on-surface-variant hover:text-on-surface transition-colors">
                 <LogOut size={18} />
               </button>
             )}
@@ -1102,7 +1102,7 @@ export function TheOfficeApp() {
       </main>
 
       {account && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-balaio-rule flex z-40" style={{ height: 56 }}>
+        <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant/20 flex z-40" style={{ height: 56 }}>
           {[
             { id: "home" as const, icon: Home, label: t.home },
             { id: "tasks" as const, icon: Clipboard, label: t.tasks },
@@ -1120,9 +1120,9 @@ export function TheOfficeApp() {
               >
                 <Icon
                   size={20}
-                  className={isActive ? "text-balaio-sage" : "text-balaio-muted opacity-60"}
+                  className={isActive ? "text-secondary" : "text-on-surface-variant opacity-60"}
                 />
-                <span className={`text-[10px] font-semibold ${isActive ? "text-balaio-sage" : "text-balaio-muted opacity-60"}`}>
+                <span className={`text-[10px] font-semibold ${isActive ? "text-secondary" : "text-on-surface-variant opacity-60"}`}>
                   {tab.label}
                 </span>
               </button>
