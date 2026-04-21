@@ -123,7 +123,7 @@ export function HomePage({
   ]
 
   return (
-    <div className="px-[22px] py-5 pb-24">
+    <div className="max-w-3xl mx-auto px-[22px] py-5 pb-24">
       {/* Latest Tasks */}
       {latestTasks.length > 0 && (
         <div className="mb-8">
@@ -152,7 +152,7 @@ export function HomePage({
               return (
                 <div
                   key={task.id}
-                  className="py-4 border-b border-balaio-rule -mx-[22px] px-[22px]"
+                  className="py-4 border-b border-balaio-rule"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
