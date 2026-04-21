@@ -57,6 +57,12 @@ const AUDIENCES = [
   },
 ]
 
+const PARTNERS = [
+  { name: "GoodDollar",           src: "/GoodDapp_Primary.webp" },
+  { name: "Green Pill Brasil",    src: "/greenpill-logo.png" },
+  { name: "Blockchain na Escola", src: "/blockchain na escola.png" },
+]
+
 // ── Component ────────────────────────────────────────────────────────
 export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAgents }: LandingPageProps) {
   const t = useTranslations(language)
@@ -168,6 +174,28 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
               </button>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── PARTNERS ─────────────────────────────────────── */}
+      <section className="bg-surface-container-low py-16">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <SectionLabel>Parceiros & Ecossistema</SectionLabel>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-12">
+            {PARTNERS.map(({ name, src }) => (
+              <img
+                key={name}
+                src={src}
+                alt={name}
+                className="h-10 object-contain opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300"
+              />
+            ))}
+            <span className="text-on-surface-variant text-sm font-semibold opacity-60 hover:opacity-100 transition-opacity">
+              UNIFACS
+            </span>
+          </div>
         </div>
       </section>
 
