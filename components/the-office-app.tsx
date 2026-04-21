@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { ethers } from "ethers"
-import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp } from "lucide-react"
+import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp, BookOpen } from "lucide-react"
 import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
@@ -1097,7 +1097,7 @@ export function TheOfficeApp() {
             language={language}
           />
         )}
-        {account && currentPage === "blog" && <BlogPage onBack={() => setCurrentPage("profile")} language={language} />}
+        {account && currentPage === "blog" && <BlogPage language={language} />}
         {account && currentPage === "stats" && <StatsPage language={language} />}
       </main>
 
@@ -1107,6 +1107,7 @@ export function TheOfficeApp() {
             { id: "home" as const, icon: Home, label: t.home },
             { id: "tasks" as const, icon: Clipboard, label: t.tasks },
             { id: "profile" as const, icon: User, label: t.profile },
+            { id: "blog" as const, icon: BookOpen, label: "Blog" },
             { id: "stats" as const, icon: TrendingUp, label: "Stats" },
           ].map((tab) => {
             const Icon = tab.icon
