@@ -1,9 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { User, Tag, Folder } from "lucide-react"
+import { User, Tag, Folder, X } from "lucide-react"
 import { TokenBadge } from "@/components/ui/token-badge"
-import { BottomSheet } from "@/components/ui/bottom-sheet"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 
@@ -101,13 +100,21 @@ export function TaskDetailModal({
   const inputClass = "w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm outline-none focus:ring-1 focus:ring-balaio-sage"
 
   return (
-    <BottomSheet onClose={onClose}>
-      <div className="px-[22px] pb-8">
-        {/* Status label + title */}
+    <>
+      <div className="fixed inset-0 bg-balaio-ink/40 z-50" onClick={onClose} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-balaio-sheet pointer-events-auto">
+          <div className="flex items-center justify-between px-[22px] pt-5 pb-3 border-b border-balaio-rule sticky top-0 bg-white rounded-t-2xl z-10">
+            <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-balaio-pill ${slotStatus.className}`}>
+              {slotStatus.text}
+            </span>
+            <button onClick={onClose} className="text-balaio-muted hover:text-balaio-ink transition-colors p-1">
+              <X size={18} />
+            </button>
+          </div>
+        <div className="px-[22px] pb-8 pt-4">
+        {/* Title */}
         <div className="mb-4">
-          <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-balaio-pill mb-2 ${slotStatus.className}`}>
-            {slotStatus.text}
-          </span>
           <h2 className="font-display text-2xl text-balaio-ink leading-snug">{task.title}</h2>
         </div>
 
@@ -328,7 +335,9 @@ export function TaskDetailModal({
             </div>
           )}
         </div>
+        </div>
+        </div>
       </div>
-    </BottomSheet>
+    </>
   )
 }
