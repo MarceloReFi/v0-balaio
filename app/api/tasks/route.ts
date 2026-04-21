@@ -1,51 +1,93 @@
 import { NextResponse } from "next/server"
-import { ethers } from "ethers"
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
-import { getProvider, retryQuery } from "@/lib/blockchain-provider"
+import { createClient } from "@/lib/supabase/client"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-const CONTRACT_DEPLOYMENT_BLOCK = 51778358
-const BLOCKS_PER_DAY = 17280
-const BATCH_SIZE = 50000
-
 export async function GET(request: Request) {
   const ip = getClientIp(request)
-  if (!checkRateLimit(`${ip}:tasks`, 10, 60000)) {
+  if (!checkRateLimit(`${ip}:tasks-get`, 60, 60 * 1000)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 })
   }
 
+  const { searchParams } = new URL(request.url)
+  const visibility = searchParams.get("visibility") ?? "public"
+  const status = searchParams.get("status") ?? "open"
+
+  const supabase = createClient()
+
+  let query = supabase
+    .from("tasks")
+    .select(
+      "id, title, description, reward, token, token_address, slots, claimed_slots, category, complexity, deadline, tags, visibility, creator_address"
+    )
+    .eq("visibility", visibility)
+
+  if (status === "open") {
+    query = query.filter("claimed_slots", "lt", "slots")
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json(data ?? [])
+}
+
+export async function POST(request: Request) {
+  const ip = getClientIp(request)
+  if (!checkRateLimit(`${ip}:tasks-post`, 10, 60 * 1000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+  }
+
+  let body: unknown
   try {
-    const provider = await getProvider()
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+  }
 
-    const currentBlock = await provider.getBlockNumber()
-    const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 60 * BLOCKS_PER_DAY)
-    const numBatches = Math.ceil((currentBlock - startBlock) / BATCH_SIZE)
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 })
+  }
 
-    let allCreatedEvents: any[] = []
-    for (let i = 0; i < numBatches; i++) {
-      const batchStart = startBlock + i * BATCH_SIZE
-      const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
-      try {
-        const events = await retryQuery(() =>
-          contract.queryFilter(contract.filters.TaskCreated(), batchStart, batchEnd)
-        )
-        allCreatedEvents = allCreatedEvents.concat(events)
-      } catch (err) {
-        console.error(`Batch ${i + 1}/${numBatches} failed:`, err)
-      }
-    }
+  const b = body as Record<string, unknown>
+  const { id, title, reward, token, tokenAddress, creatorAddress, slots } = b
 
-    const taskIds = [...new Set(allCreatedEvents.map(e => e.args?.[0]).filter(Boolean))]
-
-    return NextResponse.json({ taskIds, success: true })
-  } catch (error) {
+  if (!id || !title || !reward || !token || !tokenAddress || !creatorAddress || !slots) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      { error: "Missing required fields: id, title, reward, token, tokenAddress, creatorAddress, slots" },
+      { status: 400 }
     )
   }
+
+  const supabase = createClient()
+
+  const { error } = await supabase.from("tasks").upsert(
+    {
+      id,
+      title,
+      reward,
+      token,
+      token_address: tokenAddress,
+      creator_address: creatorAddress,
+      slots,
+      description: b.description ?? null,
+      visibility: b.visibility ?? "public",
+      category: b.category ?? null,
+      tags: b.tags ?? [],
+      deadline: b.deadline ?? null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" }
+  )
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
 }
