@@ -102,7 +102,7 @@ export function TasksPage({
   }
 
   return (
-    <div className="px-[22px] py-5">
+    <div className="max-w-3xl mx-auto px-[22px] py-5">
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -186,7 +186,7 @@ export function TasksPage({
                   setSelectedTask(task)
                   setShowTaskModal(true)
                 }}
-                className="py-4 border-b border-outline-variant/20 cursor-pointer hover:bg-surface-container-low/50 transition-colors -mx-[22px] px-[22px]"
+                className="py-4 border-b border-outline-variant/20 cursor-pointer hover:bg-surface-container-low/50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
