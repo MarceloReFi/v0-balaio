@@ -32,14 +32,14 @@ export const translations = {
     getStartedDesc: "Connect your Celo wallet and start earning with tasks today.",
 
     // Opportunities
-    celoPublicGoods: "Celo Public Goods",
-    celoPublicGoodsDesc: "Support public goods and community projects on Celo through retroactive funding.",
-    celoBuilderFund: "Celo Builder Fund",
-    celoBuilderFundDesc: "Get funding to build innovative projects and dApps on the Celo ecosystem.",
-    prezentiGrants: "Prezenti Grants",
-    prezentiGrantsDesc: "Access grants for projects focused on real-world impact and social good.",
-    celoCamp: "Celo Camp",
-    celoCampDesc: "Join an accelerator program for Web3 startups building on Celo.",
+    celoPublicGoods: "GoodDollar Basic Income",
+    celoPublicGoodsDesc: "Claim daily G$ tokens as universal basic income. Available to verified humans worldwide.",
+    celoBuilderFund: "GoodBuilders Grants",
+    celoBuilderFundDesc: "Apply for funding to build projects that expand the GoodDollar ecosystem and real-world impact.",
+    prezentiGrants: "G$ Liquidity Mining",
+    prezentiGrantsDesc: "Provide liquidity to G$ pools and earn rewards while supporting the ecosystem.",
+    celoCamp: "GoodDollar DAO",
+    celoCampDesc: "Participate in governance and help shape the future of GoodDollar's universal basic income protocol.",
 
     // Tasks Page
     createTask: "Create",
@@ -205,14 +205,14 @@ export const translations = {
     getStartedDesc: "Conecte sua carteira Celo e comece a ganhar com tarefas hoje.",
 
     // Opportunities
-    celoPublicGoods: "Bens Públicos Celo",
-    celoPublicGoodsDesc: "Apoie bens públicos e projetos comunitários no Celo através de financiamento retroativo.",
-    celoBuilderFund: "Fundo de Construtores Celo",
-    celoBuilderFundDesc: "Obtenha financiamento para construir projetos inovadores e dApps no ecossistema Celo.",
-    prezentiGrants: "Subsídios Prezenti",
-    prezentiGrantsDesc: "Acesse subsídios para projetos focados em impacto no mundo real e bem social.",
-    celoCamp: "Celo Camp",
-    celoCampDesc: "Participe de um programa acelerador para startups Web3 construindo no Celo.",
+    celoPublicGoods: "Renda Básica GoodDollar",
+    celoPublicGoodsDesc: "Reivindique tokens G$ diariamente como renda básica universal. Disponível para humanos verificados no mundo todo.",
+    celoBuilderFund: "GoodBuilders Grants",
+    celoBuilderFundDesc: "Solicite financiamento para construir projetos que expandam o ecossistema GoodDollar e gerem impacto real.",
+    prezentiGrants: "G$ Liquidity Mining",
+    prezentiGrantsDesc: "Forneça liquidez para pools de G$ e ganhe recompensas enquanto apoia o ecossistema.",
+    celoCamp: "GoodDollar DAO",
+    celoCampDesc: "Participe da governança e ajude a moldar o futuro do protocolo de renda básica universal da GoodDollar.",
 
     // Tasks Page
     createTask: "Criar",
