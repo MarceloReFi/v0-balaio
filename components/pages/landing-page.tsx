@@ -36,14 +36,14 @@ const STEPS = [
 const AUDIENCES = [
   {
     icon: Building2,
-    label: "Empresas e Projetos",
+    label: "Empresas e Equipes",
     body: "Converta orçamento em execução. Aloque capital diretamente em tarefas e pague apenas por resultados aprovados.",
     cta: "Saiba mais",
-    dark: true,
+    dark: false,
   },
   {
     icon: Users,
-    label: "Contribuidores",
+    label: "Profissionais",
     body: "Execute tarefas com escopo claro e garanta o recebimento automático após a aprovação do seu trabalho.",
     cta: "Explorar",
     dark: false,
@@ -61,6 +61,8 @@ const AUDIENCES = [
 export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAgents }: LandingPageProps) {
   const t = useTranslations(language)
   const [inMiniPay, setInMiniPay] = useState(false)
+  const [showEmpresasModal, setShowEmpresasModal] = useState(false)
+  const [showProfissionaisModal, setShowProfissionaisModal] = useState(false)
   useEffect(() => { setInMiniPay(isMiniPay()) }, [])
 
   return (
@@ -69,13 +71,12 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
       {/* ── HERO ─────────────────────────────────────────── */}
       <section className="max-w-5xl mx-auto px-6 py-20 md:py-32 grid md:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col gap-8">
-          <SectionLabel>Plataforma B2B · Celo Mainnet</SectionLabel>
           <h1 className="text-4xl md:text-5xl font-bold text-primary-container leading-tight" style={{ fontFamily: "'Noto Serif', serif", letterSpacing: "-0.02em" }}>
             Trabalho inteligente.<br />
             <span className="text-secondary">Coordenação eficiente.</span>
           </h1>
           <p className="text-base text-on-surface-variant leading-relaxed max-w-md">
-            Conecte organizações, talentos e agentes de IA em um fluxo de execução com pagamento por tarefa.
+            Conectando organizações, profissionais e agentes de IA em um ambiente simples e funcional.
           </p>
           {!inMiniPay && (
             <div className="flex flex-wrap gap-3">
@@ -85,26 +86,28 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
               >
                 Explorar Tarefas <ArrowRight size={16} />
               </button>
-              <button
-                onClick={onOpenWallet}
-                className="border-2 border-primary-container/20 text-primary-container px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-surface-container-low transition-all"
-              >
-                Criar Projeto
-              </button>
             </div>
           )}
         </div>
 
         {/* Right side: trust signals */}
-        <div className="bg-surface-container rounded-2xl p-8 flex flex-col gap-5">
-          {["Pagamento por resultado aprovado", "Escrow onchain — sem intermediários", "Compatível com agentes de IA", "Verificação de identidade via GoodDollar"].map((item) => (
-            <div key={item} className="flex items-center gap-3">
-              <span className="w-5 h-5 rounded-full bg-marigold flex items-center justify-center flex-shrink-0">
-                <Check size={12} className="text-on-tertiary-fixed" />
-              </span>
-              <span className="text-sm text-on-surface-variant">{item}</span>
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+              <img src="/logo.png" alt="Balaio" className="w-full h-full object-contain" />
             </div>
-          ))}
+            <span className="font-bold text-primary-container text-lg" style={{ fontFamily: "'Noto Serif', serif" }}>Balaio</span>
+          </div>
+          <div className="bg-surface-container rounded-2xl p-8 flex flex-col gap-5">
+            {["Pagamento por resultado aprovado", "Escrow onchain — sem intermediários", "Compatível com agentes de IA", "Verificação de identidade via GoodDollar"].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded-full bg-marigold flex items-center justify-center flex-shrink-0">
+                  <Check size={12} className="text-on-tertiary-fixed" />
+                </span>
+                <span className="text-sm text-on-surface-variant">{item}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -153,7 +156,12 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
                 <p className={`text-sm leading-relaxed ${dark ? "text-on-primary-container" : "text-on-surface-variant"}`}>{body}</p>
               </div>
               <button
-                onClick={label === "Equipes de IA" ? onNavigateToAgents : undefined}
+                onClick={
+                  label === "Empresas e Equipes" ? () => setShowEmpresasModal(true)
+                  : label === "Profissionais" ? () => setShowProfissionaisModal(true)
+                  : label === "Equipes de IA" ? onNavigateToAgents
+                  : undefined
+                }
                 className={`flex items-center gap-2 text-sm font-semibold ${dark ? "text-marigold" : "text-secondary"}`}
               >
                 {cta} <ArrowRight size={14} />
@@ -190,6 +198,64 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
           <Thread />
         </div>
       </section>
+
+      {/* Modal — Empresas e Equipes */}
+      {showEmpresasModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary-container/40 backdrop-blur-sm" onClick={() => setShowEmpresasModal(false)}>
+          <div className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-[0_24px_48px_rgba(28,28,23,0.16)]" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-primary-container mb-6" style={{ fontFamily: "'Noto Serif', serif" }}>Criando uma tarefa</h3>
+            <ol className="flex flex-col gap-4">
+              {[
+                { n: "01", t: "Defina a tarefa", d: "Escreva o título, descrição, critérios de aprovação e prazo." },
+                { n: "02", t: "Escolha o token e a recompensa", d: "Selecione cUSD, USDC ou CELO e defina o valor por slot." },
+                { n: "03", t: "Configure visibilidade", d: "Público, somente verificados (GoodDollar) ou privado." },
+                { n: "04", t: "Confirme na carteira", d: "A recompensa fica em escrow no contrato até aprovação." },
+                { n: "05", t: "Acompanhe e aprove", d: "Revise os resultados entregues e aprove para liberar o pagamento." },
+              ].map(({ n, t, d }) => (
+                <li key={n} className="flex gap-4">
+                  <span className="text-secondary font-extrabold text-xs tracking-widest mt-0.5 w-6 flex-shrink-0">{n}</span>
+                  <div>
+                    <p className="font-semibold text-on-surface text-sm">{t}</p>
+                    <p className="text-on-surface-variant text-xs mt-0.5 leading-relaxed">{d}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <button onClick={() => setShowEmpresasModal(false)} className="mt-8 w-full bg-primary-container text-white py-3 rounded-xl font-bold text-sm">
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Profissionais */}
+      {showProfissionaisModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary-container/40 backdrop-blur-sm" onClick={() => setShowProfissionaisModal(false)}>
+          <div className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-[0_24px_48px_rgba(28,28,23,0.16)]" onClick={e => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-primary-container mb-6" style={{ fontFamily: "'Noto Serif', serif" }}>Como funciona para profissionais</h3>
+            <ol className="flex flex-col gap-4">
+              {[
+                { n: "01", t: "Conecte sua carteira", d: "Use MetaMask, WalletConnect ou qualquer carteira compatível com Celo." },
+                { n: "02", t: "Explore as tarefas", d: "Filtre por categoria, recompensa ou prazo e encontre oportunidades relevantes." },
+                { n: "03", t: "Faça o claim", d: "Reserve seu slot na tarefa — o contrato registra sua posição onchain." },
+                { n: "04", t: "Execute e envie o resultado", d: "Conclua o trabalho e envie o link de comprovação." },
+                { n: "05", t: "Receba a recompensa", d: "Após aprovação do criador, faça o claim do pagamento direto para sua carteira." },
+              ].map(({ n, t, d }) => (
+                <li key={n} className="flex gap-4">
+                  <span className="text-secondary font-extrabold text-xs tracking-widest mt-0.5 w-6 flex-shrink-0">{n}</span>
+                  <div>
+                    <p className="font-semibold text-on-surface text-sm">{t}</p>
+                    <p className="text-on-surface-variant text-xs mt-0.5 leading-relaxed">{d}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <button onClick={() => setShowProfissionaisModal(false)} className="mt-8 w-full bg-marigold text-on-tertiary-fixed py-3 rounded-xl font-bold text-sm">
+              Explorar Tarefas
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   )
