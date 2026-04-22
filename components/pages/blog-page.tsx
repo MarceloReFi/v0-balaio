@@ -109,7 +109,7 @@ export function BlogPage({ onBack }: BlogPageProps) {
               onClick={() => setActiveCategory(cat)}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                 activeCategory === cat
-                  ? "bg-primary-container text-white"
+                  ? "bg-primary-container text-on-primary"
                   : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
               }`}
             >

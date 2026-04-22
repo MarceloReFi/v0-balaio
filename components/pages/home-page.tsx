@@ -268,7 +268,7 @@ export function HomePage({
                         {onViewTask && (
                           <button
                             onClick={() => onViewTask(task)}
-                            className="bg-primary-container text-white px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity"
+                            className="bg-primary-container text-on-primary px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity"
                           >
                             {language === "en" ? "View" : "Ver"}
                           </button>
@@ -279,7 +279,7 @@ export function HomePage({
                           onClaimTask && (
                             <button
                               onClick={() => onClaimTask(task)}
-                              className="bg-secondary text-white px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity"
+                              className="bg-secondary text-on-secondary px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity"
                             >
                               {language === "en" ? "Claim" : "Reivindicar"}
                             </button>
@@ -373,7 +373,7 @@ export function HomePage({
                   href={opp.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-secondary text-white px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity flex-shrink-0"
+                  className="bg-secondary text-on-secondary px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity flex-shrink-0"
                 >
                   {language === "en" ? "Apply" : "Aplicar"}
                 </a>

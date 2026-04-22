@@ -89,7 +89,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={onConnect}
-                className="bg-marigold text-on-tertiary-fixed px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-primary-container hover:text-white transition-all flex items-center gap-2"
+                className="bg-marigold text-on-tertiary-fixed px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-2"
               >
                 Explorar Tarefas <ArrowRight size={16} />
               </button>
@@ -214,7 +214,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
             {!inMiniPay && (
               <button
                 onClick={onConnect}
-                className="flex-shrink-0 bg-primary-container text-white px-8 py-4 rounded-xl font-bold text-base hover:bg-black transition-all"
+                className="flex-shrink-0 bg-primary-container text-on-primary px-8 py-4 rounded-xl font-bold text-base hover:bg-black transition-all"
                 style={{ boxShadow: "0 8px 24px rgba(28,28,23,0.06)" }}
               >
                 Começar a Coordenar
@@ -247,7 +247,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
                 </li>
               ))}
             </ol>
-            <button onClick={() => setShowEmpresasModal(false)} className="mt-8 w-full bg-primary-container text-white py-3 rounded-xl font-bold text-sm">
+            <button onClick={() => setShowEmpresasModal(false)} className="mt-8 w-full bg-primary-container text-on-primary py-3 rounded-xl font-bold text-sm">
               Entendido
             </button>
           </div>
