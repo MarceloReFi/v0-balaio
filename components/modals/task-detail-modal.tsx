@@ -76,9 +76,9 @@ export function TaskDetailModal({
   const getSlotStatusLabel = () => {
     const available = Number(task.availableSlots)
     const total = Number(task.totalSlots)
-    if (!task.active || available === 0) return { text: language === "en" ? "Closed" : "Fechado", className: "bg-balaio-claimed-bg text-balaio-claimed-text" }
-    if (available === total) return { text: language === "en" ? `Open · ${available} of ${total} slots` : `Aberto · ${available} de ${total} vagas`, className: "bg-balaio-open-bg text-balaio-open-text" }
-    return { text: language === "en" ? `${available} of ${total} slots left` : `${available} de ${total} vagas restantes`, className: "bg-balaio-pending-bg text-balaio-pending-text" }
+    if (!task.active || available === 0) return { text: language === "en" ? "Closed" : "Fechado", className: "bg-surface-dim text-on-surface-variant" }
+    if (available === total) return { text: language === "en" ? `Open · ${available} of ${total} slots` : `Aberto · ${available} de ${total} vagas`, className: "bg-secondary/10 text-secondary" }
+    return { text: language === "en" ? `${available} of ${total} slots left` : `${available} de ${total} vagas restantes`, className: "bg-marigold/20 text-on-tertiary-fixed" }
   }
 
   const getDeadlineInfo = () => {
@@ -88,74 +88,74 @@ export function TaskDetailModal({
     const diffMs = deadlineDate.getTime() - now.getTime()
     const diffDays = diffMs / (1000 * 60 * 60 * 24)
     if (diffMs < 0) return { color: "text-red-500", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-balaio-pending-text", text: language === "en" ? "1 day left" : "1 dia restante" }
-    if (diffDays <= 7) return { color: "text-balaio-ink", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
-    return { color: "text-balaio-muted", text: new Date(task.deadline).toLocaleDateString() }
+    if (diffDays <= 1) return { color: "text-on-tertiary-fixed", text: language === "en" ? "1 day left" : "1 dia restante" }
+    if (diffDays <= 7) return { color: "text-on-surface", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
+    return { color: "text-on-surface-variant", text: new Date(task.deadline).toLocaleDateString() }
   }
 
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
   const deadlineInfo = getDeadlineInfo()
   const slotStatus = getSlotStatusLabel()
 
-  const inputClass = "w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm outline-none focus:ring-1 focus:ring-balaio-sage"
+  const inputClass = "w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none focus:ring-1 focus:ring-secondary"
 
   return (
     <>
-      <div className="fixed inset-0 bg-balaio-ink/40 z-50" onClick={onClose} />
+      <div className="fixed inset-0 bg-primary-container/40 z-50" onClick={onClose} />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-        <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-balaio-sheet pointer-events-auto">
-          <div className="flex items-center justify-between px-[22px] pt-5 pb-3 border-b border-balaio-rule sticky top-0 bg-white rounded-t-2xl z-10">
-            <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-balaio-pill ${slotStatus.className}`}>
+        <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-lg pointer-events-auto">
+          <div className="flex items-center justify-between px-[22px] pt-5 pb-3 border-b border-outline-variant sticky top-0 bg-white rounded-t-2xl z-10">
+            <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${slotStatus.className}`}>
               {slotStatus.text}
             </span>
-            <button onClick={onClose} className="text-balaio-muted hover:text-balaio-ink transition-colors p-1">
+            <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors p-1">
               <X size={18} />
             </button>
           </div>
         <div className="px-[22px] pb-8 pt-4">
         {/* Title */}
         <div className="mb-4">
-          <h2 className="font-display text-2xl text-balaio-ink leading-snug">{task.title}</h2>
+          <h2 className="font-display text-2xl text-on-surface leading-snug">{task.title}</h2>
         </div>
 
-        <p className="text-sm text-balaio-muted mb-5" style={{ lineHeight: 1.65 }}>{task.description}</p>
+        <p className="text-sm text-on-surface-variant mb-5" style={{ lineHeight: 1.65 }}>{task.description}</p>
 
         {task.validationMethod && task.validationMethod.startsWith('http') && (
           <a
             href={task.validationMethod}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-balaio-sage hover:underline mb-5 block"
+            className="text-sm text-secondary hover:underline mb-5 block"
           >
             {language === "en" ? "View full task details →" : "Ver detalhes completos da tarefa →"}
           </a>
         )}
 
         {/* Details grid */}
-        <div className="bg-balaio-surface rounded-balaio-xl p-4 mb-5">
+        <div className="bg-surface-container-low rounded-xl p-4 mb-5">
           <div className="flex flex-col gap-0">
-            <div className="flex justify-between py-3 border-b border-balaio-rule">
-              <span className="text-xs text-balaio-muted">{t.reward}</span>
-              <span className="font-semibold text-sm text-balaio-ink flex items-center gap-1">
+            <div className="flex justify-between py-3 border-b border-outline-variant">
+              <span className="text-xs text-on-surface-variant">{t.reward}</span>
+              <span className="font-semibold text-sm text-on-surface flex items-center gap-1">
                 {task.reward} <TokenBadge symbol={task.token || "cUSD"} />
               </span>
             </div>
-            <div className="flex justify-between py-3 border-b border-balaio-rule">
-              <span className="text-xs text-balaio-muted">{language === "en" ? "Slots" : "Vagas"}</span>
-              <span className="font-semibold text-sm text-balaio-ink">{task.availableSlots}/{task.totalSlots}</span>
+            <div className="flex justify-between py-3 border-b border-outline-variant">
+              <span className="text-xs text-on-surface-variant">{language === "en" ? "Slots" : "Vagas"}</span>
+              <span className="font-semibold text-sm text-on-surface">{task.availableSlots}/{task.totalSlots}</span>
             </div>
-            <div className="flex justify-between py-3 border-b border-balaio-rule">
-              <span className="text-xs text-balaio-muted">{language === "en" ? "Creator" : "Criador"}</span>
-              <span className="font-semibold text-xs text-balaio-ink">{shortenAddress(task.creator)}</span>
+            <div className="flex justify-between py-3 border-b border-outline-variant">
+              <span className="text-xs text-on-surface-variant">{language === "en" ? "Creator" : "Criador"}</span>
+              <span className="font-semibold text-xs text-on-surface">{shortenAddress(task.creator)}</span>
             </div>
-            <div className="flex justify-between py-3 border-b border-balaio-rule">
-              <span className="text-xs text-balaio-muted">{language === "en" ? "Created" : "Criado"}</span>
-              <span className="text-xs text-balaio-ink">{task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "-"}</span>
+            <div className="flex justify-between py-3 border-b border-outline-variant">
+              <span className="text-xs text-on-surface-variant">{language === "en" ? "Created" : "Criado"}</span>
+              <span className="text-xs text-on-surface">{task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "-"}</span>
             </div>
             {task.deadline && (
               <div className="flex justify-between py-3">
-                <span className="text-xs text-balaio-muted">{language === "en" ? "Deadline" : "Prazo"}</span>
-                <span className={`text-xs font-semibold ${deadlineInfo?.color || 'text-balaio-ink'}`}>
+                <span className="text-xs text-on-surface-variant">{language === "en" ? "Deadline" : "Prazo"}</span>
+                <span className={`text-xs font-semibold ${deadlineInfo?.color || 'text-on-surface'}`}>
                   {deadlineInfo?.text || new Date(task.deadline).toLocaleDateString()}
                 </span>
               </div>
@@ -166,9 +166,9 @@ export function TaskDetailModal({
         {/* Category */}
         {task.category && (
           <div className="flex items-center gap-2 text-sm mb-3">
-            <Folder size={14} className="text-balaio-muted" />
-            <span className="text-balaio-muted">{language === "en" ? "Category:" : "Categoria:"}</span>
-            <span className="bg-balaio-surface text-balaio-muted px-2 py-0.5 text-xs font-semibold rounded-full">
+            <Folder size={14} className="text-on-surface-variant" />
+            <span className="text-on-surface-variant">{language === "en" ? "Category:" : "Categoria:"}</span>
+            <span className="bg-surface-container-low text-on-surface-variant px-2 py-0.5 text-xs font-semibold rounded-full">
               {categoryLabels[task.category]?.[language === "en" ? "en" : "pt"] || task.category}
             </span>
           </div>
@@ -177,12 +177,12 @@ export function TaskDetailModal({
         {/* Tags */}
         {task.tags && task.tags.length > 0 && (
           <div className="flex items-start gap-2 text-sm mb-5">
-            <Tag size={14} className="text-balaio-muted mt-0.5" />
+            <Tag size={14} className="text-on-surface-variant mt-0.5" />
             <div className="flex flex-wrap gap-1">
               {task.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="bg-balaio-surface text-balaio-muted text-xs px-2 py-0.5 rounded-full font-semibold"
+                  className="bg-surface-container-low text-on-surface-variant text-xs px-2 py-0.5 rounded-full font-semibold"
                 >
                   {tag}
                 </span>
@@ -198,13 +198,13 @@ export function TaskDetailModal({
               <button
                 onClick={() => onClaimTask(task.id)}
                 disabled={loading}
-                className="bg-balaio-ink text-white px-6 py-3.5 font-semibold rounded-balaio-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
+                className="bg-primary-container text-on-primary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
               >
                 {loading
                   ? language === "en" ? "Claiming..." : "Reivindicando..."
                   : `${language === "en" ? "Claim this task" : "Reivindicar tarefa"} →`}
               </button>
-              <p className="text-xs text-balaio-muted mt-2 text-center">
+              <p className="text-xs text-on-surface-variant mt-2 text-center">
                 {language === "en" ? "You will have exclusive access to complete and submit work." : "Você terá acesso exclusivo para completar e enviar o trabalho."}
               </p>
             </div>
@@ -212,8 +212,8 @@ export function TaskDetailModal({
 
           {canSubmit && (
             <div className="flex flex-col gap-3">
-              <div className="bg-balaio-open-bg rounded-balaio-lg px-4 py-3">
-                <p className="text-xs font-semibold text-balaio-sage">
+              <div className="bg-secondary/10 rounded-lg px-4 py-3">
+                <p className="text-xs font-semibold text-secondary">
                   {language === "en" ? "Task claimed — submit your proof below" : "Tarefa reivindicada — envie sua prova abaixo"}
                 </p>
               </div>
@@ -226,7 +226,7 @@ export function TaskDetailModal({
               <button
                 onClick={() => { onSubmitTask(task.id, proofUrl); setProofUrl("") }}
                 disabled={loading || !proofUrl}
-                className="bg-balaio-sage text-white px-6 py-3.5 font-semibold rounded-balaio-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
+                className="bg-secondary text-on-secondary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
               >
                 {loading
                   ? language === "en" ? "Submitting..." : "Enviando..."
@@ -236,11 +236,11 @@ export function TaskDetailModal({
           )}
 
           {isPending && (
-            <div className="bg-balaio-pending-bg rounded-balaio-lg px-4 py-4 text-center">
-              <p className="font-semibold text-sm text-balaio-pending-text">
+            <div className="bg-marigold/20 rounded-lg px-4 py-4 text-center">
+              <p className="font-semibold text-sm text-on-tertiary-fixed">
                 {language === "en" ? "Waiting for approval..." : "Aguardando aprovação..."}
               </p>
-              <p className="text-xs text-balaio-muted mt-1">
+              <p className="text-xs text-on-surface-variant mt-1">
                 {language === "en" ? "The creator will review your submission." : "O criador irá revisar seu envio."}
               </p>
             </div>
@@ -250,23 +250,23 @@ export function TaskDetailModal({
             <button
               onClick={() => onClaimReward(task.id)}
               disabled={loading}
-              className="bg-balaio-sage text-white px-6 py-3.5 font-semibold rounded-balaio-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="bg-secondary text-on-secondary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
             >
               {loading ? (language === "en" ? "Claiming..." : "Reivindicando...") : t.claimReward}
             </button>
           )}
 
           {isCompleted && (
-            <div className="bg-balaio-open-bg rounded-balaio-lg px-4 py-3 text-center">
-              <p className="font-semibold text-sm text-balaio-open-text">
+            <div className="bg-secondary/10 rounded-lg px-4 py-3 text-center">
+              <p className="font-semibold text-sm text-secondary">
                 {language === "en" ? "Reward claimed!" : "Recompensa reivindicada!"}
               </p>
             </div>
           )}
 
           {isCreator && (
-            <div className="mt-2 p-4 bg-balaio-surface rounded-balaio-xl">
-              <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-3">
+            <div className="mt-2 p-4 bg-surface-container-low rounded-xl">
+              <p className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-3">
                 {language === "en" ? "Creator Actions" : "Ações do Criador"}
               </p>
               <input
@@ -283,7 +283,7 @@ export function TaskDetailModal({
                   }
                 }}
                 disabled={loading}
-                className="bg-balaio-sage text-white px-4 py-2.5 font-semibold rounded-balaio-lg w-full text-sm disabled:opacity-40 hover:opacity-90 transition-opacity"
+                className="bg-secondary text-on-secondary px-4 py-2.5 font-semibold rounded-lg w-full text-sm disabled:opacity-40 hover:opacity-90 transition-opacity"
               >
                 {language === "en" ? "Approve Submission →" : "Aprovar Envio →"}
               </button>
@@ -311,7 +311,7 @@ export function TaskDetailModal({
                       <button
                         onClick={handleSaveDeadline}
                         disabled={savingDeadline}
-                        className="flex-1 bg-[#99FF99] text-[#111111] px-3 py-2 font-bold border-2 border-[#111111] rounded-xl text-xs disabled:opacity-70"
+                        className="flex-1 bg-marigold text-on-surface px-3 py-2 font-bold border-2 border-[#111111] rounded-xl text-xs disabled:opacity-70"
                       >
                         {savingDeadline ? t.savingDeadline : t.saveDeadline}
                       </button>

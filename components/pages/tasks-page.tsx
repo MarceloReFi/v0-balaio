@@ -147,7 +147,7 @@ export function TasksPage({
             onClick={() => setTaskFilter(filter)}
             className={`px-4 py-1.5 font-semibold text-xs rounded-full transition-colors ${
               taskFilter === filter
-                ? "bg-primary-container text-white"
+                ? "bg-primary-container text-on-primary"
                 : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
             }`}
           >

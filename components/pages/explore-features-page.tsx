@@ -72,13 +72,13 @@ export function ExploreFeaturesPage({ onBack, language }: ExploreFeaturesPagePro
     <div className="p-5 pb-24">
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-sm text-[#666666] hover:text-[#111111] mb-4"
+        className="flex items-center gap-2 text-sm text-[#666666] hover:text-on-surface mb-4"
       >
         <ArrowLeft size={16} />
         {language === "en" ? "Back" : "Voltar"}
       </button>
 
-      <div className="bg-[#111111] border-2 border-[#111111] rounded-xl p-6 mb-6 text-white shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
+      <div className="bg-primary-container border-2 border-[#111111] rounded-xl p-6 mb-6 text-on-primary shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
         <h1 className="text-2xl font-bold mb-2">
           {language === "en" ? "Explore Features" : "Explorar Recursos"}
         </h1>
@@ -102,7 +102,7 @@ export function ExploreFeaturesPage({ onBack, language }: ExploreFeaturesPagePro
                   className="w-12 h-12 border-2 border-[#111111] rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: feature.color }}
                 >
-                  <Icon size={24} className={feature.color === "#111111" ? "text-white" : "text-[#111111]"} />
+                  <Icon size={24} className={feature.color === "#111111" ? "text-white" : "text-on-surface"} />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-lg mb-1">
@@ -119,10 +119,10 @@ export function ExploreFeaturesPage({ onBack, language }: ExploreFeaturesPagePro
       </div>
 
       <div className="mt-6 bg-[#FFFF66] border-2 border-[#111111] rounded-xl p-4 text-center shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-        <p className="font-bold mb-2 text-[#111111]">
+        <p className="font-bold mb-2 text-on-surface">
           {language === "en" ? "Ready to get started?" : "Pronto para comecar?"}
         </p>
-        <p className="text-sm text-[#111111]">
+        <p className="text-sm text-on-surface">
           {language === "en"
             ? "Connect your wallet and explore available tasks!"
             : "Conecte sua carteira e explore as tarefas disponiveis!"}

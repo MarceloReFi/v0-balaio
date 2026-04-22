@@ -136,22 +136,22 @@ export function CreateTaskModal({
     return complexityOptions.find((c) => c.value === comp)?.label || comp
   }
 
-  const inputClass = "w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm outline-none focus:ring-1 focus:ring-balaio-sage"
+  const inputClass = "w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none focus:ring-1 focus:ring-secondary"
 
   return (
     <BottomSheet onClose={onClose}>
       <div className="px-[22px] pb-8">
         <div className="mb-5">
-          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-1">
+          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-1">
             {language === "en" ? "New task" : "Nova tarefa"}
           </p>
-          <h2 className="font-display text-2xl text-balaio-ink">{t.createNewTask}</h2>
+          <h2 className="font-display text-2xl text-on-surface">{t.createNewTask}</h2>
         </div>
 
         <div className="flex flex-col gap-4">
           {/* Task IDs */}
           <div>
-            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.taskId}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.taskId}</label>
             <div className="flex flex-col gap-2">
               {taskIds.map((id, index) => (
                 <div key={index} className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export function CreateTaskModal({
                   <button
                     type="button"
                     onClick={() => removeTaskId(index)}
-                    className="p-1 hover:opacity-70 text-balaio-muted flex-shrink-0"
+                    className="p-1 hover:opacity-70 text-on-surface-variant flex-shrink-0"
                     aria-label="Remove task ID"
                   >
                     <X size={18} />
@@ -177,7 +177,7 @@ export function CreateTaskModal({
               type="button"
               onClick={addTaskId}
               disabled={taskIds.length >= 10}
-              className="mt-2 flex items-center gap-1 text-sm font-semibold text-balaio-sage hover:opacity-70 disabled:opacity-40"
+              className="mt-2 flex items-center gap-1 text-sm font-semibold text-secondary hover:opacity-70 disabled:opacity-40"
             >
               <Plus size={16} />
               {t.addTaskId}
@@ -186,7 +186,7 @@ export function CreateTaskModal({
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.title}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.title}</label>
             <input
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
@@ -197,7 +197,7 @@ export function CreateTaskModal({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.description}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.description}</label>
             <textarea
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
@@ -209,7 +209,7 @@ export function CreateTaskModal({
 
           {/* Visibility */}
           <div>
-            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">
               {language === "en" ? "Visibility" : "Visibilidade"}
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -222,17 +222,17 @@ export function CreateTaskModal({
                   key={opt.value}
                   type="button"
                   onClick={() => setVisibility(opt.value)}
-                  className={`py-2.5 px-3 font-semibold text-sm rounded-balaio-lg transition-colors ${
+                  className={`py-2.5 px-3 font-semibold text-sm rounded-lg transition-colors ${
                     visibility === opt.value
-                      ? "bg-balaio-ink text-white"
-                      : "bg-balaio-surface text-balaio-muted hover:bg-balaio-rule"
+                      ? "bg-primary-container text-on-primary"
+                      : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
                   }`}
                 >
                   {opt.label}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-balaio-muted mt-2">
+            <p className="text-xs text-on-surface-variant mt-2">
               {visibility === "public"
                 ? (language === "en" ? "Everyone can see and claim this task" : "Todos podem ver e reivindicar esta tarefa")
                 : visibility === "verified_humans"
@@ -244,24 +244,24 @@ export function CreateTaskModal({
           {/* Category + Complexity side by side */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.category}</label>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.category}</label>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className="w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm flex items-center justify-between outline-none"
+                  className="w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm flex items-center justify-between outline-none"
                 >
                   <span>{getCategoryLabel(category)}</span>
                   <ChevronDown size={16} className={`transition-transform ${showCategoryDropdown ? "rotate-180" : ""}`} />
                 </button>
                 {showCategoryDropdown && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-balaio-rule rounded-balaio-lg z-10 overflow-hidden shadow-balaio-card mt-1">
+                  <div className="absolute top-full left-0 right-0 bg-white border border-outline-variant rounded-lg z-10 overflow-hidden shadow-md mt-1">
                     {categoryOptions.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => { setCategory(opt.value); setShowCategoryDropdown(false) }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-balaio-surface transition-colors ${category === opt.value ? "font-semibold text-balaio-sage" : "text-balaio-ink"}`}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-surface-container-low transition-colors ${category === opt.value ? "font-semibold text-secondary" : "text-on-surface"}`}
                       >
                         {opt.label}
                       </button>
@@ -272,24 +272,24 @@ export function CreateTaskModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.complexity}</label>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.complexity}</label>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowComplexityDropdown(!showComplexityDropdown)}
-                  className="w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm flex items-center justify-between outline-none"
+                  className="w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm flex items-center justify-between outline-none"
                 >
                   <span>{getComplexityLabel(complexity)}</span>
                   <ChevronDown size={16} className={`transition-transform ${showComplexityDropdown ? "rotate-180" : ""}`} />
                 </button>
                 {showComplexityDropdown && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-balaio-rule rounded-balaio-lg z-10 overflow-hidden shadow-balaio-card mt-1">
+                  <div className="absolute top-full left-0 right-0 bg-white border border-outline-variant rounded-lg z-10 overflow-hidden shadow-md mt-1">
                     {complexityOptions.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => { setComplexity(opt.value); setShowComplexityDropdown(false) }}
-                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-balaio-surface transition-colors ${complexity === opt.value ? "font-semibold text-balaio-sage" : "text-balaio-ink"}`}
+                        className={`w-full px-4 py-2.5 text-left text-sm hover:bg-surface-container-low transition-colors ${complexity === opt.value ? "font-semibold text-secondary" : "text-on-surface"}`}
                       >
                         {opt.label}
                       </button>
@@ -302,8 +302,8 @@ export function CreateTaskModal({
 
           {/* Validation method (fixed) */}
           <div>
-            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.validationMethod}</label>
-            <div className="px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm text-balaio-muted">
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.validationMethod}</label>
+            <div className="px-4 py-2.5 bg-surface-container-low rounded-lg text-sm text-on-surface-variant">
               {t.validationUrl}
             </div>
           </div>
@@ -311,7 +311,7 @@ export function CreateTaskModal({
           {/* Reward + Deadline side by side */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">
                 {t.reward} ({selectedToken})
               </label>
               <input
@@ -323,7 +323,7 @@ export function CreateTaskModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.deadline}</label>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.deadline}</label>
               <div className="relative">
                 <input
                   type="date"
@@ -332,14 +332,14 @@ export function CreateTaskModal({
                   min={new Date().toISOString().split("T")[0]}
                   className={`${inputClass} pr-10`}
                 />
-                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-balaio-muted pointer-events-none" size={16} />
+                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant pointer-events-none" size={16} />
               </div>
             </div>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.tags}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.tags}</label>
             <input
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
@@ -350,32 +350,32 @@ export function CreateTaskModal({
 
           {/* Token selector */}
           <div>
-            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted mb-2">{t.selectToken}</label>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.selectToken}</label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowTokenDropdown(!showTokenDropdown)}
-                className="w-full px-4 py-2.5 bg-balaio-surface rounded-balaio-lg text-sm flex items-center justify-between outline-none"
+                className="w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm flex items-center justify-between outline-none"
               >
                 <span className="flex items-center gap-2">
-                  <span className="font-semibold text-balaio-ink">{selectedToken}</span>
-                  <span className="text-balaio-muted text-xs">
+                  <span className="font-semibold text-on-surface">{selectedToken}</span>
+                  <span className="text-on-surface-variant text-xs">
                     ({language === "en" ? "Balance" : "Saldo"}: {tokenBalances[selectedToken]})
                   </span>
                 </span>
                 <ChevronDown size={16} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
               </button>
               {showTokenDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-balaio-rule rounded-balaio-lg z-10 max-h-48 overflow-y-auto shadow-balaio-card mt-1">
+                <div className="absolute top-full left-0 right-0 bg-white border border-outline-variant rounded-lg z-10 max-h-48 overflow-y-auto shadow-md mt-1">
                   {tokenOptions.map((token) => (
                     <button
                       key={token.symbol}
                       type="button"
                       onClick={() => { setSelectedToken(token.symbol); setShowTokenDropdown(false) }}
-                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-balaio-surface transition-colors flex items-center justify-between ${selectedToken === token.symbol ? "font-semibold text-balaio-sage" : "text-balaio-ink"}`}
+                      className={`w-full px-4 py-2.5 text-left text-sm hover:bg-surface-container-low transition-colors flex items-center justify-between ${selectedToken === token.symbol ? "font-semibold text-secondary" : "text-on-surface"}`}
                     >
-                      <span>{token.symbol} <span className="text-balaio-muted font-normal">({token.name})</span></span>
-                      <span className="text-balaio-muted text-xs">{tokenBalances[token.symbol]}</span>
+                      <span>{token.symbol} <span className="text-on-surface-variant font-normal">({token.name})</span></span>
+                      <span className="text-on-surface-variant text-xs">{tokenBalances[token.symbol]}</span>
                     </button>
                   ))}
                 </div>
@@ -385,9 +385,9 @@ export function CreateTaskModal({
 
           {/* Cost summary */}
           {totalCost && (
-            <div className="bg-balaio-surface rounded-balaio-lg p-4 flex items-center justify-between">
-              <div className="text-xs font-semibold tracking-[0.08em] uppercase text-balaio-muted">{t.totalCostBrl}</div>
-              <div className="text-lg font-semibold text-balaio-ink">
+            <div className="bg-surface-container-low rounded-lg p-4 flex items-center justify-between">
+              <div className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant">{t.totalCostBrl}</div>
+              <div className="text-lg font-semibold text-on-surface">
                 {totalCost} {selectedToken}
               </div>
             </div>
@@ -397,7 +397,7 @@ export function CreateTaskModal({
           <button
             onClick={submitTaskForm}
             disabled={loading || validTaskIds.length === 0 || !taskTitle || !totalSlots || !rewardPerSlot}
-            className="bg-balaio-ink text-white px-6 py-3.5 font-semibold rounded-balaio-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
+            className="bg-primary-container text-on-primary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
           >
             {loading ? (language === "en" ? "Creating..." : "Criando...") : t.createTaskButton}
           </button>
