@@ -1,6 +1,11 @@
-// Public contract address on Celo Mainnet. Verified on Celoscan.
-// To deploy your own instance, see docs/smart-contracts.md
-export const CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
+import { GNOSIS_CONTRACT_ADDRESS } from "@/lib/config"
+
+const CELO_CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
+
+export function getContractAddress(chainId: number): string {
+  if (chainId === 100) return GNOSIS_CONTRACT_ADDRESS
+  return CELO_CONTRACT_ADDRESS // default to Celo
+}
 
 export type TokenSymbol =
   | "CELO"
@@ -159,6 +164,28 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     decimals: 6,
     name: "GPBR",
   },
+}
+
+export type GnosisTokenSymbol = "xDAI" | "USDC"
+
+export const GNOSIS_TOKENS: Record<GnosisTokenSymbol, TokenConfig> = {
+  xDAI: {
+    symbol: "xDAI" as any,
+    address: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d", // wxDAI ERC-20
+    decimals: 18,
+    name: "Wrapped xDAI",
+  },
+  USDC: {
+    symbol: "USDC" as any,
+    address: "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83",
+    decimals: 6,
+    name: "USD Coin",
+  },
+}
+
+export function getTokensForChain(chainId: number): TokenConfig[] {
+  if (chainId === 100) return Object.values(GNOSIS_TOKENS)
+  return Object.values(SUPPORTED_TOKENS)
 }
 
 export const CONTRACT_ABI = [
