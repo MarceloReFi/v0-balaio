@@ -166,25 +166,37 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
   },
 }
 
-export type GnosisTokenSymbol = "xDAI" | "USDC"
-
-export const GNOSIS_TOKENS: Record<GnosisTokenSymbol, TokenConfig> = {
+export const GNOSIS_TOKENS = {
   xDAI: {
-    symbol: "xDAI" as any,
-    address: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d", // wxDAI ERC-20
+    symbol: "xDAI",
+    address: "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d", // Wrapped xDAI
     decimals: 18,
     name: "Wrapped xDAI",
   },
   USDC: {
-    symbol: "USDC" as any,
+    symbol: "USDC",
     address: "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83",
     decimals: 6,
     name: "USD Coin",
   },
-}
+  USDT: {
+    symbol: "USDT",
+    address: "0x4ECaBa5870353805a9F068101A40E0f32ed605C6",
+    decimals: 6,
+    name: "Tether USD",
+  },
+  GNO: {
+    symbol: "GNO",
+    address: "0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb",
+    decimals: 18,
+    name: "Gnosis Token",
+  },
+} as const
+
+export type GnosisTokenSymbol = keyof typeof GNOSIS_TOKENS
 
 export function getTokensForChain(chainId: number): TokenConfig[] {
-  if (chainId === 100) return Object.values(GNOSIS_TOKENS)
+  if (chainId === 100) return Object.values(GNOSIS_TOKENS) as TokenConfig[]
   return Object.values(SUPPORTED_TOKENS)
 }
 
