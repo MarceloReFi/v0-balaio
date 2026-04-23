@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { ChevronDown, Calendar, Plus, X } from "lucide-react"
-import { SUPPORTED_TOKENS, type TokenSymbol } from "@/lib/web3"
+import { getTokensForChain, type TokenConfig, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
 import { BottomSheet } from "@/components/ui/bottom-sheet"
 import type { Task } from "@/lib/types"
 
 interface CreateTaskModalProps {
+  chainId: number
   open: boolean
   onClose: () => void
   onCreateTask: (
@@ -31,6 +32,7 @@ interface CreateTaskModalProps {
 }
 
 export function CreateTaskModal({
+  chainId,
   open,
   onClose,
   onCreateTask,
@@ -45,7 +47,9 @@ export function CreateTaskModal({
   const [taskDescription, setTaskDescription] = useState("")
   const [rewardPerSlot, setRewardPerSlot] = useState("")
   const [totalSlots, setTotalSlots] = useState("1") // TEMPORARY: Hardcoded to 1 - multi-slot approval requires contract fix
-  const [selectedToken, setSelectedToken] = useState<TokenSymbol>("cUSD")
+  const [selectedToken, setSelectedToken] = useState<string>(() =>
+    chainId === 100 ? "xDAI" : "cUSD"
+  )
   const [showTokenDropdown, setShowTokenDropdown] = useState(false)
   const [category, setCategory] = useState<NonNullable<Task["category"]>>("other")
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
@@ -72,7 +76,7 @@ export function CreateTaskModal({
       taskDescription,
       rewardPerSlot,
       totalSlots,
-      selectedToken,
+      selectedToken as TokenSymbol,
       category,
       complexity,
       "url",
@@ -111,7 +115,7 @@ export function CreateTaskModal({
   const totalCost =
     rewardPerSlot && totalSlots ? (Number.parseFloat(rewardPerSlot) * Number.parseInt(totalSlots)).toFixed(2) : null
 
-  const tokenOptions = Object.values(SUPPORTED_TOKENS)
+  const tokenOptions = getTokensForChain(chainId)
 
   const categoryOptions: { value: NonNullable<Task["category"]>; label: string }[] = [
     { value: "development", label: t.categoryDevelopment },
@@ -336,6 +340,23 @@ export function CreateTaskModal({
               </div>
             </div>
           </div>
+
+          {chainId === 100 && (
+            <div>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">
+                {language === "en" ? "Total Slots" : "Total de vagas"}
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={totalSlots}
+                onChange={(e) => setTotalSlots(e.target.value)}
+                placeholder="1"
+                className={inputClass}
+              />
+            </div>
+          )}
 
           {/* Tags */}
           <div>
