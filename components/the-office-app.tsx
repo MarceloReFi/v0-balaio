@@ -30,9 +30,10 @@ import { StatsPage } from "@/components/pages/stats/stats-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { isMiniPay } from "@/lib/minipay"
-import { useAccount, useDisconnect, useChainId } from 'wagmi'
+import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
+import { celo, gnosis } from "@reown/appkit/networks"
 import { useEthersSigner } from '@/lib/ethers-adapter'
 
 declare global {
@@ -173,6 +174,7 @@ export function TheOfficeApp() {
   const [multiTaskStatuses, setMultiTaskStatuses] = useState<Record<string, "idle" | "pending" | "success" | "error">>({})
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
+  const { switchChain } = useSwitchChain()
   const { open } = useAppKit()
   const signer = useEthersSigner()
   const t = useTranslations(language)
@@ -1037,6 +1039,24 @@ export function TheOfficeApp() {
               {language === "en" ? "PT" : "EN"}
             </button>
             {account && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => switchChain({ chainId: celo.id })}
+                  title="Switch to Celo"
+                  className={`p-1 rounded-full transition-opacity ${chainId === celo.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
+                >
+                  <img src="https://cryptologos.cc/logos/celo-celo-logo.png" alt="Celo" className="w-6 h-6 rounded-full" />
+                </button>
+                <button
+                  onClick={() => switchChain({ chainId: gnosis.id })}
+                  title="Switch to Gnosis"
+                  className={`p-1 rounded-full transition-opacity ${chainId === gnosis.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
+                >
+                  <img src="https://cryptologos.cc/logos/gnosis-gno-logo.png" alt="Gnosis" className="w-6 h-6 rounded-full" />
+                </button>
+              </div>
+            )}
+            {account && (
               <button onClick={handleDisconnect} className="text-on-surface-variant hover:text-on-surface transition-colors">
                 <LogOut size={18} />
               </button>
@@ -1047,7 +1067,33 @@ export function TheOfficeApp() {
 
       <main className="flex-1 overflow-y-auto pb-16">
         {!account && currentPage !== "agents" && (
-          <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
+          <>
+            <div className="flex items-center gap-2 justify-center mb-4">
+              <button
+                onClick={() => switchChain({ chainId: celo.id })}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                  chainId === celo.id
+                    ? "bg-primary-container text-on-primary"
+                    : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
+                }`}
+              >
+                <img src="https://cryptologos.cc/logos/celo-celo-logo.png" alt="Celo" className="w-4 h-4 rounded-full" />
+                Celo
+              </button>
+              <button
+                onClick={() => switchChain({ chainId: gnosis.id })}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                  chainId === gnosis.id
+                    ? "bg-primary-container text-on-primary"
+                    : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
+                }`}
+              >
+                <img src="https://cryptologos.cc/logos/gnosis-gno-logo.png" alt="Gnosis" className="w-4 h-4 rounded-full" />
+                Gnosis
+              </button>
+            </div>
+            <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
+          </>
         )}
         {currentPage === "agents" && (
           <AgentsPage onBack={() => setCurrentPage("home")} language={language} />
@@ -1133,6 +1179,7 @@ export function TheOfficeApp() {
       )}
 
       <CreateTaskModal
+        chainId={chainId}
         open={showCreateModal}
         onClose={() => { setShowCreateModal(false); setMultiTaskStatuses({}) }}
         onCreateTask={createTask}
