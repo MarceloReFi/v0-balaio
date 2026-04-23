@@ -1046,14 +1046,14 @@ export function TheOfficeApp() {
                   title="Switch to Celo"
                   className={`p-1 rounded-full transition-opacity ${chainId === celo.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
                 >
-                  <img src="https://cryptologos.cc/logos/celo-celo-logo.png" alt="Celo" className="w-6 h-6 rounded-full" />
+                  <img src="/celo-logo.svg" alt="Celo" className="w-6 h-6 rounded-full" />
                 </button>
                 <button
                   onClick={() => switchChain({ chainId: gnosis.id })}
                   title="Switch to Gnosis"
                   className={`p-1 rounded-full transition-opacity ${chainId === gnosis.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
                 >
-                  <img src="https://cryptologos.cc/logos/gnosis-gno-logo.png" alt="Gnosis" className="w-6 h-6 rounded-full" />
+                  <img src="/gnosis-logo.svg" alt="Gnosis" className="h-5 w-auto object-contain" />
                 </button>
               </div>
             )}
@@ -1078,7 +1078,7 @@ export function TheOfficeApp() {
                     : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
                 }`}
               >
-                <img src="https://cryptologos.cc/logos/celo-celo-logo.png" alt="Celo" className="w-4 h-4 rounded-full" />
+                <img src="/celo-logo.svg" alt="Celo" className="w-4 h-4 rounded-full" />
                 Celo
               </button>
               <button
@@ -1089,7 +1089,7 @@ export function TheOfficeApp() {
                     : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
                 }`}
               >
-                <img src="https://cryptologos.cc/logos/gnosis-gno-logo.png" alt="Gnosis" className="w-4 h-4 rounded-full" />
+                <img src="/gnosis-logo.svg" alt="Gnosis" className="h-4 w-auto object-contain" />
                 Gnosis
               </button>
             </div>
