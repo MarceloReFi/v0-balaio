@@ -1046,7 +1046,7 @@ export function TheOfficeApp() {
                   title="Switch to Celo"
                   className={`p-1 rounded-full transition-opacity ${chainId === celo.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
                 >
-                  <img src="/celo.png" alt="Celo" className="w-6 h-6 rounded-full" />
+                  <img src="/celo.png" alt="Celo" className="h-5 w-auto object-contain" />
                 </button>
                 <button
                   onClick={() => switchChain({ chainId: gnosis.id })}
@@ -1078,7 +1078,7 @@ export function TheOfficeApp() {
                     : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
                 }`}
               >
-                <img src="/celo.png" alt="Celo" className="w-4 h-4 rounded-full" />
+                <img src="/celo.png" alt="Celo" className="h-4 w-auto object-contain" />
                 Celo
               </button>
               <button
