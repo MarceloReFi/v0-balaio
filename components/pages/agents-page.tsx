@@ -2,7 +2,8 @@
 
 import { ArrowLeft, Check, ExternalLink } from "lucide-react"
 import type { Language } from "@/lib/translations"
-import { CONTRACT_ADDRESS } from "@/lib/web3"
+import { useChainId } from "wagmi"
+import { getContractAddress } from "@/lib/web3"
 
 interface AgentsPageProps {
   onBack: () => void
@@ -51,6 +52,7 @@ slot = balaio.getTaskSlot(taskId, agentAddress)
 if (slot.approved) balaio.claimReward(taskId)`
 
 export function AgentsPage({ onBack, language }: AgentsPageProps) {
+  const chainId = useChainId()
   return (
     <div className="bg-surface text-on-surface pb-24">
       {/* Header */}
@@ -177,7 +179,7 @@ export function AgentsPage({ onBack, language }: AgentsPageProps) {
               <h3 className="font-bold text-primary-container" style={{ fontFamily: "'Noto Serif', serif" }}>
                 Endereço
               </h3>
-              <p className="font-mono text-xs text-secondary break-all">{CONTRACT_ADDRESS}</p>
+              <p className="font-mono text-xs text-secondary break-all">{getContractAddress(chainId)}</p>
               <div className="mt-2 space-y-1 text-sm text-on-surface-variant">
                 <p>
                   <span className="font-semibold text-primary-container">Rede:</span> Celo Mainnet
@@ -206,7 +208,7 @@ export function AgentsPage({ onBack, language }: AgentsPageProps) {
         {/* Footer */}
         <div className="py-8 border-t border-secondary/10 text-center">
           <a
-            href={`https://celoscan.io/address/${CONTRACT_ADDRESS}`}
+            href={`https://celoscan.io/address/${getContractAddress(chainId)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-secondary font-semibold text-sm hover:underline"

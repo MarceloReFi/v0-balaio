@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { ethers } from "ethers"
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
 import { CELO_RPC } from "@/lib/config"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   try {
     logs.push("Test 1: Imports OK")
 
-    logs.push(`Test 2: CONTRACT_ADDRESS = ${CONTRACT_ADDRESS}`)
+    logs.push(`Test 2: getContractAddress(42220) = ${getContractAddress(42220)}`)
     logs.push(`Test 3: CELO_RPC = ${CELO_RPC}`)
 
     logs.push("Test 4: Creating provider...")
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     logs.push(`Test 7: Network chainId = ${network.chainId.toString()}`)
 
     logs.push("Test 8: Creating contract...")
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+    const contract = new ethers.Contract(getContractAddress(42220), CONTRACT_ABI, provider)
     logs.push("Test 9: Contract created")
 
     logs.push("Test 10: Checking filters...")

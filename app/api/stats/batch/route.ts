@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { ethers } from "ethers"
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
 import { CELO_RPC } from "@/lib/config"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     console.log(`[Stats Batch API] Querying blocks ${startBlock} to ${endBlock}`)
 
     const provider = new ethers.JsonRpcProvider(CELO_RPC)
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+    const contract = new ethers.Contract(getContractAddress(42220), CONTRACT_ABI, provider)
 
     // Query events in parallel
     const [createdEvents, claimedEvents, approvedEvents] = await Promise.all([
