@@ -9,9 +9,11 @@ import {
   ERC20_ABI,
   CUSTOM_ERRORS,
   SUPPORTED_TOKENS,
+  GNOSIS_TOKENS,
+  getTokensForChain,
   type TokenSymbol,
 } from "@/lib/web3"
-import { CELO_CHAIN_ID, CELO_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
+import { CELO_CHAIN_ID, CELO_RPC, GNOSIS_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
 
 const CONTRACT_DEPLOYMENT_BLOCK = 51778358
 
@@ -118,7 +120,8 @@ function mapDatabaseRowToTask(row: any, mySlot: Task["mySlot"], claims?: TaskCla
 
 function resolveTokenSymbol(tokenAddress: string): TokenSymbol {
   const normalized = tokenAddress.toLowerCase()
-  for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
+  const allTokens = { ...SUPPORTED_TOKENS, ...GNOSIS_TOKENS }
+  for (const [symbol, config] of Object.entries(allTokens)) {
     if (config.address.toLowerCase() === normalized) {
       return symbol as TokenSymbol
     }
@@ -146,26 +149,22 @@ function resolveWalletError(error: unknown): string {
   return "Failed to connect wallet"
 }
 
+function getTokenConfig(symbol: string): { address: string; decimals: number; name: string; symbol: string } | undefined {
+  return (SUPPORTED_TOKENS as any)[symbol] ?? (GNOSIS_TOKENS as any)[symbol]
+}
+
 export function TheOfficeApp() {
   const chainId = useChainId()
   const [account, setAccount] = useState<string>("")
   const [contract, setContract] = useState<ethers.Contract | null>(null)
-  const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
-    CELO: null,
-    cUSD: null,
-    USDC: null,
-  })
+  const [tokenContracts, setTokenContracts] = useState<Record<string, ethers.Contract | null>>({})
   const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
-  const [tokenBalances, setTokenBalances] = useState<Record<TokenSymbol, string>>({
-    CELO: "0.00",
-    cUSD: "0.00",
-    USDC: "0.00",
-  })
+  const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({})
   const [tasks, setTasks] = useState<Task[]>([])
   const { isVerified } = useGoodID(account)
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
@@ -191,7 +190,8 @@ export function TheOfficeApp() {
       setLoading(true)
       console.log("[loadTasksFromBlockchain] Starting...")
 
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const rpc = chainId === 100 ? GNOSIS_RPC : CELO_RPC
+      const provider = new ethers.JsonRpcProvider(rpc)
       const readContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, provider)
 
       const { data: supabaseTasks } = await supabase.from("tasks").select("id")
@@ -228,7 +228,7 @@ export function TheOfficeApp() {
 
         const tokenAddress = taskData.token.toLowerCase()
         const tokenSymbol = resolveTokenSymbol(tokenAddress)
-        const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
+        const tokenConfig = getTokenConfig(tokenSymbol) ?? { decimals: 18 }
         const totalSlots = Number(taskData.totalSlots)
         const claimedSlots = Number(taskData.claimedSlots)
 
@@ -368,7 +368,7 @@ export function TheOfficeApp() {
       if (accountsArray.length === 0) {
         setAccount("")
         setContract(null)
-        setTokenContracts({ cUSD: null, USDC: null })
+        setTokenContracts({})
         setTasks([])
         setCurrentPage("home")
         toast("Wallet disconnected")
@@ -401,14 +401,15 @@ export function TheOfficeApp() {
     const fetchBalances = async () => {
       if (!account) return
 
-      const newBalances: Record<TokenSymbol, string> = { cUSD: "0.00", USDC: "0.00" }
+      const newBalances: Record<string, string> = {}
 
       for (const [symbol, tokenContract] of Object.entries(tokenContracts)) {
         if (tokenContract) {
           try {
             const bal = await tokenContract.balanceOf(account)
-            const tokenConfig = SUPPORTED_TOKENS[symbol as TokenSymbol]
-            newBalances[symbol as TokenSymbol] = Number.parseFloat(
+            const tokenConfig = getTokenConfig(symbol)
+            if (!tokenConfig) continue
+            newBalances[symbol] = Number.parseFloat(
               ethers.formatUnits(bal, tokenConfig.decimals),
             ).toFixed(2)
           } catch (error) {
@@ -477,12 +478,9 @@ export function TheOfficeApp() {
       const provider = new ethers.BrowserProvider(window.ethereum!)
       const signer = await provider.getSigner()
       const taskContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, signer)
-      const contracts: Record<TokenSymbol, ethers.Contract | null> = {
-        cUSD: null,
-        USDC: null,
-      }
-      for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
-        contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
+      const contracts: Record<string, ethers.Contract | null> = {}
+      for (const config of getTokensForChain(chainId)) {
+        contracts[config.symbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
       }
       setAccount(accounts[0])
       setContract(taskContract)
@@ -540,7 +538,7 @@ export function TheOfficeApp() {
         ])
 
         const tokenSymbol = resolveTokenSymbol(task.token)
-        const tokenConfig = SUPPORTED_TOKENS[tokenSymbol]
+        const tokenConfig = getTokenConfig(tokenSymbol) ?? { decimals: 18 }
 
         return {
           id: task.taskId,
@@ -653,10 +651,10 @@ export function TheOfficeApp() {
     if (!account || !contract) return
 
     const tokenContract = tokenContracts[token]
-    const tokenConfig = SUPPORTED_TOKENS[token]
+    const tokenConfig = getTokenConfig(token)
 
-    if (!tokenContract) {
-      toast(`${token} contract not initialized`)
+    if (!tokenContract || !tokenConfig) {
+      toast(`${token} token not initialized`)
       return
     }
 
@@ -949,7 +947,7 @@ export function TheOfficeApp() {
   const logout = () => {
     setAccount("")
     setContract(null)
-    setTokenContracts({ cUSD: null, USDC: null })
+    setTokenContracts({})
     setTasks([])
     setCurrentPage("home")
     toast("Logged out")
@@ -961,7 +959,7 @@ export function TheOfficeApp() {
     }
     setAccount("")
     setContract(null)
-    setTokenContracts({ cUSD: null, USDC: null })
+    setTokenContracts({})
     setCurrentPage("home")
     setTasks([])
     setUserActivity({ created: [], worked: [] })
@@ -972,7 +970,10 @@ export function TheOfficeApp() {
     setLanguage((prev) => (prev === "en" ? "pt-BR" : "en"))
   }
 
-  const displayBalance = `${tokenBalances.CELO} CELO | ${tokenBalances.cUSD} cUSD | ${tokenBalances.USDC} USDC`
+  const displayBalance = Object.entries(tokenBalances)
+    .filter(([, v]) => parseFloat(v) > 0)
+    .map(([k, v]) => `${v} ${k}`)
+    .join(" | ") || "0.00"
 
   useEffect(() => {
     loadTasksFromBlockchain()
@@ -1001,9 +1002,9 @@ export function TheOfficeApp() {
     if (!wagmiConnected || !wagmiAddress || !signer || contract) return
     try {
       const taskContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, signer)
-      const contracts: Record<TokenSymbol, ethers.Contract | null> = { cUSD: null, USDC: null }
-      for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
-        contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
+      const contracts: Record<string, ethers.Contract | null> = {}
+      for (const config of getTokensForChain(chainId)) {
+        contracts[config.symbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
       }
       setContract(taskContract)
       setTokenContracts(contracts)
