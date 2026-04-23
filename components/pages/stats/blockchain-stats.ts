@@ -1,5 +1,5 @@
 import { ethers } from "ethers"
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
 import { CELO_RPC } from "@/lib/config"
 
 export interface StatsData {
@@ -35,7 +35,7 @@ export async function fetchBlockchainStats(days = DEFAULT_DAYS): Promise<StatsDa
   console.log(`[fetchBlockchainStats] Starting... (last ${days} days)`)
 
   const provider = new ethers.JsonRpcProvider(CELO_RPC)
-  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+  const contract = new ethers.Contract(getContractAddress(42220), CONTRACT_ABI, provider)
 
   const currentBlock = await provider.getBlockNumber()
   const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - days * BLOCKS_PER_DAY)

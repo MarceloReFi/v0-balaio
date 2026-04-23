@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { ethers } from "ethers"
 import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp, BookOpen } from "lucide-react"
 import {
-  CONTRACT_ADDRESS,
+  getContractAddress,
   CONTRACT_ABI,
   ERC20_ABI,
   CUSTOM_ERRORS,
@@ -30,7 +30,7 @@ import { StatsPage } from "@/components/pages/stats/stats-page"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { isMiniPay } from "@/lib/minipay"
-import { useAccount, useDisconnect } from 'wagmi'
+import { useAccount, useDisconnect, useChainId } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
 import { useEthersSigner } from '@/lib/ethers-adapter'
@@ -146,6 +146,7 @@ function resolveWalletError(error: unknown): string {
 }
 
 export function TheOfficeApp() {
+  const chainId = useChainId()
   const [account, setAccount] = useState<string>("")
   const [contract, setContract] = useState<ethers.Contract | null>(null)
   const [tokenContracts, setTokenContracts] = useState<Record<TokenSymbol, ethers.Contract | null>>({
@@ -189,7 +190,7 @@ export function TheOfficeApp() {
       console.log("[loadTasksFromBlockchain] Starting...")
 
       const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const readContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      const readContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, provider)
 
       const { data: supabaseTasks } = await supabase.from("tasks").select("id")
       if (!supabaseTasks || supabaseTasks.length === 0) {
@@ -473,7 +474,7 @@ export function TheOfficeApp() {
       }
       const provider = new ethers.BrowserProvider(window.ethereum!)
       const signer = await provider.getSigner()
-      const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+      const taskContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, signer)
       const contracts: Record<TokenSymbol, ethers.Contract | null> = {
         cUSD: null,
         USDC: null,
@@ -675,11 +676,11 @@ export function TheOfficeApp() {
       }
 
       toast(`Checking ${token} allowance...`)
-      const currentAllowance = await tokenContract.allowance(account, CONTRACT_ADDRESS)
+      const currentAllowance = await tokenContract.allowance(account, getContractAddress(chainId))
 
       if (currentAllowance < totalDeposit) {
         toast(`Approving ${token}...`)
-        const approveTx = await tokenContract.approve(CONTRACT_ADDRESS, totalDeposit)
+        const approveTx = await tokenContract.approve(getContractAddress(chainId), totalDeposit)
         await approveTx.wait()
         toast(`${token} approved!`)
       } else {
@@ -997,7 +998,7 @@ export function TheOfficeApp() {
   useEffect(() => {
     if (!wagmiConnected || !wagmiAddress || !signer || contract) return
     try {
-      const taskContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer)
+      const taskContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, signer)
       const contracts: Record<TokenSymbol, ethers.Contract | null> = { cUSD: null, USDC: null }
       for (const [symbol, config] of Object.entries(SUPPORTED_TOKENS)) {
         contracts[symbol as TokenSymbol] = new ethers.Contract(config.address, ERC20_ABI, signer)

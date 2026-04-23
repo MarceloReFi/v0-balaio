@@ -1,5 +1,5 @@
 import { ethers } from "ethers"
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
 import { CELO_RPC } from "@/lib/config"
 import type { StatsData, GrowthData } from "./blockchain-stats"
 
@@ -18,7 +18,7 @@ export async function fetchFullHistoryStats(
   console.log("[fetchFullHistoryStats] Starting full history fetch...")
 
   const provider = new ethers.JsonRpcProvider(CELO_RPC)
-  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+  const contract = new ethers.Contract(getContractAddress(42220), CONTRACT_ABI, provider)
 
   const currentBlock = await provider.getBlockNumber()
   const totalBlocks = currentBlock - CONTRACT_DEPLOYMENT_BLOCK

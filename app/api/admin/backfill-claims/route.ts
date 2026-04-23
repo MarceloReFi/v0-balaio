@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { ethers } from "ethers"
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
 import { getProvider, retryQuery } from "@/lib/blockchain-provider"
 import { BLOCKS_PER_DAY, CONTRACT_DEPLOYMENT_BLOCK } from "@/lib/config"
 import { createClient } from "@/lib/supabase/server"
@@ -17,7 +17,7 @@ async function runBackfill() {
     const hashToTaskId = new Map(taskIds.map((id: string) => [ethers.id(id), id]))
 
     const provider = await getProvider()
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+    const contract = new ethers.Contract(getContractAddress(42220), CONTRACT_ABI, provider)
     const currentBlock = await provider.getBlockNumber()
     const startBlock = Math.max(CONTRACT_DEPLOYMENT_BLOCK, currentBlock - 30 * BLOCKS_PER_DAY)
 

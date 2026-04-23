@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { ethers } from "ethers"
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from "@/lib/web3"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
 import { getProvider, retryQuery } from "@/lib/blockchain-provider"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { BLOCKS_PER_DAY, CONTRACT_DEPLOYMENT_BLOCK } from "@/lib/config"
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     console.log("[User Activity API] Getting provider...")
     const provider = await getProvider()
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+    const contract = new ethers.Contract(getContractAddress(42220), CONTRACT_ABI, provider)
 
     // Query only last 180 days to avoid timeout
     const currentBlock = await provider.getBlockNumber()
