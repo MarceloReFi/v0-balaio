@@ -11,8 +11,7 @@ interface TasksPageProps {
   account: string
   searchTask: (query: string) => void
   loadMyTasks: () => void
-  setSelectedTask: (task: Task) => void
-  setShowTaskModal: (show: boolean) => void
+  onViewTask: (task: Task) => void
   setShowCreateModal: (show: boolean) => void
   language: Language
 }
@@ -22,8 +21,7 @@ export function TasksPage({
   account,
   searchTask,
   loadMyTasks,
-  setSelectedTask,
-  setShowTaskModal,
+  onViewTask,
   setShowCreateModal,
   language,
 }: TasksPageProps) {
@@ -182,10 +180,7 @@ export function TasksPage({
             return (
               <div
                 key={idx}
-                onClick={() => {
-                  setSelectedTask(task)
-                  setShowTaskModal(true)
-                }}
+                onClick={() => onViewTask(task)}
                 className="py-4 border-b border-outline-variant/20 cursor-pointer hover:bg-surface-container-low/50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3">
