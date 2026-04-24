@@ -576,6 +576,15 @@ export function TheOfficeApp() {
     [contract, account, supabase],
   )
 
+  const openTaskModal = useCallback(async (task: Task) => {
+    setSelectedTask(task)
+    setShowTaskModal(true)
+    if (account) {
+      const fresh = await getTask(task.id)
+      if (fresh) setSelectedTask(fresh)
+    }
+  }, [account, getTask])
+
   const searchTask = async (searchQuery: string) => {
     if (!searchQuery || !contract) return
 
@@ -1098,10 +1107,7 @@ export function TheOfficeApp() {
             language={language}
             tasks={tasks}
             account={account}
-            onViewTask={(task) => {
-              setSelectedTask(task)
-              setShowTaskModal(true)
-            }}
+            onViewTask={(task) => openTaskModal(task)}
             onClaimTask={(task) => claimTask(task.id)}
             onNavigateToTasks={() => setCurrentPage("tasks")}
             onNavigateToFeatures={() => setCurrentPage("features")}
@@ -1116,8 +1122,7 @@ export function TheOfficeApp() {
             account={account}
             searchTask={searchTask}
             loadMyTasks={loadMyTasks}
-            setSelectedTask={setSelectedTask}
-            setShowTaskModal={setShowTaskModal}
+            onViewTask={openTaskModal}
             setShowCreateModal={setShowCreateModal}
             language={language}
           />
