@@ -34,6 +34,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="talentapp:project_verification" content="b33bca9d6fcd4219d19ad8e41816af8871693ed9c60779b82b97ca41771dd99ca1ceb01ee777eff90f5c6d02bdb89128220a67c5dd8a67016efcbe2f2c1cf0d7" />
+      </head>
       <body className="antialiased">
         <Web3Provider>
           {children}
