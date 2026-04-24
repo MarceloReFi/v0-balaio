@@ -191,6 +191,12 @@ export const GNOSIS_TOKENS = {
     decimals: 18,
     name: "Gnosis Token",
   },
+  BREAD: {
+    symbol: "BREAD",
+    address: "0xa555d5344f6fb6c65da19e403cb4c1ec4a1a5ee3",
+    decimals: 18,
+    name: "BREAD Community Currency",
+  },
 } as const
 
 export type GnosisTokenSymbol = keyof typeof GNOSIS_TOKENS
