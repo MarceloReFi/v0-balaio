@@ -520,10 +520,13 @@ export function TheOfficeApp() {
       if (!contract || !account) return null
 
       try {
+        const readProvider = new ethers.JsonRpcProvider(CELO_RPC)
+        const readContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, readProvider)
+
         const [task, availableSlots, mySlot, { data: metadata }] = await Promise.all([
-          contract.getTask(id),
-          contract.getAvailableSlots(id),
-          contract.getTaskSlot(id, account),
+          readContract.getTask(id),
+          readContract.getAvailableSlots(id),
+          readContract.getTaskSlot(id, account),
           supabase.from("tasks").select("*").eq("id", id).single(),
         ])
 
