@@ -13,7 +13,7 @@ import {
   getTokensForChain,
   type TokenSymbol,
 } from "@/lib/web3"
-import { CELO_CHAIN_ID, CELO_RPC, GNOSIS_RPC, VALORA_DEEP_LINK_BASE } from "@/lib/config"
+import { CELO_CHAIN_ID, CELO_RPC, GNOSIS_RPC } from "@/lib/config"
 
 const CONTRACT_DEPLOYMENT_BLOCK = 51778358
 
@@ -423,23 +423,13 @@ export function TheOfficeApp() {
     fetchBalances()
   }, [account, tokenContracts])
 
-  const openInValora = () => {
-    const currentUrl = window.location.href
-    const dappName = encodeURIComponent("Balaio")
-    const encodedUrl = encodeURIComponent(currentUrl)
-    const deepLink = `${VALORA_DEEP_LINK_BASE}?dappName=${dappName}&url=${encodedUrl}`
-
-    toast("Opening Valora...")
-    window.location.href = deepLink
-  }
-
   const connectWallet = async () => {
     try {
       const isMobile = isMobileDevice()
       const inMobileWallet = isInMobileWalletBrowser()
       const hasProvider = hasEthereumProvider()
       if (isMobile && !inMobileWallet) {
-        openInValora()
+        open()
         return
       }
       if (!isMobile && !hasProvider) {
