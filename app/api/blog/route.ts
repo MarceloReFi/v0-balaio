@@ -29,7 +29,7 @@ export async function GET() {
           }
         `,
       }),
-      next: { revalidate: 300 },
+      cache: "no-store",
     })
 
     const json = await res.json()
