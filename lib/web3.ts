@@ -191,6 +191,12 @@ export const GNOSIS_TOKENS = {
     decimals: 18,
     name: "Gnosis Token",
   },
+  CRC: {
+    symbol: "CRC",
+    address: "0x3c06Fbe1d02BE72A576395e591A0238F7136819b",
+    decimals: 18,
+    name: "Circles",
+  },
   BREAD: {
     symbol: "BREAD",
     address: "0xa555d5344f6fb6c65da19e403cb4c1ec4a1a5ee3",
