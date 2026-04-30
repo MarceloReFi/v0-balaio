@@ -1,0 +1,1 @@
+ALTER TABLE public.task_claims ADD COLUMN IF NOT EXISTS withdrawn_at TIMESTAMP WITH TIME ZONE;

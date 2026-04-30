@@ -194,7 +194,7 @@ export function TheOfficeApp() {
       const provider = new ethers.JsonRpcProvider(rpc)
       const readContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, provider)
 
-      const { data: supabaseTasks } = await supabase.from("tasks").select("id")
+      const { data: supabaseTasks } = await supabase.from("tasks").select("id").eq("chain_id", chainId)
       if (!supabaseTasks || supabaseTasks.length === 0) {
         setTasks([])
         setLoading(false)
@@ -261,6 +261,32 @@ export function TheOfficeApp() {
           pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
           pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
         })
+      }
+
+      if (account) {
+        const { data: myClaims } = await supabase
+          .from("task_claims")
+          .select("task_id, submitted_at, approved_at, withdrawn_at")
+          .eq("worker_address", account.toLowerCase())
+
+        if (myClaims) {
+          const claimMap = myClaims.reduce((acc: Record<string, any>, c: any) => {
+            acc[c.task_id] = c
+            return acc
+          }, {})
+
+          for (const task of loadedTasks) {
+            const claim = claimMap[task.id]
+            if (claim) {
+              task.mySlot = {
+                claimed: true,
+                submitted: !!claim.submitted_at,
+                approved: !!claim.approved_at,
+                withdrawn: !!claim.withdrawn_at,
+              }
+            }
+          }
+        }
       }
 
       setTasks(loadedTasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()))
@@ -343,6 +369,7 @@ export function TheOfficeApp() {
             deadline: task.deadline ? task.deadline.toISOString() : null,
             tags: task.tags || [],
             visibility: task.visibility || "public",
+            chain_id: chainId,
           },
           { onConflict: "id" },
         )
@@ -867,6 +894,11 @@ export function TheOfficeApp() {
 
       const tx = await contract.claimReward(id)
       await tx.wait()
+
+      await supabase.from("task_claims").upsert(
+        { task_id: id, worker_address: account.toLowerCase(), withdrawn_at: new Date().toISOString() },
+        { onConflict: "task_id,worker_address" }
+      )
 
       toast("Reward claimed!")
 
