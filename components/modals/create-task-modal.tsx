@@ -112,8 +112,11 @@ export function CreateTaskModal({
     return null
   }
 
+  const feeMultiplier = chainId === 100 ? 1.03 : 1
   const totalCost =
-    rewardPerSlot && totalSlots ? (Number.parseFloat(rewardPerSlot) * Number.parseInt(totalSlots)).toFixed(2) : null
+    rewardPerSlot && totalSlots
+      ? (Number.parseFloat(rewardPerSlot) * Number.parseInt(totalSlots) * feeMultiplier).toFixed(4)
+      : null
 
   const tokenOptions = getTokensForChain(chainId)
 

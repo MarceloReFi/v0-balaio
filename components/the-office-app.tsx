@@ -691,7 +691,8 @@ export function TheOfficeApp() {
       setLoading(true)
 
       const rewardWei = ethers.parseUnits(rewardPerSlot, tokenConfig.decimals)
-      const totalDeposit = rewardWei * BigInt(taskIds.length)
+      const FEE_MULTIPLIER = chainId === 100 ? 103n : 100n
+      const totalDeposit = rewardWei * BigInt(taskIds.length) * FEE_MULTIPLIER / 100n
 
       toast(`Checking ${token} balance...`)
       const balance = await tokenContract.balanceOf(account)
