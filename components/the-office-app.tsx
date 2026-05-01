@@ -547,7 +547,8 @@ export function TheOfficeApp() {
       if (!contract || !account) return null
 
       try {
-        const readProvider = new ethers.JsonRpcProvider(CELO_RPC)
+        const rpc = chainId === 100 ? GNOSIS_RPC : CELO_RPC
+        const readProvider = new ethers.JsonRpcProvider(rpc)
         const readContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, readProvider)
 
         const [task, availableSlots, mySlot, { data: metadata }] = await Promise.all([
@@ -600,7 +601,7 @@ export function TheOfficeApp() {
         return null
       }
     },
-    [contract, account, supabase],
+    [contract, account, supabase, chainId],
   )
 
   const openTaskModal = useCallback(async (task: Task) => {
