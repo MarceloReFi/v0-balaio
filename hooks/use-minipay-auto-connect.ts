@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useConnect, useConnectors } from "wagmi"
+import { isMiniPay } from "@/lib/minipay"
 
 export function useMiniPayAutoConnect() {
   const connectors = useConnectors()
@@ -10,7 +11,9 @@ export function useMiniPayAutoConnect() {
 
   useEffect(() => {
     if (attempted || connectors.length === 0) return
-    connect({ connector: connectors[0] })
+    const injected = connectors.find(c => c.id === 'injected')
+    if (!injected || !isMiniPay()) return
+    connect({ connector: injected })
     setAttempted(true)
   }, [connectors, connect, attempted])
 }
