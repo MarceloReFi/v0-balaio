@@ -13,7 +13,7 @@ import {
   getTokensForChain,
   type TokenSymbol,
 } from "@/lib/web3"
-import { CELO_CHAIN_ID, CELO_RPC, GNOSIS_RPC } from "@/lib/config"
+import { CELO_RPC, GNOSIS_RPC } from "@/lib/config"
 
 const CONTRACT_DEPLOYMENT_BLOCK = 51778358
 
@@ -48,13 +48,6 @@ declare global {
   }
 }
 
-interface WalletProvider {
-  isValora?: boolean
-  isMetaMask?: boolean
-  isMiniPay?: boolean
-  isCelo?: boolean
-}
-
 interface WalletError {
   code?: number
   message?: string
@@ -64,22 +57,6 @@ interface WalletError {
 
 function isWalletError(error: unknown): error is WalletError {
   return typeof error === "object" && error !== null
-}
-
-const isMobileDevice = () => {
-  if (typeof window === "undefined") return false
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
-
-const isInMobileWalletBrowser = () => {
-  if (typeof window === "undefined" || !window.ethereum) return false
-  const ethereum = window.ethereum as WalletProvider
-  return !!(ethereum.isValora || ethereum.isMiniPay || (ethereum.isMetaMask && isMobileDevice()) || ethereum.isCelo)
-}
-
-const hasEthereumProvider = () => {
-  if (typeof window === "undefined") return false
-  return !!window.ethereum
 }
 
 function mapDatabaseRowToTask(row: any, mySlot: Task["mySlot"], claims?: TaskClaim[]): Task {
@@ -388,43 +365,6 @@ export function TheOfficeApp() {
 
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.ethereum) return
-
-    const syncAccounts = async (accounts: unknown) => {
-      const accountsArray = accounts as string[]
-      if (accountsArray.length === 0) {
-        setAccount("")
-        setContract(null)
-        setTokenContracts({})
-        setTasks([])
-        setCurrentPage("home")
-        toast("Wallet disconnected")
-      } else {
-        toast("Account changed - reloading...")
-        setTimeout(() => window.location.reload(), 500)
-      }
-    }
-
-    const onChainChanged = () => {
-      toast("Network changed - reloading...")
-      setTimeout(() => window.location.reload(), 500)
-    }
-
-    window.ethereum.on("accountsChanged", syncAccounts)
-    window.ethereum.on("chainChanged", onChainChanged)
-
-    return () => {
-      window.ethereum?.removeListener("accountsChanged", syncAccounts)
-      window.ethereum?.removeListener("chainChanged", onChainChanged)
-    }
-  }, [toast])
-
-  useEffect(() => {
-    if (isMiniPay()) connectWallet()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
     const fetchBalances = async () => {
       if (!account) return
 
@@ -450,63 +390,9 @@ export function TheOfficeApp() {
     fetchBalances()
   }, [account, tokenContracts])
 
-  const connectWallet = async () => {
-    try {
-      const isMobile = isMobileDevice()
-      const inMobileWallet = isInMobileWalletBrowser()
-      const hasProvider = hasEthereumProvider()
-      if (isMobile && !inMobileWallet) {
-        open()
-        return
-      }
-      if (!isMobile && !hasProvider) {
-        toast("Please install MetaMask or use Valora on mobile")
-        return
-      }
-      toast("Connecting to wallet...")
-      const accounts = (await window.ethereum!.request({ method: "eth_requestAccounts" })) as string[]
-      try {
-        await window.ethereum!.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: CELO_CHAIN_ID }],
-        })
-      } catch (switchError: unknown) {
-        if (!isWalletError(switchError)) throw switchError
-        if (switchError.code === 4902) {
-          await window.ethereum!.request({
-            method: "wallet_addEthereumChain",
-            params: [
-              {
-                chainId: CELO_CHAIN_ID,
-                chainName: "Celo Mainnet",
-                nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
-                rpcUrls: [CELO_RPC],
-                blockExplorerUrls: ["https://celoscan.io"],
-              },
-            ],
-          })
-        } else if (switchError.code === 4001) {
-          toast("Network switch cancelled by user")
-          return
-        } else {
-          throw switchError
-        }
-      }
-      const provider = new ethers.BrowserProvider(window.ethereum!)
-      const signer = await provider.getSigner()
-      const taskContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, signer)
-      const contracts: Record<string, ethers.Contract | null> = {}
-      for (const config of getTokensForChain(chainId)) {
-        contracts[config.symbol] = new ethers.Contract(config.address, ERC20_ABI, signer)
-      }
-      setAccount(accounts[0])
-      setContract(taskContract)
-      setTokenContracts(contracts)
-      toast("Wallet connected!")
-    } catch (error: unknown) {
-      console.error("Connect wallet error:", error)
-      toast(resolveWalletError(error))
-    }
+  const connectWallet = () => {
+    if (isMiniPay()) return // handled by useMiniPayAutoConnect
+    open()
   }
 
   const parseContractError = (error: unknown): string => {
