@@ -15,7 +15,7 @@ if (!projectId) {
 export const networks = [celo, gnosis]
 
 export const wagmiAdapter = new WagmiAdapter({
-  storage: createStorage({ storage: localStorage }),
+  storage: createStorage({ storage: typeof window !== 'undefined' ? localStorage : undefined }),
   ssr: false,
   projectId,
   networks
