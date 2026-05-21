@@ -1,10 +1,8 @@
-import { GNOSIS_CONTRACT_ADDRESS } from "@/lib/config"
-
-const CELO_CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
+import { GNOSIS_CONTRACT_ADDRESS, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/config"
 
 export function getContractAddress(chainId: number): string {
   if (chainId === 100) return GNOSIS_CONTRACT_ADDRESS
-  return CELO_CONTRACT_ADDRESS // default to Celo
+  return CELO_CONTRACT_ADDRESS_V2
 }
 
 export type TokenSymbol =
