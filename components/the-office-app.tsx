@@ -13,7 +13,7 @@ import {
   getTokensForChain,
   type TokenSymbol,
 } from "@/lib/web3"
-import { CELO_RPC, GNOSIS_RPC } from "@/lib/config"
+import { CELO_RPC, GNOSIS_RPC, CELO_CONTRACT_ADDRESS_V1, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/config"
 
 const CONTRACT_DEPLOYMENT_BLOCK = 51778358
 
@@ -169,7 +169,11 @@ export function TheOfficeApp() {
 
       const rpc = chainId === 100 ? GNOSIS_RPC : CELO_RPC
       const provider = new ethers.JsonRpcProvider(rpc)
-      const readContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, provider)
+
+      // Na Celo: lemos de V1 e V2. Na Gnosis: apenas o contrato único.
+      const contractAddresses = chainId === 42220
+        ? [CELO_CONTRACT_ADDRESS_V1, CELO_CONTRACT_ADDRESS_V2]
+        : [getContractAddress(chainId)]
 
       const { data: supabaseTasks } = await supabase.from("tasks").select("id").eq("chain_id", chainId)
       if (!supabaseTasks || supabaseTasks.length === 0) {
@@ -188,8 +192,18 @@ export function TheOfficeApp() {
         }
       }
 
+      // Tenta cada task em todos os contratos ativos da chain, usa o primeiro que responder
+      const readContracts = contractAddresses.map(addr => new ethers.Contract(addr, CONTRACT_ABI, provider))
       const taskDataResults = await Promise.all(
-        taskIds.map(id => readContract.getTask(id).catch(() => null))
+        taskIds.map(async (id) => {
+          for (const rc of readContracts) {
+            try {
+              const result = await rc.getTask(id)
+              if (result && result.taskId) return result
+            } catch {}
+          }
+          return null
+        })
       )
 
       const loadedTasks: Task[] = []
@@ -578,7 +592,7 @@ export function TheOfficeApp() {
       setLoading(true)
 
       const rewardWei = ethers.parseUnits(rewardPerSlot, tokenConfig.decimals)
-      const FEE_MULTIPLIER = chainId === 100 ? 103n : 100n
+      const FEE_MULTIPLIER = chainId === 100 ? 103n : 101n
       const totalDeposit = rewardWei * BigInt(taskIds.length) * FEE_MULTIPLIER / 100n
 
       toast(`Checking ${token} balance...`)
