@@ -1,263 +1,389 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { RefreshCw, TrendingUp, Users, CheckCircle, ListChecks, Clock, History } from "lucide-react"
-import type { StatsData } from "./blockchain-stats"
+import { ethers } from "ethers"
+import { CONTRACT_ABI } from "@/lib/web3"
+import {
+  CELO_CONTRACT_ADDRESS_V1,
+  CELO_CONTRACT_ADDRESS_V2,
+  CELO_DEPLOYMENT_BLOCK_V1,
+  CELO_DEPLOYMENT_BLOCK_V2,
+  CELO_RPC,
+} from "@/lib/config"
 
 interface StatsPageProps {
   language: "en" | "pt-BR"
 }
 
-export function StatsPage({ language }: StatsPageProps) {
-  const [stats, setStats] = useState<StatsData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [loadingFullHistory, setLoadingFullHistory] = useState(false)
-  const [fullHistoryProgress, setFullHistoryProgress] = useState(0)
-  const [isFullHistory, setIsFullHistory] = useState(false)
-  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+type StatsData = {
+  wallets: number
+  tasksCreated: number
+  tasksClaimed: number
+  tasksApproved: number
+  growth: { date: string; created: number; claimed: number; approved: number }[]
+  lastUpdated: number
+}
 
-  const t = {
+type PanelState = {
+  stats: StatsData | null
+  loading: boolean
+  isFullHistory: boolean
+  loadingFullHistory: boolean
+  progress: number
+  error: string | null
+}
+
+const INITIAL_PANEL: PanelState = {
+  stats: null,
+  loading: true,
+  isFullHistory: false,
+  loadingFullHistory: false,
+  progress: 0,
+  error: null,
+}
+
+const BATCH_SIZE = 50000
+const DEFAULT_DAYS = 60
+
+export function StatsPage({ language }: StatsPageProps) {
+  const [v1, setV1] = useState<PanelState>(INITIAL_PANEL)
+  const [v2, setV2] = useState<PanelState>(INITIAL_PANEL)
+
+  const strings = {
     en: {
       title: "Platform Stats",
+      v1Label: "Celo V1 — Legacy",
+      v2Label: "Celo V2",
       lastUpdated: "Last updated",
       refresh: "Refresh",
       viewFullHistory: "View Full History",
       loadingFullHistory: "Loading full history...",
-      fullHistoryNote: "This takes 1-2 minutes to load from blockchain",
-      last90Days: "Last 90 Days",
+      fullHistoryNote: "~1-2 minutes",
+      last60Days: "Last 60 Days",
       fullHistory: "Full History",
       wallets: "Unique Wallets",
       tasksCreated: "Tasks Created",
       tasksClaimed: "Tasks Claimed",
       tasksApproved: "Tasks Approved",
       growthSinceLaunch: "Growth Since Launch",
-      growth90Days: "Growth (Last 90 Days)",
+      growth60Days: "Growth (Last 60 Days)",
       date: "Date",
       created: "Created",
       claimed: "Claimed",
       approved: "Approved",
-      loading: "Loading stats...",
+      loading: "Loading...",
       error: "Failed to load stats",
       ago: "ago",
-      cached: "Cached",
+      notDeployed: "Not yet deployed",
     },
     "pt-BR": {
       title: "Estatísticas da Plataforma",
+      v1Label: "Celo V1 — Legado",
+      v2Label: "Celo V2",
       lastUpdated: "Atualizado",
       refresh: "Atualizar",
       viewFullHistory: "Ver Histórico Completo",
-      loadingFullHistory: "Carregando histórico completo...",
-      fullHistoryNote: "Leva 1-2 minutos para carregar do blockchain",
-      last90Days: "Últimos 90 Dias",
+      loadingFullHistory: "Carregando histórico...",
+      fullHistoryNote: "~1-2 minutos",
+      last60Days: "Últimos 60 Dias",
       fullHistory: "Histórico Completo",
       wallets: "Carteiras Únicas",
       tasksCreated: "Tarefas Criadas",
       tasksClaimed: "Tarefas Reivindicadas",
       tasksApproved: "Tarefas Aprovadas",
       growthSinceLaunch: "Crescimento Desde o Lançamento",
-      growth90Days: "Crescimento (Últimos 90 Dias)",
+      growth60Days: "Crescimento (Últimos 60 Dias)",
       date: "Data",
       created: "Criadas",
       claimed: "Reivindicadas",
       approved: "Aprovadas",
-      loading: "Carregando estatísticas...",
-      error: "Falha ao carregar estatísticas",
+      loading: "Carregando...",
+      error: "Falha ao carregar",
       ago: "atrás",
-      cached: "Cache",
+      notDeployed: "Ainda não deployado",
     },
-  }
-
-  const strings = t[language]
-
-  const fetchStats = async (forceRefresh = false) => {
-    try {
-      if (forceRefresh) setRefreshing(true)
-      else setLoading(true)
-
-      setError(null)
-      setIsFullHistory(false)
-
-      const response = await fetch("/api/stats", {
-        method: forceRefresh ? "POST" : "GET",
-      })
-
-      if (!response.ok) throw new Error("Failed to fetch")
-
-      const data = await response.json()
-      setStats(data)
-    } catch (err) {
-      setError(strings.error)
-      console.error("Stats fetch error:", err)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
-
-  const fetchFullHistory = async () => {
-    try {
-      setLoadingFullHistory(true)
-      setFullHistoryProgress(0)
-      setError(null)
-
-      const DEPLOYMENT_BLOCK = 51778358
-      const BATCH_SIZE = 50000
-
-      const provider = new (await import("ethers")).ethers.JsonRpcProvider("https://forno.celo.org")
-      const currentBlock = await provider.getBlockNumber()
-
-      const totalBlocks = currentBlock - DEPLOYMENT_BLOCK
-      const numBatches = Math.ceil(totalBlocks / BATCH_SIZE)
-
-      console.log(`Fetching ${numBatches} batches of blockchain data...`)
-
-      const allCreators = new Set<string>()
-      const allClaimants = new Set<string>()
-      let totalCreated = 0
-      let totalClaimed = 0
-      let totalApproved = 0
-      const weeklyStats: Record<string, { created: number; claimed: number; approved: number }> = {}
-
-      for (let i = 0; i < numBatches; i++) {
-        const batchStart = DEPLOYMENT_BLOCK + i * BATCH_SIZE
-        const batchEnd = Math.min(batchStart + BATCH_SIZE - 1, currentBlock)
-
-        console.log(`Fetching batch ${i + 1}/${numBatches}: blocks ${batchStart}-${batchEnd}`)
-
-        const response = await fetch("/api/stats/batch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ startBlock: batchStart, endBlock: batchEnd }),
-        })
-
-        if (!response.ok) {
-          const errBody = await response.json().catch(() => ({}))
-          console.error(`Batch ${i + 1} failed (status ${response.status}):`, errBody)
-          continue
-        }
-
-        const batch = await response.json()
-
-        batch.events.created.forEach((e: any) => {
-          if (e.creator) allCreators.add(e.creator.toLowerCase())
-          totalCreated++
-
-          const weeksSinceDeployment = Math.floor((e.blockNumber - DEPLOYMENT_BLOCK) / 120960)
-          const weekKey = `Week ${weeksSinceDeployment + 1}`
-          if (!weeklyStats[weekKey]) weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
-          weeklyStats[weekKey].created++
-        })
-
-        batch.events.claimed.forEach((e: any) => {
-          if (e.claimant) allClaimants.add(e.claimant.toLowerCase())
-          totalClaimed++
-
-          const weeksSinceDeployment = Math.floor((e.blockNumber - DEPLOYMENT_BLOCK) / 120960)
-          const weekKey = `Week ${weeksSinceDeployment + 1}`
-          if (!weeklyStats[weekKey]) weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
-          weeklyStats[weekKey].claimed++
-        })
-
-        batch.events.approved.forEach((e: any) => {
-          totalApproved++
-
-          const weeksSinceDeployment = Math.floor((e.blockNumber - DEPLOYMENT_BLOCK) / 120960)
-          const weekKey = `Week ${weeksSinceDeployment + 1}`
-          if (!weeklyStats[weekKey]) weeklyStats[weekKey] = { created: 0, claimed: 0, approved: 0 }
-          weeklyStats[weekKey].approved++
-        })
-
-        const progress = Math.round(((i + 1) / numBatches) * 100)
-        setFullHistoryProgress(progress)
-      }
-
-      const uniqueWallets = new Set([...allCreators, ...allClaimants])
-
-      const growth = Object.entries(weeklyStats)
-        .map(([week, stats]) => ({
-          date: week,
-          created: stats.created,
-          claimed: stats.claimed,
-          approved: stats.approved,
-        }))
-        .sort((a, b) => {
-          const aNum = parseInt(a.date.replace("Week ", ""))
-          const bNum = parseInt(b.date.replace("Week ", ""))
-          return aNum - bNum
-        })
-
-      const fullStats = {
-        wallets: uniqueWallets.size,
-        tasksCreated: totalCreated,
-        tasksClaimed: totalClaimed,
-        tasksApproved: totalApproved,
-        growth,
-        lastUpdated: Date.now(),
-      }
-
-      setStats(fullStats)
-      setIsFullHistory(true)
-      console.log("Full history loaded:", fullStats)
-    } catch (err) {
-      setError(strings.error)
-      console.error("Full history fetch error:", err)
-    } finally {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current)
-        progressIntervalRef.current = null
-      }
-      setLoadingFullHistory(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchStats()
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current)
-      }
-    }
-  }, [])
+  }[language]
 
   const formatTimeAgo = (timestamp: number) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
     if (seconds < 60) return `${seconds}s ${strings.ago}`
     const minutes = Math.floor(seconds / 60)
     if (minutes < 60) return `${minutes}m ${strings.ago}`
-    const hours = Math.floor(minutes / 60)
-    return `${hours}h ${strings.ago}`
+    return `${Math.floor(minutes / 60)}h ${strings.ago}`
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-12">
-            <div className="inline-block balaio-chip pink mb-4">
-              {strings.loading}
-            </div>
+  async function loadRecent(
+    setter: React.Dispatch<React.SetStateAction<PanelState>>,
+    contractAddress: string,
+    deploymentBlock: number,
+  ) {
+    if (!contractAddress || deploymentBlock === 0) {
+      setter(p => ({ ...p, loading: false, error: strings.notDeployed }))
+      return
+    }
+    setter(p => ({ ...p, loading: true, error: null }))
+    try {
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const currentBlock = await provider.getBlockNumber()
+      // 60 days: Celo L2 ~1s/block = 86400 blocks/day
+      const startBlock = Math.max(deploymentBlock, currentBlock - 86400 * DEFAULT_DAYS)
+      const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, provider)
+
+      const [created, claimed, approved] = await Promise.all([
+        contract.queryFilter(contract.filters.TaskCreated(), startBlock, currentBlock),
+        contract.queryFilter(contract.filters.TaskClaimed(), startBlock, currentBlock),
+        contract.queryFilter(contract.filters.TaskApproved(), startBlock, currentBlock),
+      ])
+
+      const creators = new Set(created.map((e: any) => e.args?.[1]?.toLowerCase()).filter(Boolean))
+      const claimants = new Set(claimed.map((e: any) => e.args?.[1]?.toLowerCase()).filter(Boolean))
+      const wallets = new Set([...creators, ...claimants])
+
+      const weeklyMap: Record<string, { created: number; claimed: number; approved: number }> = {}
+      const toWeek = (blockNumber: number) => {
+        const w = Math.floor((blockNumber - deploymentBlock) / (86400 * 7)) + 1
+        return `Week ${w}`
+      }
+      ;[...created, ...claimed, ...approved].forEach((e: any) => {
+        const key = toWeek(e.blockNumber)
+        if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
+      })
+      created.forEach((e: any) => { weeklyMap[toWeek(e.blockNumber)].created++ })
+      claimed.forEach((e: any) => { weeklyMap[toWeek(e.blockNumber)].claimed++ })
+      approved.forEach((e: any) => { weeklyMap[toWeek(e.blockNumber)].approved++ })
+
+      const growth = Object.entries(weeklyMap)
+        .map(([date, s]) => ({ date, ...s }))
+        .sort((a, b) => parseInt(a.date.replace("Week ", "")) - parseInt(b.date.replace("Week ", "")))
+
+      setter({
+        loading: false,
+        isFullHistory: false,
+        loadingFullHistory: false,
+        progress: 0,
+        error: null,
+        stats: {
+          wallets: wallets.size,
+          tasksCreated: created.length,
+          tasksClaimed: claimed.length,
+          tasksApproved: approved.length,
+          growth,
+          lastUpdated: Date.now(),
+        },
+      })
+    } catch (err) {
+      console.error("loadRecent error:", err)
+      setter(p => ({ ...p, loading: false, error: strings.error }))
+    }
+  }
+
+  async function loadFullHistory(
+    setter: React.Dispatch<React.SetStateAction<PanelState>>,
+    contractAddress: string,
+    deploymentBlock: number,
+  ) {
+    if (!contractAddress || deploymentBlock === 0) return
+    setter(p => ({ ...p, loadingFullHistory: true, progress: 0, error: null }))
+    try {
+      const provider = new ethers.JsonRpcProvider(CELO_RPC)
+      const currentBlock = await provider.getBlockNumber()
+      const numBatches = Math.ceil((currentBlock - deploymentBlock) / BATCH_SIZE)
+
+      const creators = new Set<string>()
+      const claimants = new Set<string>()
+      let totalCreated = 0, totalClaimed = 0, totalApproved = 0
+      const weeklyMap: Record<string, { created: number; claimed: number; approved: number }> = {}
+
+      const toWeek = (blockNumber: number) => {
+        const w = Math.floor((blockNumber - deploymentBlock) / (86400 * 7)) + 1
+        return `Week ${w}`
+      }
+
+      for (let i = 0; i < numBatches; i++) {
+        const startBlock = deploymentBlock + i * BATCH_SIZE
+        const endBlock = Math.min(startBlock + BATCH_SIZE - 1, currentBlock)
+
+        const res = await fetch("/api/stats/batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ startBlock, endBlock, contractAddress }),
+        })
+        if (!res.ok) { continue }
+        const batch = await res.json()
+
+        batch.events.created.forEach((e: any) => {
+          if (e.creator) creators.add(e.creator.toLowerCase())
+          totalCreated++
+          const key = toWeek(e.blockNumber)
+          if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
+          weeklyMap[key].created++
+        })
+        batch.events.claimed.forEach((e: any) => {
+          if (e.claimant) claimants.add(e.claimant.toLowerCase())
+          totalClaimed++
+          const key = toWeek(e.blockNumber)
+          if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
+          weeklyMap[key].claimed++
+        })
+        batch.events.approved.forEach((e: any) => {
+          totalApproved++
+          const key = toWeek(e.blockNumber)
+          if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
+          weeklyMap[key].approved++
+        })
+
+        setter(p => ({ ...p, progress: Math.round(((i + 1) / numBatches) * 100) }))
+      }
+
+      const wallets = new Set([...creators, ...claimants])
+      const growth = Object.entries(weeklyMap)
+        .map(([date, s]) => ({ date, ...s }))
+        .sort((a, b) => parseInt(a.date.replace("Week ", "")) - parseInt(b.date.replace("Week ", "")))
+
+      setter({
+        loading: false,
+        isFullHistory: true,
+        loadingFullHistory: false,
+        progress: 100,
+        error: null,
+        stats: {
+          wallets: wallets.size,
+          tasksCreated: totalCreated,
+          tasksClaimed: totalClaimed,
+          tasksApproved: totalApproved,
+          growth,
+          lastUpdated: Date.now(),
+        },
+      })
+    } catch (err) {
+      console.error("loadFullHistory error:", err)
+      setter(p => ({ ...p, loadingFullHistory: false, error: strings.error }))
+    }
+  }
+
+  useEffect(() => {
+    loadRecent(setV1, CELO_CONTRACT_ADDRESS_V1, CELO_DEPLOYMENT_BLOCK_V1)
+    loadRecent(setV2, CELO_CONTRACT_ADDRESS_V2, CELO_DEPLOYMENT_BLOCK_V2)
+  }, [])
+
+  function StatsPanel({
+    panel,
+    label,
+    onRefresh,
+    onFullHistory,
+  }: {
+    panel: PanelState
+    label: string
+    onRefresh: () => void
+    onFullHistory: () => void
+  }) {
+    if (panel.loading) {
+      return (
+        <div className="balaio-card mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-xl font-bold">{label}</h2>
           </div>
+          <div className="text-sm text-gray-500">{strings.loading}</div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  if (error || !stats) {
+    if (panel.error) {
+      return (
+        <div className="balaio-card mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">{label}</h2>
+          </div>
+          <div className="text-sm text-red-500">{panel.error}</div>
+        </div>
+      )
+    }
+
+    if (!panel.stats) return null
+
     return (
-      <div className="min-h-screen bg-white p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-12">
-            <div className="inline-block balaio-chip pink mb-4">
-              {strings.error}
-            </div>
-            <button
-              onClick={() => fetchStats()}
-              className="ml-4 balaio-chip yellow"
-            >
+      <div className="balaio-card mb-8">
+        {/* Panel header */}
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold">{label}</h2>
+            <span className={`balaio-chip ${panel.isFullHistory ? "blue" : "yellow"} text-xs`}>
+              {panel.isFullHistory ? strings.fullHistory : strings.last60Days}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">{strings.lastUpdated}: {formatTimeAgo(panel.stats.lastUpdated)}</span>
+            <button onClick={onRefresh} disabled={panel.loadingFullHistory} className="balaio-chip green flex items-center gap-1 text-xs">
+              <RefreshCw size={12} />
               {strings.refresh}
             </button>
           </div>
+        </div>
+
+        {/* Progress bar */}
+        {panel.loadingFullHistory && (
+          <div className="mb-4">
+            <div className="w-full bg-gray-200 rounded-full h-3 border border-black overflow-hidden">
+              <div className="bg-yellow-300 h-full transition-all duration-500" style={{ width: `${panel.progress}%` }} />
+            </div>
+            <div className="flex justify-between mt-1 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><Clock size={11} />{strings.loadingFullHistory}</span>
+              <span>{panel.progress}%</span>
+            </div>
+          </div>
+        )}
+
+        {/* Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {[
+            { icon: Users, label: strings.wallets, value: panel.stats.wallets },
+            { icon: ListChecks, label: strings.tasksCreated, value: panel.stats.tasksCreated },
+            { icon: TrendingUp, label: strings.tasksClaimed, value: panel.stats.tasksClaimed },
+            { icon: CheckCircle, label: strings.tasksApproved, value: panel.stats.tasksApproved },
+          ].map(({ icon: Icon, label: l, value }) => (
+            <div key={l} className="bg-gray-50 rounded border border-gray-200 p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Icon size={14} />
+                <span className="text-xs font-bold">{l}</span>
+              </div>
+              <div className="text-2xl font-bold">{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Full history button */}
+        {!panel.isFullHistory && !panel.loadingFullHistory && (
+          <button onClick={onFullHistory} className="balaio-chip blue flex items-center gap-1 text-xs mb-4">
+            <History size={12} />
+            {strings.viewFullHistory}
+            <span className="text-gray-500 ml-1">({strings.fullHistoryNote})</span>
+          </button>
+        )}
+
+        {/* Growth table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b-2 border-black">
+                <th className="text-left py-2 px-3">{strings.date}</th>
+                <th className="text-left py-2 px-3">{strings.created}</th>
+                <th className="text-left py-2 px-3">{strings.claimed}</th>
+                <th className="text-left py-2 px-3">{strings.approved}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {panel.stats.growth.length > 0 ? panel.stats.growth.map(row => (
+                <tr key={row.date} className="border-b border-gray-100">
+                  <td className="py-1.5 px-3">{row.date}</td>
+                  <td className="py-1.5 px-3">{row.created}</td>
+                  <td className="py-1.5 px-3">{row.claimed}</td>
+                  <td className="py-1.5 px-3">{row.approved}</td>
+                </tr>
+              )) : (
+                <tr><td colSpan={4} className="py-4 px-3 text-center text-gray-400">No data yet</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     )
@@ -265,148 +391,22 @@ export function StatsPage({ language }: StatsPageProps) {
 
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold">{strings.title}</h1>
-            <span className={`balaio-chip ${isFullHistory ? "blue" : "yellow"} text-sm`}>
-              {isFullHistory ? strings.fullHistory : strings.last90Days}
-            </span>
-          </div>
-          <button
-            onClick={() => fetchStats(true)}
-            disabled={refreshing || loadingFullHistory}
-            className="balaio-chip green flex items-center gap-2"
-          >
-            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-            {strings.refresh}
-          </button>
-        </div>
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">{strings.title}</h1>
 
-        {/* Last Updated */}
-        <div className="mb-6 text-sm text-gray-600">
-          {strings.lastUpdated}: {formatTimeAgo(stats.lastUpdated)}
-          {(stats as any).cached && (
-            <span className="ml-2 balaio-chip text-xs">{strings.cached}</span>
-          )}
-        </div>
+        <StatsPanel
+          panel={v1}
+          label={strings.v1Label}
+          onRefresh={() => loadRecent(setV1, CELO_CONTRACT_ADDRESS_V1, CELO_DEPLOYMENT_BLOCK_V1)}
+          onFullHistory={() => loadFullHistory(setV1, CELO_CONTRACT_ADDRESS_V1, CELO_DEPLOYMENT_BLOCK_V1)}
+        />
 
-        {/* Full History Progress Bar */}
-        {loadingFullHistory && (
-          <div className="mb-8 balaio-card">
-            <div className="flex items-center gap-2 mb-3">
-              <History size={16} />
-              <span className="font-bold">{strings.loadingFullHistory}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-4 border-2 border-black overflow-hidden">
-              <div
-                className="bg-yellow-300 h-full transition-all duration-1000 ease-linear"
-                style={{ width: `${fullHistoryProgress}%` }}
-              />
-            </div>
-            <div className="flex justify-between mt-2 text-sm text-gray-600">
-              <span className="flex items-center gap-1">
-                <Clock size={13} />
-                Loading blockchain data in batches... (~1-2 minutes)
-              </span>
-              <span>{fullHistoryProgress}%</span>
-            </div>
-          </div>
-        )}
-
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="balaio-card">
-            <div className="flex items-center gap-2 mb-2">
-              <Users size={20} />
-              <div className="text-sm font-bold">{strings.wallets}</div>
-            </div>
-            <div className="text-3xl font-bold">{stats.wallets}</div>
-          </div>
-          <div className="balaio-card">
-            <div className="flex items-center gap-2 mb-2">
-              <ListChecks size={20} />
-              <div className="text-sm font-bold">{strings.tasksCreated}</div>
-            </div>
-            <div className="text-3xl font-bold">{stats.tasksCreated}</div>
-          </div>
-          <div className="balaio-card">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={20} />
-              <div className="text-sm font-bold">{strings.tasksClaimed}</div>
-            </div>
-            <div className="text-3xl font-bold">{stats.tasksClaimed}</div>
-          </div>
-          <div className="balaio-card">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle size={20} />
-              <div className="text-sm font-bold">{strings.tasksApproved}</div>
-            </div>
-            <div className="text-3xl font-bold">{stats.tasksApproved}</div>
-          </div>
-        </div>
-
-        {/* View Full History Button */}
-        {!isFullHistory && !loadingFullHistory && (
-          <div className="mb-8 flex items-center gap-3 flex-wrap">
-            <button
-              onClick={fetchFullHistory}
-              className="balaio-chip blue flex items-center gap-2"
-            >
-              <History size={16} />
-              {strings.viewFullHistory}
-            </button>
-            <span className="text-sm text-gray-500 flex items-center gap-1">
-              <Clock size={13} />
-              {strings.fullHistoryNote}
-            </span>
-          </div>
-        )}
-
-        {!isFullHistory && !loadingFullHistory && (
-          <div className="mb-8 text-xs text-gray-500 max-w-2xl p-3 bg-gray-50 rounded border border-gray-200">
-            <strong>About Full History:</strong> Full history shows all events since contract deployment (block 51778358).
-            This data is cached and updated periodically. If currently unavailable, the Last 90 Days view provides all recent platform activity.
-          </div>
-        )}
-
-        {/* Growth Table */}
-        <div className="balaio-card">
-          <h2 className="text-xl font-bold mb-4">
-            {isFullHistory ? strings.growthSinceLaunch : strings.growth90Days}
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-black">
-                  <th className="text-left py-2 px-4">{strings.date}</th>
-                  <th className="text-left py-2 px-4">{strings.created}</th>
-                  <th className="text-left py-2 px-4">{strings.claimed}</th>
-                  <th className="text-left py-2 px-4">{strings.approved}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.growth.length > 0 ? (
-                  stats.growth.map((row) => (
-                    <tr key={row.date} className="border-b border-gray-200">
-                      <td className="py-2 px-4">{row.date}</td>
-                      <td className="py-2 px-4">{row.created}</td>
-                      <td className="py-2 px-4">{row.claimed}</td>
-                      <td className="py-2 px-4">{row.approved}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="py-4 px-4 text-center text-gray-500">
-                      No growth data yet
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <StatsPanel
+          panel={v2}
+          label={strings.v2Label}
+          onRefresh={() => loadRecent(setV2, CELO_CONTRACT_ADDRESS_V2, CELO_DEPLOYMENT_BLOCK_V2)}
+          onFullHistory={() => loadFullHistory(setV2, CELO_CONTRACT_ADDRESS_V2, CELO_DEPLOYMENT_BLOCK_V2)}
+        />
       </div>
     </div>
   )
