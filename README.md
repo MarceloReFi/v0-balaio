@@ -1,6 +1,6 @@
 # Balaio
 
-A decentralized task marketplace on the Celo blockchain. Organizations post tasks with crypto escrow; contributors claim, complete, and get paid on approval.
+A decentralized task marketplace of micro digital work and freelancers on the blockchain. Organizations post tasks with crypto escrow; contributors claim, complete, and get paid on approval.
 
 ---
 
@@ -23,7 +23,7 @@ Work is tracked on-chain. Payments release via smart contract when a creator app
 - **Escrow payments** — Funds are held in a smart contract and released automatically on approval.
 - **GoodDollar verification** — Optional identity check to restrict tasks to verified humans.
 - **Pix integration** — BRL fiat settlement via Pix for Brazilian users.
-- **Multi-token support** — cUSD, CELO, USDC, cEUR, cREAL, G$ (GoodDollar), and regional stablecoins (cPHP, cCOP, cKES, and more).
+- **Multi-token support** — cUSD, CELO, USDC, cEUR, cREAL, G$ (GoodDollar), and regional stablecoins (cPHP, cCOP, cKES, and more), as well as xDAI, GNO, BREAD, and CRC (Balaio Circle).
 
 ---
 
