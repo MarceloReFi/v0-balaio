@@ -51,4 +51,5 @@ export interface Task {
   workerPixKeyType?: PixKeyType
   pixPaymentConfirmed?: boolean
   pixPaymentConfirmedAt?: Date | null
+  contractAddress?: string
 }

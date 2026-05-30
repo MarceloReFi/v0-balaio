@@ -196,10 +196,19 @@ export function TheOfficeApp() {
       const readContracts = contractAddresses.map(addr => new ethers.Contract(addr, CONTRACT_ABI, provider))
       const taskDataResults = await Promise.all(
         taskIds.map(async (id) => {
+          const metadata = metadataMap[id]
+          // Use cached contract address from Supabase to skip unnecessary calls
+          if (metadata?.contract_address) {
+            const cachedRc = new ethers.Contract(metadata.contract_address, CONTRACT_ABI, provider)
+            try {
+              const result = await cachedRc.getTask(id)
+              if (result && result.taskId) return { data: result, usedContract: cachedRc }
+            } catch {}
+          }
           for (const rc of readContracts) {
             try {
               const result = await rc.getTask(id)
-              if (result && result.taskId) return result
+              if (result && result.taskId) return { data: result, usedContract: rc }
             } catch {}
           }
           return null
@@ -209,10 +218,17 @@ export function TheOfficeApp() {
       const loadedTasks: Task[] = []
       for (let i = 0; i < taskIds.length; i++) {
         const taskId = taskIds[i]
-        const taskData = taskDataResults[i]
+        const taskResult = taskDataResults[i]
+        const taskData = taskResult?.data ?? null
+        const usedContract = taskResult?.usedContract ?? null
         const metadata = metadataMap[taskId]
 
-        if (!taskData) continue
+        if (!taskData || !usedContract) continue
+
+        // Persist contract address silently if not already stored
+        if (!metadata?.contract_address) {
+          supabase.from("tasks").update({ contract_address: usedContract.target as string }).eq("id", taskId).then(() => {})
+        }
 
         if (metadata?.visibility === "verified_humans" && !isVerified) continue
         if (metadata?.visibility === "private" && metadata?.creator_address?.toLowerCase() !== account?.toLowerCase()) continue
@@ -251,6 +267,7 @@ export function TheOfficeApp() {
           workerPixKeyType: metadata?.worker_pix_key_type as any,
           pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
           pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
+          contractAddress: usedContract.target as string,
         })
       }
 
@@ -508,6 +525,7 @@ export function TheOfficeApp() {
           workerPixKeyType: metadata?.worker_pix_key_type as any,
           pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
           pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
+          contractAddress: usedContract.target as string,
         }
       } catch (error) {
         console.error("Error getting task:", error)
@@ -707,14 +725,22 @@ export function TheOfficeApp() {
     }
   }
 
-  const claimTask = async (id: string) => {
-    if (!contract) return
+  const getWriteContract = useCallback((task?: Task | null) => {
+    if (task?.contractAddress && signer) {
+      return new ethers.Contract(task.contractAddress, CONTRACT_ABI, signer)
+    }
+    return contract
+  }, [contract, signer])
+
+  const claimTask = async (id: string, task?: Task | null) => {
+    const writeContract = getWriteContract(task)
+    if (!writeContract) return
 
     try {
       setLoading(true)
       toast("Claiming task...")
 
-      const tx = await contract.claimTask(id)
+      const tx = await writeContract.claimTask(id)
       await tx.wait()
 
       await supabase.from("task_claims").upsert(
@@ -738,14 +764,15 @@ export function TheOfficeApp() {
     }
   }
 
-  const submitTask = async (id: string, proof: string) => {
-    if (!proof || !contract) return
+  const submitTask = async (id: string, proof: string, task?: Task | null) => {
+    const writeContract = getWriteContract(task)
+    if (!proof || !writeContract) return
 
     try {
       setLoading(true)
       toast("Submitting proof...")
 
-      const tx = await contract.submitTask(id, proof)
+      const tx = await writeContract.submitTask(id, proof)
       await tx.wait()
 
       await supabase.from("task_claims").upsert(
@@ -769,14 +796,15 @@ export function TheOfficeApp() {
     }
   }
 
-  const approveTaskSubmission = async (id: string, claimant: string) => {
-    if (!contract) return
+  const approveTaskSubmission = async (id: string, claimant: string, task?: Task | null) => {
+    const writeContract = getWriteContract(task)
+    if (!writeContract) return
 
     try {
       setLoading(true)
       toast("Approving submission...")
 
-      const tx = await contract.approveTask(id, claimant)
+      const tx = await writeContract.approveTask(id, claimant)
       await tx.wait()
 
       await supabase.from("task_claims").upsert(
@@ -800,14 +828,15 @@ export function TheOfficeApp() {
     }
   }
 
-  const claimReward = async (id: string) => {
-    if (!contract) return
+  const claimReward = async (id: string, task?: Task | null) => {
+    const writeContract = getWriteContract(task)
+    if (!writeContract) return
 
     try {
       setLoading(true)
       toast("Claiming reward...")
 
-      const tx = await contract.claimReward(id)
+      const tx = await writeContract.claimReward(id)
       await tx.wait()
 
       await supabase.from("task_claims").upsert(
@@ -1055,7 +1084,7 @@ export function TheOfficeApp() {
             tasks={tasks}
             account={account}
             onViewTask={(task) => openTaskModal(task)}
-            onClaimTask={(task) => claimTask(task.id)}
+            onClaimTask={(task) => claimTask(task.id, task)}
             onNavigateToTasks={() => setCurrentPage("tasks")}
             onNavigateToFeatures={() => setCurrentPage("features")}
           />
@@ -1141,10 +1170,10 @@ export function TheOfficeApp() {
         account={account}
         loading={loading}
         onClose={() => setShowTaskModal(false)}
-        onClaimTask={claimTask}
-        onSubmitTask={submitTask}
-        onApproveTask={approveTaskSubmission}
-        onClaimReward={claimReward}
+        onClaimTask={(id) => claimTask(id, selectedTask)}
+        onSubmitTask={(id, proof) => submitTask(id, proof, selectedTask)}
+        onApproveTask={(id, claimant) => approveTaskSubmission(id, claimant, selectedTask)}
+        onClaimReward={(id) => claimReward(id, selectedTask)}
         onUpdateDeadline={updateTaskDeadline}
         language={language}
       />
