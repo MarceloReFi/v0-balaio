@@ -449,12 +449,25 @@ export function TheOfficeApp() {
       try {
         const rpc = chainId === 100 ? GNOSIS_RPC : CELO_RPC
         const readProvider = new ethers.JsonRpcProvider(rpc)
-        const readContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, readProvider)
+        const contractAddresses = chainId === 42220
+          ? [CELO_CONTRACT_ADDRESS_V1, CELO_CONTRACT_ADDRESS_V2]
+          : [getContractAddress(chainId)]
 
-        const [task, availableSlots, mySlot, { data: metadata }] = await Promise.all([
-          readContract.getTask(id),
-          readContract.getAvailableSlots(id),
-          readContract.getTaskSlot(id, account),
+        const readContracts = contractAddresses.map(addr => new ethers.Contract(addr, CONTRACT_ABI, readProvider))
+
+        let task = null
+        let usedContract = readContracts[0]
+        for (const rc of readContracts) {
+          try {
+            const result = await rc.getTask(id)
+            if (result && result.taskId) { task = result; usedContract = rc; break }
+          } catch {}
+        }
+        if (!task) return null
+
+        const [availableSlots, mySlot, { data: metadata }] = await Promise.all([
+          usedContract.getAvailableSlots(id),
+          usedContract.getTaskSlot(id, account),
           supabase.from("tasks").select("*").eq("id", id).single(),
         ])
 
