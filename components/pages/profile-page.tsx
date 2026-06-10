@@ -14,11 +14,11 @@ interface ProfilePageProps {
   tasks: Task[]
   userActivity: { created: Task[]; worked: Task[] }
   onNavigateToBlog: () => void
-  onApproveTask: (taskId: string, claimant: string) => Promise<void>
-  onWithdrawClaim: (taskId: string) => Promise<void>
-  onAuthorizeWithdraw: (taskId: string) => Promise<void>
-  onWithdraw: (taskId: string, creatorAddress: string) => Promise<void>
-  onClaimTokens: (taskId: string) => Promise<void>
+  onApproveTask: (task: Task, claimant: string) => Promise<void>
+  onWithdrawClaim: (task: Task) => Promise<void>
+  onAuthorizeWithdraw: (task: Task) => Promise<void>
+  onWithdraw: (task: Task, creatorAddress: string) => Promise<void>
+  onClaimTokens: (task: Task) => Promise<void>
   onRefreshClaims: () => void
   language: Language
 }
@@ -194,7 +194,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                             {claim.submittedAt && !claim.approvedAt && (
                               <div className="flex gap-2 mt-2">
                                 <button
-                                  onClick={() => onApproveTask(task.id, claim.workerAddress)}
+                                  onClick={() => onApproveTask(task, claim.workerAddress)}
                                   className="bg-secondary text-on-secondary px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity"
                                 >
                                   {t.approveSubmission}
@@ -221,22 +221,22 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                         cancel: {
                           label: t.cancelTask,
                           className: "bg-surface-container-low text-on-surface",
-                          action: () => onWithdrawClaim(task.id),
+                          action: () => onWithdrawClaim(task),
                         },
                         authorize: {
                           label: t.authorizeWithdraw,
                           className: "bg-primary-container text-on-primary",
-                          action: () => onAuthorizeWithdraw(task.id),
+                          action: () => onAuthorizeWithdraw(task),
                         },
                         withdraw: {
                           label: t.withdrawFunds,
                           className: "bg-primary-container text-on-primary",
-                          action: () => onWithdraw(task.id, account),
+                          action: () => onWithdraw(task, account),
                         },
                         claim: {
                           label: t.claimTokens,
                           className: "bg-secondary text-on-secondary",
-                          action: () => onClaimTokens(task.id),
+                          action: () => onClaimTokens(task),
                         },
                       }[step]
                       return (

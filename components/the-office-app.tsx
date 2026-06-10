@@ -1110,11 +1110,11 @@ export function TheOfficeApp() {
             tasks={tasks}
             userActivity={userActivity}
             onNavigateToBlog={() => setCurrentPage("blog")}
-            onApproveTask={approveTaskSubmission}
-            onWithdrawClaim={claimTask}
-            onAuthorizeWithdraw={(id) => submitTask(id, "Withdraw Funds")}
-            onWithdraw={approveTaskSubmission}
-            onClaimTokens={claimReward}
+            onApproveTask={(task, claimant) => approveTaskSubmission(task.id, claimant, task)}
+            onWithdrawClaim={(task) => claimTask(task.id, task)}
+            onAuthorizeWithdraw={(task) => submitTask(task.id, "Withdraw Funds", task)}
+            onWithdraw={(task, creator) => approveTaskSubmission(task.id, creator, task)}
+            onClaimTokens={(task) => claimReward(task.id, task)}
             onRefreshClaims={() => refreshClaimsFromBlockchain(userActivity.created.map(t => t.id))}
             language={language}
           />
