@@ -15,10 +15,8 @@ interface ProfilePageProps {
   userActivity: { created: Task[]; worked: Task[] }
   onNavigateToBlog: () => void
   onApproveTask: (task: Task, claimant: string) => Promise<void>
-  onWithdrawClaim: (task: Task) => Promise<void>
-  onAuthorizeWithdraw: (task: Task) => Promise<void>
-  onWithdraw: (task: Task, creatorAddress: string) => Promise<void>
-  onClaimTokens: (task: Task) => Promise<void>
+  onCancelTask: (task: Task) => Promise<void>
+  onRejectSubmission: (task: Task, claimant: string) => Promise<void>
   onRefreshClaims: () => void
   language: Language
 }
@@ -33,7 +31,7 @@ const formatTimestamp = (date: Date | null | undefined): string => {
   })
 }
 
-export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, onWithdrawClaim, onAuthorizeWithdraw, onWithdraw, onClaimTokens, onRefreshClaims, language }: ProfilePageProps) {
+export function ProfilePage({ account, balance, tasks, userActivity, onNavigateToBlog, onApproveTask, onCancelTask, onRejectSubmission, onRefreshClaims, language }: ProfilePageProps) {
   const t = useTranslations(language)
   const [noticeDismissed, setNoticeDismissed] = useState(() => {
     if (typeof window === "undefined") return false
@@ -48,18 +46,6 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
   const dismissNotice = () => {
     localStorage.setItem(DB_NOTICE_KEY, "true")
     setNoticeDismissed(true)
-  }
-
-  const getCreatorSlot = (taskId: string) =>
-    tasks.find((t) => t.id === taskId)?.mySlot ?? null
-
-  const getWithdrawStep = (taskId: string) => {
-    const slot = getCreatorSlot(taskId)
-    if (!slot || !slot.claimed) return "cancel"
-    if (slot.claimed && !slot.submitted) return "authorize"
-    if (slot.submitted && !slot.approved) return "withdraw"
-    if (slot.approved && !slot.withdrawn) return "claim"
-    return "done"
   }
 
   return (
@@ -199,7 +185,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                                 >
                                   {t.approveSubmission}
                                 </button>
-                                <button className="bg-red-500 text-white px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity">
+                                <button onClick={() => onRejectSubmission(task, claim.workerAddress)} className="bg-red-500 text-white px-3 py-1 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity">
                                   {t.rejectSubmission}
                                 </button>
                               </div>
@@ -210,51 +196,16 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                     ) : (
                       <div className="text-xs text-on-surface-variant italic mt-1">{t.noClaimsYet}</div>
                     )}
-                    {(() => {
-                      const step = getWithdrawStep(task.id)
-                      if (step === "done") return (
-                        <div className="mt-2 pt-2 border-t border-outline-variant text-xs font-semibold text-secondary">
-                          {t.tokensWithdrawn}
-                        </div>
-                      )
-                      const stepConfig = {
-                        cancel: {
-                          label: t.cancelTask,
-                          className: "bg-surface-container-low text-on-surface",
-                          action: () => onWithdrawClaim(task),
-                        },
-                        authorize: {
-                          label: t.authorizeWithdraw,
-                          className: "bg-primary-container text-on-primary",
-                          action: () => onAuthorizeWithdraw(task),
-                        },
-                        withdraw: {
-                          label: t.withdrawFunds,
-                          className: "bg-primary-container text-on-primary",
-                          action: () => onWithdraw(task, account),
-                        },
-                        claim: {
-                          label: t.claimTokens,
-                          className: "bg-secondary text-on-secondary",
-                          action: () => onClaimTokens(task),
-                        },
-                      }[step]
-                      return (
-                        <div className="mt-2 pt-2 border-t border-outline-variant">
-                          {step !== "cancel" && (
-                            <div className="text-xs text-on-surface-variant mb-1">
-                              {t.withdrawInProgress}
-                            </div>
-                          )}
-                          <button
-                            onClick={stepConfig.action}
-                            className={`${stepConfig.className} px-3 py-1.5 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity`}
-                          >
-                            {stepConfig.label}
-                          </button>
-                        </div>
-                      )
-                    })()}
+                    {task.active && Number(task.claimedSlots) === 0 && (
+                      <div className="mt-2 pt-2 border-t border-outline-variant">
+                        <button
+                          onClick={() => { if (confirm(t.cancelTaskConfirm)) onCancelTask(task) }}
+                          className="bg-surface-container-low text-on-surface px-3 py-1.5 text-xs font-semibold rounded-full hover:opacity-90 transition-opacity"
+                        >
+                          {t.cancelTask}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
