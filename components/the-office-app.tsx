@@ -861,6 +861,46 @@ export function TheOfficeApp() {
     }
   }
 
+  const cancelTask = async (id: string, task?: Task | null) => {
+    const writeContract = getWriteContract(task)
+    if (!writeContract) return
+    try {
+      setLoading(true)
+      toast("Cancelling task...")
+      const tx = await writeContract.cancelTask(id)
+      await tx.wait()
+      toast("Task cancelled — escrow refunded")
+      await loadTasksFromBlockchain()
+      if (account) await loadUserActivity(account, tasks)
+    } catch (error) {
+      console.error(error)
+      toast("Error: " + parseContractError(error))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const rejectSubmission = async (id: string, claimant: string, task?: Task | null) => {
+    const writeContract = getWriteContract(task)
+    if (!writeContract) return
+    try {
+      setLoading(true)
+      toast("Rejecting submission...")
+      const tx = await writeContract.rejectSubmission(id, claimant)
+      await tx.wait()
+      await supabase.from("task_claims")
+        .update({ submitted_at: null, submission_link: null })
+        .match({ task_id: id, worker_address: claimant.toLowerCase() })
+      toast("Submission rejected — worker can resubmit")
+      if (account) await loadUserActivity(account, tasks)
+    } catch (error) {
+      console.error(error)
+      toast("Error: " + parseContractError(error))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const updateTaskDeadline = useCallback(
     async (taskId: string, deadline: Date | null) => {
       try {
@@ -1111,10 +1151,8 @@ export function TheOfficeApp() {
             userActivity={userActivity}
             onNavigateToBlog={() => setCurrentPage("blog")}
             onApproveTask={(task, claimant) => approveTaskSubmission(task.id, claimant, task)}
-            onWithdrawClaim={(task) => claimTask(task.id, task)}
-            onAuthorizeWithdraw={(task) => submitTask(task.id, "Withdraw Funds", task)}
-            onWithdraw={(task, creator) => approveTaskSubmission(task.id, creator, task)}
-            onClaimTokens={(task) => claimReward(task.id, task)}
+            onCancelTask={(task) => cancelTask(task.id, task)}
+            onRejectSubmission={(task, claimant) => rejectSubmission(task.id, claimant, task)}
             onRefreshClaims={() => refreshClaimsFromBlockchain(userActivity.created.map(t => t.id))}
             language={language}
           />
