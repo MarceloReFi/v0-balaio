@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Analytics } from "@vercel/analytics/next"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import { Web3Provider } from "@/components/providers/web3-provider"
 import "./globals.css"
 
@@ -42,6 +43,7 @@ export default function RootLayout({
           {children}
         </Web3Provider>
         <Analytics />
+        <GoogleAnalytics gaId="G-00VD4RK2MV" />
       </body>
     </html>
   )
