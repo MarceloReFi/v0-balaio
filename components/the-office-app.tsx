@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { ethers } from "ethers"
-import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp, BookOpen } from "lucide-react"
+import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp, BookOpen, Building2 } from "lucide-react"
 import {
   getContractAddress,
   CONTRACT_ABI,
@@ -29,6 +29,7 @@ import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { AgentsPage } from "@/components/pages/agents-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
+import { OrganizationsView } from "@/components/organizations/organizations-view"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { isMiniPay } from "@/lib/minipay"
@@ -135,7 +136,7 @@ export function TheOfficeApp() {
   const [account, setAccount] = useState<string>("")
   const [contract, setContract] = useState<ethers.Contract | null>(null)
   const [tokenContracts, setTokenContracts] = useState<Record<string, ethers.Contract | null>>({})
-  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents">("home")
+  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents" | "organizations">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -1159,6 +1160,7 @@ export function TheOfficeApp() {
         )}
         {account && currentPage === "blog" && <BlogPage language={language} />}
         {account && currentPage === "stats" && <StatsPage language={language} />}
+        {account && currentPage === "organizations" && <OrganizationsView account={account} language={language} />}
       </main>
 
       {account && (
@@ -1169,6 +1171,7 @@ export function TheOfficeApp() {
             { id: "profile" as const, icon: User, label: t.profile },
             { id: "blog" as const, icon: BookOpen, label: "Blog" },
             { id: "stats" as const, icon: TrendingUp, label: "Stats" },
+            { id: "organizations" as const, icon: Building2, label: t.orgsNav },
           ].map((tab) => {
             const Icon = tab.icon
             const isActive = currentPage === tab.id
