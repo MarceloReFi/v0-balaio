@@ -34,6 +34,7 @@ interface TaskDetailModalProps {
   onUpdateDeadline: (taskId: string, deadline: Date | null) => Promise<void>
   language: Language
   onOpenOrganizationProfile?: (orgId: string) => void
+  onOpenProject?: (projectId: string) => void
 }
 
 export function TaskDetailModal({
@@ -49,6 +50,7 @@ export function TaskDetailModal({
   onUpdateDeadline,
   language,
   onOpenOrganizationProfile,
+  onOpenProject,
 }: TaskDetailModalProps) {
   const t = useTranslations(language)
   const [proofUrl, setProofUrl] = useState("")
@@ -192,7 +194,11 @@ export function TaskDetailModal({
               <span className="text-on-surface font-semibold">{orgName}</span>
             ))}
             {orgName && projectName && <span className="text-on-surface-variant">·</span>}
-            {projectName && <span className="text-on-surface-variant">{projectName}</span>}
+            {projectName && (onOpenProject && task.projectId ? (
+              <button type="button" onClick={() => onOpenProject(task.projectId!)} className="text-secondary hover:opacity-70">{projectName}</button>
+            ) : (
+              <span className="text-on-surface-variant">{projectName}</span>
+            ))}
           </div>
         )}
 
