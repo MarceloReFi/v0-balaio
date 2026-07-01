@@ -17,7 +17,7 @@ import { CELO_RPC, GNOSIS_RPC, CELO_CONTRACT_ADDRESS_V1, CELO_CONTRACT_ADDRESS_V
 
 const CONTRACT_DEPLOYMENT_BLOCK = 51778358
 
-import type { Task, TaskClaim } from "@/lib/types"
+import type { Task, TaskClaim, Organization } from "@/lib/types"
 import { Toast } from "@/components/ui/toast"
 import { CreateTaskModal } from "@/components/modals/create-task-modal"
 import { TaskDetailModal } from "@/components/modals/task-detail-modal"
@@ -32,6 +32,7 @@ import { StatsPage } from "@/components/pages/stats/stats-page"
 import { OrganizationsView } from "@/components/organizations/organizations-view"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
+import { getOrganizationsByWallet } from "@/lib/organizations"
 import { isMiniPay } from "@/lib/minipay"
 import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
@@ -149,6 +150,7 @@ export function TheOfficeApp() {
   const loadingActivityRef = useRef(false)
   const [language, setLanguage] = useState<Language>("en")
   const [multiTaskStatuses, setMultiTaskStatuses] = useState<Record<string, "idle" | "pending" | "success" | "error">>({})
+  const [myOrgs, setMyOrgs] = useState<Organization[]>([])
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
@@ -379,6 +381,8 @@ export function TheOfficeApp() {
             tags: task.tags || [],
             visibility: task.visibility || "public",
             chain_id: chainId,
+            organization_id: task.organizationId || null,
+            project_id: task.projectId || null,
           },
           { onConflict: "id" },
         )
@@ -609,6 +613,8 @@ export function TheOfficeApp() {
     deadline: Date | null,
     tags: string[],
     visibility: Task["visibility"],
+    organizationId: string | null,
+    projectId: string | null,
   ) => {
     if (!account || !contract) return
 
@@ -694,6 +700,8 @@ export function TheOfficeApp() {
             tags: tags,
             visibility: visibility,
             paymentMethod: "crypto",
+            organizationId,
+            projectId,
           }
 
           const saveResult = await saveTaskToSupabase(newTask)
@@ -1011,6 +1019,13 @@ export function TheOfficeApp() {
   }, [account, tasks, loadUserActivity])
 
   useEffect(() => {
+    if (!account) return
+    getOrganizationsByWallet(account)
+      .then(setMyOrgs)
+      .catch((error) => console.error(error))
+  }, [account])
+
+  useEffect(() => {
     if (wagmiConnected && wagmiAddress && !account) {
       setAccount(wagmiAddress)
       toast("Wallet connected via WalletConnect!")
@@ -1203,6 +1218,7 @@ export function TheOfficeApp() {
         tokenBalances={tokenBalances}
         language={language}
         taskStatuses={multiTaskStatuses}
+        organizations={myOrgs}
       />
 
       <TaskDetailModal
