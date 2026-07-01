@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { User, Tag, Folder, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { User, Tag, Folder, X, Building2 } from "lucide-react"
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
+import { getOrganization, getProject } from "@/lib/organizations"
 
 function truncateAddress(address: string): string {
   if (!address) return ""
@@ -32,6 +33,7 @@ interface TaskDetailModalProps {
   onClaimReward: (id: string) => void
   onUpdateDeadline: (taskId: string, deadline: Date | null) => Promise<void>
   language: Language
+  onOpenOrganizationProfile?: (orgId: string) => void
 }
 
 export function TaskDetailModal({
@@ -46,6 +48,7 @@ export function TaskDetailModal({
   onClaimReward,
   onUpdateDeadline,
   language,
+  onOpenOrganizationProfile,
 }: TaskDetailModalProps) {
   const t = useTranslations(language)
   const [proofUrl, setProofUrl] = useState("")
@@ -55,6 +58,23 @@ export function TaskDetailModal({
     task?.deadline ? new Date(task.deadline).toISOString().split("T")[0] : ""
   )
   const [savingDeadline, setSavingDeadline] = useState(false)
+  const [orgName, setOrgName] = useState<string | null>(null)
+  const [orgIsPublic, setOrgIsPublic] = useState(false)
+  const [projectName, setProjectName] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    async function load() {
+      if (task?.organizationId) {
+        try { const org = await getOrganization(task.organizationId); if (active && org) { setOrgName(org.name); setOrgIsPublic(org.isPublic) } } catch (e) { console.error(e) }
+      } else { setOrgName(null); setOrgIsPublic(false) }
+      if (task?.projectId) {
+        try { const p = await getProject(task.projectId); if (active && p) setProjectName(p.title) } catch (e) { console.error(e) }
+      } else { setProjectName(null) }
+    }
+    if (open) load()
+    return () => { active = false }
+  }, [open, task?.organizationId, task?.projectId])
 
   const handleSaveDeadline = async () => {
     setSavingDeadline(true)
@@ -162,6 +182,19 @@ export function TaskDetailModal({
             )}
           </div>
         </div>
+
+        {(orgName || projectName) && (
+          <div className="flex items-center gap-2 text-sm mb-3 flex-wrap">
+            <Building2 size={14} className="text-on-surface-variant" />
+            {orgName && (orgIsPublic && onOpenOrganizationProfile && task.organizationId ? (
+              <button type="button" onClick={() => onOpenOrganizationProfile(task.organizationId!)} className="text-secondary font-semibold hover:opacity-70">{orgName}</button>
+            ) : (
+              <span className="text-on-surface font-semibold">{orgName}</span>
+            ))}
+            {orgName && projectName && <span className="text-on-surface-variant">·</span>}
+            {projectName && <span className="text-on-surface-variant">{projectName}</span>}
+          </div>
+        )}
 
         {/* Category */}
         {task.category && (
