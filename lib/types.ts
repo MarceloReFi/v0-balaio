@@ -52,4 +52,42 @@ export interface Task {
   pixPaymentConfirmed?: boolean
   pixPaymentConfirmedAt?: Date | null
   contractAddress?: string
+  organizationId?: string | null
+  projectId?: string | null
+}
+
+export type OrganizationRole = "owner" | "admin"
+
+export interface Organization {
+  id: string
+  ownerAddress: string
+  name: string
+  description?: string | null
+  logoUrl?: string | null
+  nature?: string | null
+  niches: string[]
+  region?: string | null
+  contactEmail?: string | null
+  socialLinks: Record<string, string>
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface OrganizationMember {
+  id: string
+  organizationId: string
+  walletAddress: string
+  role: OrganizationRole
+  createdAt: Date
+}
+
+export interface Project {
+  id: string
+  organizationId: string
+  title: string
+  description?: string | null
+  goals?: string | null
+  website?: string | null
+  createdAt: Date
+  updatedAt: Date
 }
