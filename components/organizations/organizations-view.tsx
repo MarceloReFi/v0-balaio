@@ -6,6 +6,7 @@ import type { Organization } from "@/lib/types"
 import { OrganizationForm, type OrgFormValues } from "./organization-form"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ProjectsView } from "./projects-view"
+import { OrganizationProfile } from "./organization-profile"
 import { getOrganizationsByWallet, createOrganization, updateOrganization, deleteOrganization } from "@/lib/organizations"
 
 interface OrganizationsViewProps {
@@ -13,7 +14,7 @@ interface OrganizationsViewProps {
   language: Language
 }
 
-type Mode = "list" | "create" | "edit" | "projects"
+type Mode = "list" | "create" | "edit" | "projects" | "profile"
 
 export function OrganizationsView({ account, language }: OrganizationsViewProps) {
   const t = useTranslations(language)
@@ -25,6 +26,7 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
   const [selected, setSelected] = useState<Organization | null>(null)
   const [confirming, setConfirming] = useState<Organization | null>(null)
   const [projectsOrg, setProjectsOrg] = useState<Organization | null>(null)
+  const [profileOrg, setProfileOrg] = useState<Organization | null>(null)
 
   const refresh = useCallback(async () => {
     if (!account) return
@@ -130,6 +132,19 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
     )
   }
 
+  if (mode === "profile" && profileOrg) {
+    return (
+      <OrganizationProfile
+        organization={profileOrg}
+        language={language}
+        onBack={() => {
+          setMode("list")
+          setProfileOrg(null)
+        }}
+      />
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
@@ -160,6 +175,16 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOrg(org)
+                      setMode("profile")
+                    }}
+                    className="text-xs font-semibold text-secondary hover:opacity-70"
+                  >
+                    {t.viewProfile}
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
