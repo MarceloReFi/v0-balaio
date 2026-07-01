@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react"
 import { ArrowLeft } from "lucide-react"
+import { useTranslations, type Language } from "@/lib/translations"
+import type { ProjectTaskSummary } from "@/lib/organizations"
 
 export function SectionLabel({ children }: { children: ReactNode }) {
   return <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-secondary mb-2">{children}</p>
@@ -49,4 +51,19 @@ export function Card({
   }
 
   return <div className={classes}>{children}</div>
+}
+
+export function StatusChip({ status, language }: { status: ProjectTaskSummary["status"]; language: Language }) {
+  const t = useTranslations(language)
+  const labels: Record<ProjectTaskSummary["status"], string> = {
+    open: t.statusOpen,
+    claimed: t.statusClaimed,
+    submitted: t.statusSubmitted,
+    completed: t.statusCompleted,
+  }
+  return (
+    <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-surface-container-high text-on-surface-variant">
+      {labels[status]}
+    </span>
+  )
 }
