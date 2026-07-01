@@ -69,6 +69,7 @@ export interface Organization {
   region?: string | null
   contactEmail?: string | null
   socialLinks: Record<string, string>
+  isPublic: boolean
   createdAt: Date
   updatedAt: Date
 }
