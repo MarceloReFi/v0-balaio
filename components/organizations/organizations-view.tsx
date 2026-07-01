@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization } from "@/lib/types"
 import { OrganizationForm, type OrgFormValues } from "./organization-form"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { ProjectsView } from "./projects-view"
 import { getOrganizationsByWallet, createOrganization, updateOrganization, deleteOrganization } from "@/lib/organizations"
 
 interface OrganizationsViewProps {
@@ -11,7 +13,7 @@ interface OrganizationsViewProps {
   language: Language
 }
 
-type Mode = "list" | "create" | "edit"
+type Mode = "list" | "create" | "edit" | "projects"
 
 export function OrganizationsView({ account, language }: OrganizationsViewProps) {
   const t = useTranslations(language)
@@ -21,6 +23,8 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
   const [submitting, setSubmitting] = useState(false)
   const [mode, setMode] = useState<Mode>("list")
   const [selected, setSelected] = useState<Organization | null>(null)
+  const [confirming, setConfirming] = useState<Organization | null>(null)
+  const [projectsOrg, setProjectsOrg] = useState<Organization | null>(null)
 
   const refresh = useCallback(async () => {
     if (!account) return
@@ -67,13 +71,19 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
     }
   }
 
-  const handleDelete = async (org: Organization) => {
-    if (!confirm(t.orgConfirmDelete)) return
+  const handleDelete = (org: Organization) => {
+    setConfirming(org)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!confirming) return
     try {
-      await deleteOrganization(org.id)
+      await deleteOrganization(confirming.id)
       await refresh()
     } catch (error) {
       console.error(error)
+    } finally {
+      setConfirming(null)
     }
   }
 
@@ -103,6 +113,20 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
           onCancel={handleCancel}
         />
       </div>
+    )
+  }
+
+  if (mode === "projects" && projectsOrg) {
+    return (
+      <ProjectsView
+        organization={projectsOrg}
+        account={account}
+        language={language}
+        onBack={() => {
+          setMode("list")
+          setProjectsOrg(null)
+        }}
+      />
     )
   }
 
@@ -139,6 +163,16 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
                   <button
                     type="button"
                     onClick={() => {
+                      setProjectsOrg(org)
+                      setMode("projects")
+                    }}
+                    className="text-xs font-semibold text-secondary hover:opacity-70"
+                  >
+                    {t.projects}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setSelected(org)
                       setMode("edit")
                     }}
@@ -161,6 +195,16 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirming !== null}
+        title={t.confirmDeleteTitle}
+        message={t.orgConfirmDelete}
+        confirmLabel={t.orgDelete}
+        cancelLabel={t.orgCancel}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirming(null)}
+      />
     </div>
   )
 }
