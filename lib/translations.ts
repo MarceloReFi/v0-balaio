@@ -215,6 +215,7 @@ export const translations = {
     selectOrganization: "Organization (optional)",
     selectProject: "Project (optional)",
     optionNone: "None",
+    viewProfile: "View",
   },
   "pt-BR": {
     // Header
@@ -429,6 +430,7 @@ export const translations = {
     selectOrganization: "Organização (opcional)",
     selectProject: "Projeto (opcional)",
     optionNone: "Nenhuma",
+    viewProfile: "Ver perfil",
   },
 }
 
