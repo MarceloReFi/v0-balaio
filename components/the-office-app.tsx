@@ -147,6 +147,7 @@ export function TheOfficeApp() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
   const [profileOrgId, setProfileOrgId] = useState<string | null>(null)
+  const [detailProjectId, setDetailProjectId] = useState<string | null>(null)
   const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({})
   const [tasks, setTasks] = useState<Task[]>([])
   const { isVerified } = useGoodID(account)
@@ -1185,7 +1186,7 @@ export function TheOfficeApp() {
         {account && currentPage === "stats" && <StatsPage language={language} />}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
-            <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} />
+            <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} initialProjectId={detailProjectId} />
           </div>
         )}
       </main>
@@ -1246,6 +1247,7 @@ export function TheOfficeApp() {
         onUpdateDeadline={updateTaskDeadline}
         language={language}
         onOpenOrganizationProfile={(orgId) => { setProfileOrgId(orgId); setCurrentPage("organizations"); setShowTaskModal(false) }}
+        onOpenProject={(projectId) => { setDetailProjectId(projectId); setCurrentPage("organizations"); setShowTaskModal(false) }}
       />
 
       <Toast message={toastMessage} />
