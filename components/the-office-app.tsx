@@ -95,6 +95,8 @@ function mapDatabaseRowToTask(row: any, mySlot: Task["mySlot"], claims?: TaskCla
     pixPaymentConfirmed: row.pix_payment_confirmed || false,
     pixPaymentConfirmedAt: row.pix_payment_confirmed_at ? new Date(row.pix_payment_confirmed_at) : undefined,
     claims: claims || undefined,
+    organizationId: row.organization_id ?? null,
+    projectId: row.project_id ?? null,
   }
 }
 
