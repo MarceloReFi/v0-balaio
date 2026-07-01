@@ -12,6 +12,7 @@ import { SectionLabel, Card } from "./org-ui"
 import {
   getOrganizationsByWallet,
   getPublicOrganizations,
+  getOrganization,
   createOrganization,
   updateOrganization,
   deleteOrganization,
@@ -20,11 +21,12 @@ import {
 interface OrganizationsViewProps {
   account: string
   language: Language
+  initialProfileOrgId?: string | null
 }
 
 type Mode = "list" | "create" | "edit" | "projects" | "profile" | "dashboard"
 
-export function OrganizationsView({ account, language }: OrganizationsViewProps) {
+export function OrganizationsView({ account, language, initialProfileOrgId }: OrganizationsViewProps) {
   const t = useTranslations(language)
 
   const [orgs, setOrgs] = useState<Organization[]>([])
@@ -56,6 +58,15 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (!initialProfileOrgId) return
+    let active = true
+    getOrganization(initialProfileOrgId)
+      .then((org) => { if (active && org) { setProfileOrg(org); setMode("profile") } })
+      .catch(console.error)
+    return () => { active = false }
+  }, [initialProfileOrgId])
 
   const handleCreate = async (values: OrgFormValues) => {
     setSubmitting(true)
