@@ -33,6 +33,7 @@ import { OrganizationsView } from "@/components/organizations/organizations-view
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { getOrganizationsByWallet } from "@/lib/organizations"
+import { taskStatusLabel } from "@/lib/task-status"
 import { isMiniPay } from "@/lib/minipay"
 import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
@@ -77,7 +78,7 @@ function mapDatabaseRowToTask(row: any, mySlot: Task["mySlot"], claims?: TaskCla
     tokenAddress: row.token_address || undefined,
     mySlot,
     visibility: (row.visibility || "public") as Task["visibility"],
-    status: row.status === 0 ? "open" : row.status === 1 ? "claimed" : row.status === 2 ? "submitted" : "completed",
+    status: taskStatusLabel(row.status),
     category: row.category || undefined,
     complexity: row.complexity || undefined,
     validationMethod: row.validation_method || undefined,

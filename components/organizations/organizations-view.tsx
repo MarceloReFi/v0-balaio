@@ -7,6 +7,7 @@ import { OrganizationForm, type OrgFormValues } from "./organization-form"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ProjectsView } from "./projects-view"
 import { OrganizationProfile } from "./organization-profile"
+import { OrganizationDashboard } from "./organization-dashboard"
 import { getOrganizationsByWallet, createOrganization, updateOrganization, deleteOrganization } from "@/lib/organizations"
 
 interface OrganizationsViewProps {
@@ -14,7 +15,7 @@ interface OrganizationsViewProps {
   language: Language
 }
 
-type Mode = "list" | "create" | "edit" | "projects" | "profile"
+type Mode = "list" | "create" | "edit" | "projects" | "profile" | "dashboard"
 
 export function OrganizationsView({ account, language }: OrganizationsViewProps) {
   const t = useTranslations(language)
@@ -27,6 +28,7 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
   const [confirming, setConfirming] = useState<Organization | null>(null)
   const [projectsOrg, setProjectsOrg] = useState<Organization | null>(null)
   const [profileOrg, setProfileOrg] = useState<Organization | null>(null)
+  const [dashboardOrg, setDashboardOrg] = useState<Organization | null>(null)
 
   const refresh = useCallback(async () => {
     if (!account) return
@@ -145,6 +147,19 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
     )
   }
 
+  if (mode === "dashboard" && dashboardOrg) {
+    return (
+      <OrganizationDashboard
+        organization={dashboardOrg}
+        language={language}
+        onBack={() => {
+          setMode("list")
+          setDashboardOrg(null)
+        }}
+      />
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
@@ -168,12 +183,19 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
             const isOwner = org.ownerAddress.toLowerCase() === account.toLowerCase()
             return (
               <div key={org.id} className="bg-surface-container-low rounded-lg p-4 flex items-center justify-between">
-                <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDashboardOrg(org)
+                    setMode("dashboard")
+                  }}
+                  className="text-left"
+                >
                   <p className="font-semibold text-on-surface">{org.name}</p>
                   <p className="text-xs text-on-surface-variant">
                     {[org.nature, org.region].filter(Boolean).join(" · ")}
                   </p>
-                </div>
+                </button>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
