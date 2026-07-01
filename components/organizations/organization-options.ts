@@ -1,0 +1,38 @@
+export interface SocialField {
+  key: string
+  label: string
+  placeholder: string
+}
+
+export const NATURE_OPTIONS = [
+  "Coletivo informal",
+  "Associação",
+  "Cooperativa",
+  "ONG/OSC",
+  "Empresa",
+  "Autarquia",
+  "Órgão Público",
+  "Outro",
+] as const
+
+export const NICHE_OPTIONS = [
+  "Sociedade",
+  "Finanças",
+  "Educação",
+  "Meio ambiente",
+  "Impacto social",
+  "Deep Tech",
+  "Tecnologias Emergentes",
+  "Transição Energética",
+  "Cultura",
+  "Esporte",
+  "Saúde",
+  "Outro",
+] as const
+
+export const SOCIAL_FIELDS: SocialField[] = [
+  { key: "website", label: "Website", placeholder: "https://..." },
+  { key: "instagram", label: "Instagram", placeholder: "@handle" },
+  { key: "x", label: "X", placeholder: "@handle" },
+  { key: "telegram", label: "Telegram", placeholder: "@handle or t.me/..." },
+]
