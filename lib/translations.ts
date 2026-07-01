@@ -230,6 +230,7 @@ export const translations = {
     taskOrganization: "Organization",
     taskProject: "Project",
     projectTasks: "Tasks",
+    viewProject: "View",
   },
   "pt-BR": {
     // Header
@@ -459,6 +460,7 @@ export const translations = {
     taskOrganization: "Organização",
     taskProject: "Projeto",
     projectTasks: "Tarefas",
+    viewProject: "Ver",
   },
 }
 

@@ -36,3 +36,14 @@ export const SOCIAL_FIELDS: SocialField[] = [
   { key: "x", label: "X", placeholder: "@handle" },
   { key: "telegram", label: "Telegram", placeholder: "@handle or t.me/..." },
 ]
+
+export function socialHref(key: string, value: string): string {
+  const raw = value.trim()
+  const handle = raw.replace(/^@/, "")
+  switch (key) {
+    case "instagram": return `https://instagram.com/${handle}`
+    case "x": return `https://x.com/${handle}`
+    case "telegram": return `https://t.me/${handle}`
+    default: return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+  }
+}

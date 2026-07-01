@@ -5,6 +5,7 @@ import { useTranslations, type Language } from "@/lib/translations"
 import type { Project } from "@/lib/types"
 import { listTasksByProject, type ProjectTaskSummary } from "@/lib/organizations"
 import { ScreenHeader, SectionLabel, Card, StatusChip } from "./org-ui"
+import { useOrgNav } from "./org-nav-context"
 
 interface ProjectDetailProps {
   project: Project
@@ -17,6 +18,7 @@ export function ProjectDetail({ project, language, onBack }: ProjectDetailProps)
 
   const [tasks, setTasks] = useState<ProjectTaskSummary[]>([])
   const [loading, setLoading] = useState(false)
+  const { openTask } = useOrgNav()
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -68,7 +70,7 @@ export function ProjectDetail({ project, language, onBack }: ProjectDetailProps)
           ) : (
             <div className="flex flex-col gap-3">
               {tasks.map((task) => (
-                <Card key={task.id} className="flex items-center justify-between">
+                <Card key={task.id} onClick={openTask ? () => openTask(task.id) : undefined} className="flex items-center justify-between">
                   <p className="text-sm text-on-surface">{task.title}</p>
                   <StatusChip status={task.status} language={language} />
                 </Card>

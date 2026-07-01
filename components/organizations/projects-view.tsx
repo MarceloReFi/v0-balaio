@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization, Project } from "@/lib/types"
 import { ProjectForm, type ProjectFormValues } from "./project-form"
+import { ProjectDetail } from "./project-detail"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ScreenHeader, SectionLabel, Card } from "./org-ui"
 import { listProjectsByOrganization, createProject, updateProject, deleteProject } from "@/lib/organizations"
@@ -25,6 +26,7 @@ export function ProjectsView({ organization, account, language, onBack }: Projec
   const [submitting, setSubmitting] = useState(false)
   const [mode, setMode] = useState<Mode>("list")
   const [selected, setSelected] = useState<Project | null>(null)
+  const [viewing, setViewing] = useState<Project | null>(null)
   const [confirming, setConfirming] = useState<Project | null>(null)
 
   const refresh = useCallback(async () => {
@@ -88,6 +90,8 @@ export function ProjectsView({ organization, account, language, onBack }: Projec
     setSelected(null)
   }
 
+  if (viewing) return <ProjectDetail project={viewing} language={language} onBack={() => setViewing(null)} />
+
   if (mode === "create") {
     return (
       <div>
@@ -142,6 +146,13 @@ export function ProjectsView({ organization, account, language, onBack }: Projec
             <Card key={project.id} className="flex items-center justify-between">
               <p className="font-semibold text-on-surface">{project.title}</p>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewing(project)}
+                  className="text-xs font-semibold text-secondary hover:opacity-70"
+                >
+                  {t.viewProject}
+                </button>
                 <button
                   type="button"
                   onClick={() => {
