@@ -197,6 +197,24 @@ export const translations = {
     orgDelete: "Delete",
     orgConfirmDelete: "Delete this organization? This can't be undone.",
     orgNameRequired: "Name is required.",
+
+    // Projects
+    projects: "Projects",
+    newProject: "New Project",
+    createProjectTitle: "Create Project",
+    editProjectTitle: "Edit Project",
+    noProjects: "No projects yet.",
+    projectTitle: "Title",
+    projectDescription: "Description",
+    projectGoals: "Goals",
+    projectWebsite: "Website",
+    projectTitleRequired: "Title is required.",
+    projectConfirmDelete: "Delete this project? This can't be undone.",
+    // Confirm dialog + task-org selector
+    confirmDeleteTitle: "Are you sure?",
+    selectOrganization: "Organization (optional)",
+    selectProject: "Project (optional)",
+    optionNone: "None",
   },
   "pt-BR": {
     // Header
@@ -393,6 +411,24 @@ export const translations = {
     orgDelete: "Excluir",
     orgConfirmDelete: "Excluir esta organização? Esta ação não pode ser desfeita.",
     orgNameRequired: "O nome é obrigatório.",
+
+    // Projects
+    projects: "Projetos",
+    newProject: "Novo Projeto",
+    createProjectTitle: "Criar Projeto",
+    editProjectTitle: "Editar Projeto",
+    noProjects: "Nenhum projeto ainda.",
+    projectTitle: "Título",
+    projectDescription: "Descrição",
+    projectGoals: "Objetivos",
+    projectWebsite: "Website",
+    projectTitleRequired: "O título é obrigatório.",
+    projectConfirmDelete: "Excluir este projeto? Esta ação não pode ser desfeita.",
+    // Confirm dialog + task-org selector
+    confirmDeleteTitle: "Tem certeza?",
+    selectOrganization: "Organização (opcional)",
+    selectProject: "Projeto (opcional)",
+    optionNone: "Nenhuma",
   },
 }
 
