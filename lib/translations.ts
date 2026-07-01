@@ -222,6 +222,14 @@ export const translations = {
     statusClaimed: "Claimed",
     statusSubmitted: "Submitted",
     statusCompleted: "Approved",
+    orgVisibility: "Visibility",
+    orgPublic: "Public",
+    orgPrivate: "Private",
+    orgPublicHint: "Public organizations are listed in the Orgs tab for everyone.",
+    publicOrganizations: "Public Organizations",
+    taskOrganization: "Organization",
+    taskProject: "Project",
+    projectTasks: "Tasks",
   },
   "pt-BR": {
     // Header
@@ -443,6 +451,14 @@ export const translations = {
     statusClaimed: "Reivindicada",
     statusSubmitted: "Enviada",
     statusCompleted: "Aprovada",
+    orgVisibility: "Visibilidade",
+    orgPublic: "Pública",
+    orgPrivate: "Privada",
+    orgPublicHint: "Organizações públicas ficam listadas na aba Orgs para todos.",
+    publicOrganizations: "Organizações Públicas",
+    taskOrganization: "Organização",
+    taskProject: "Projeto",
+    projectTasks: "Tarefas",
   },
 }
 
