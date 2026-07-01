@@ -14,6 +14,7 @@ export interface OrgFormValues {
   region: string
   contactEmail: string
   socialLinks: Record<string, string>
+  isPublic: boolean
 }
 
 interface OrganizationFormProps {
@@ -39,6 +40,7 @@ export function OrganizationForm({ initialValue, submitting, language, onSubmit,
   const [region, setRegion] = useState(initialValue?.region ?? "")
   const [contactEmail, setContactEmail] = useState(initialValue?.contactEmail ?? "")
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(initialValue?.socialLinks ?? {})
+  const [isPublic, setIsPublic] = useState(initialValue?.isPublic ?? false)
 
   const toggleNiche = (niche: string) => {
     setNiches((prev) => (prev.includes(niche) ? prev.filter((n) => n !== niche) : [...prev, niche]))
@@ -49,7 +51,7 @@ export function OrganizationForm({ initialValue, submitting, language, onSubmit,
   }
 
   const handleSubmit = () => {
-    onSubmit({ name, description, logoUrl, nature, niches, region, contactEmail, socialLinks })
+    onSubmit({ name, description, logoUrl, nature, niches, region, contactEmail, socialLinks, isPublic })
   }
 
   const nameEmpty = name.trim().length === 0
@@ -140,6 +142,35 @@ export function OrganizationForm({ initialValue, submitting, language, onSubmit,
             </div>
           ))}
         </div>
+      </div>
+
+      <div>
+        <label className={labelClass}>{t.orgVisibility}</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setIsPublic(false)}
+            className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
+              !isPublic
+                ? "bg-secondary text-on-secondary"
+                : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
+            }`}
+          >
+            {t.orgPrivate}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPublic(true)}
+            className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
+              isPublic
+                ? "bg-secondary text-on-secondary"
+                : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
+            }`}
+          >
+            {t.orgPublic}
+          </button>
+        </div>
+        <p className="text-xs text-on-surface-variant mt-2">{t.orgPublicHint}</p>
       </div>
 
       <div className="flex items-center gap-3 pt-2">

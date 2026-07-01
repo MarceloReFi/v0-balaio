@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ArrowLeft } from "lucide-react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization, Project } from "@/lib/types"
 import { ProjectForm, type ProjectFormValues } from "./project-form"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { ScreenHeader, SectionLabel, Card } from "./org-ui"
 import { listProjectsByOrganization, createProject, updateProject, deleteProject } from "@/lib/organizations"
 
 interface ProjectsViewProps {
@@ -114,24 +114,22 @@ export function ProjectsView({ organization, account, language, onBack }: Projec
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:opacity-70 mb-4"
-      >
-        <ArrowLeft size={16} />
-        {organization.name}
-      </button>
+      <ScreenHeader
+        title={organization.name}
+        onBack={onBack}
+        right={
+          <button
+            type="button"
+            onClick={() => setMode("create")}
+            className="bg-secondary text-on-secondary px-4 py-2 font-semibold rounded-lg hover:opacity-90 transition-opacity"
+          >
+            {t.newProject}
+          </button>
+        }
+      />
 
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="font-display text-2xl text-on-surface">{t.projects}</h2>
-        <button
-          type="button"
-          onClick={() => setMode("create")}
-          className="bg-secondary text-on-secondary px-4 py-2 font-semibold rounded-lg hover:opacity-90 transition-opacity"
-        >
-          {t.newProject}
-        </button>
+      <div className="mt-5 mb-3">
+        <SectionLabel>{t.projects}</SectionLabel>
       </div>
 
       {loading ? (
@@ -141,7 +139,7 @@ export function ProjectsView({ organization, account, language, onBack }: Projec
       ) : (
         <div className="flex flex-col gap-3">
           {projects.map((project) => (
-            <div key={project.id} className="bg-surface-container-low rounded-lg p-4 flex items-center justify-between">
+            <Card key={project.id} className="flex items-center justify-between">
               <p className="font-semibold text-on-surface">{project.title}</p>
               <div className="flex items-center gap-2">
                 <button
@@ -162,7 +160,7 @@ export function ProjectsView({ organization, account, language, onBack }: Projec
                   {t.orgDelete}
                 </button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
