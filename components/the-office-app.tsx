@@ -275,6 +275,8 @@ export function TheOfficeApp() {
           pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
           pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
           contractAddress: usedContract.target as string,
+          organizationId: metadata?.organization_id ?? null,
+          projectId: metadata?.project_id ?? null,
         })
       }
 
@@ -535,6 +537,8 @@ export function TheOfficeApp() {
           pixPaymentConfirmed: metadata?.pix_payment_confirmed || false,
           pixPaymentConfirmedAt: metadata?.pix_payment_confirmed_at ? new Date(metadata.pix_payment_confirmed_at) : undefined,
           contractAddress: usedContract.target as string,
+          organizationId: metadata?.organization_id ?? null,
+          projectId: metadata?.project_id ?? null,
         }
       } catch (error) {
         console.error("Error getting task:", error)
@@ -1179,7 +1183,11 @@ export function TheOfficeApp() {
         )}
         {account && currentPage === "blog" && <BlogPage language={language} />}
         {account && currentPage === "stats" && <StatsPage language={language} />}
-        {account && currentPage === "organizations" && <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} />}
+        {account && currentPage === "organizations" && (
+          <div className="max-w-3xl mx-auto px-[22px] py-5">
+            <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} />
+          </div>
+        )}
       </main>
 
       {account && (
