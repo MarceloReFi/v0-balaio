@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client"
 import type { Organization, OrganizationMember, OrganizationRole, Project } from "@/lib/types"
+import { taskStatusLabel, type TaskStatusLabel } from "@/lib/task-status"
 
 function normalizeAddress(address: string): string {
   return address.trim().toLowerCase()
@@ -272,4 +273,21 @@ export async function deleteProject(id: string): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase.from("projects").delete().eq("id", id)
   if (error) throw error
+}
+
+export interface ProjectTaskSummary {
+  id: string
+  title: string
+  status: TaskStatusLabel
+}
+
+export async function listTasksByProject(projectId: string): Promise<ProjectTaskSummary[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase.from("tasks").select("id, title, status").eq("project_id", projectId)
+  if (error) throw error
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    title: row.title || row.id,
+    status: taskStatusLabel(row.status),
+  }))
 }
