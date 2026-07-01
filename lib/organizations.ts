@@ -18,6 +18,7 @@ function rowToOrganization(row: any): Organization {
     region: row.region ?? null,
     contactEmail: row.contact_email ?? null,
     socialLinks: row.social_links ?? {},
+    isPublic: row.is_public ?? false,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   }
@@ -56,6 +57,7 @@ export async function createOrganization(input: {
   region?: string
   contactEmail?: string
   socialLinks?: Record<string, string>
+  isPublic?: boolean
 }): Promise<Organization> {
   const supabase = createClient()
   const ownerAddress = normalizeAddress(input.ownerAddress)
@@ -72,6 +74,7 @@ export async function createOrganization(input: {
       region: input.region ?? null,
       contact_email: input.contactEmail ?? null,
       social_links: input.socialLinks ?? {},
+      is_public: input.isPublic ?? false,
     })
     .select()
     .single()
@@ -122,6 +125,7 @@ export async function updateOrganization(
     region: string | null
     contactEmail: string | null
     socialLinks: Record<string, string>
+    isPublic: boolean
   }>
 ): Promise<Organization> {
   const supabase = createClient()
@@ -135,6 +139,7 @@ export async function updateOrganization(
   if (patch.region !== undefined) updates.region = patch.region
   if (patch.contactEmail !== undefined) updates.contact_email = patch.contactEmail
   if (patch.socialLinks !== undefined) updates.social_links = patch.socialLinks
+  if (patch.isPublic !== undefined) updates.is_public = patch.isPublic
 
   const { data, error } = await supabase.from("organizations").update(updates).eq("id", id).select().single()
 
@@ -146,6 +151,13 @@ export async function deleteOrganization(id: string): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase.from("organizations").delete().eq("id", id)
   if (error) throw error
+}
+
+export async function getPublicOrganizations(): Promise<Organization[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase.from("organizations").select().eq("is_public", true).order("name")
+  if (error) throw error
+  return (data ?? []).map(rowToOrganization)
 }
 
 export async function getMembership(
