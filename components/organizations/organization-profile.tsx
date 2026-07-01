@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization, Project } from "@/lib/types"
 import { listProjectsByOrganization } from "@/lib/organizations"
-import { SOCIAL_FIELDS } from "./organization-options"
+import { SOCIAL_FIELDS, socialHref } from "./organization-options"
 import { SectionLabel, Chip, Card } from "./org-ui"
 import { ProjectDetail } from "./project-detail"
 
@@ -107,12 +107,12 @@ export function OrganizationProfile({ organization, language, onBack }: Organiza
               {socials.map((field) => (
                 <a
                   key={field.key}
-                  href={organization.socialLinks[field.key]}
+                  href={socialHref(field.key, organization.socialLinks[field.key])}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-secondary hover:opacity-70"
                 >
-                  {field.label}
+                  {organization.socialLinks[field.key]}
                 </a>
               ))}
             </div>
