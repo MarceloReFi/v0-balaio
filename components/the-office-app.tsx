@@ -30,6 +30,7 @@ import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { AgentsPage } from "@/components/pages/agents-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
 import { OrganizationsView } from "@/components/organizations/organizations-view"
+import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { getOrganizationsByWallet } from "@/lib/organizations"
@@ -1186,7 +1187,9 @@ export function TheOfficeApp() {
         {account && currentPage === "stats" && <StatsPage language={language} />}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
-            <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} initialProjectId={detailProjectId} />
+            <OrgNavProvider openTask={async (id) => { const task = await getTask(id); if (task) openTaskModal(task) }}>
+              <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} initialProjectId={detailProjectId} />
+            </OrgNavProvider>
           </div>
         )}
       </main>
