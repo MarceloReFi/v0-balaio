@@ -146,6 +146,7 @@ export function TheOfficeApp() {
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [loading, setLoading] = useState(false)
+  const [profileOrgId, setProfileOrgId] = useState<string | null>(null)
   const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({})
   const [tasks, setTasks] = useState<Task[]>([])
   const { isVerified } = useGoodID(account)
@@ -1178,7 +1179,7 @@ export function TheOfficeApp() {
         )}
         {account && currentPage === "blog" && <BlogPage language={language} />}
         {account && currentPage === "stats" && <StatsPage language={language} />}
-        {account && currentPage === "organizations" && <OrganizationsView account={account} language={language} />}
+        {account && currentPage === "organizations" && <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} />}
       </main>
 
       {account && (
@@ -1236,6 +1237,7 @@ export function TheOfficeApp() {
         onClaimReward={(id) => claimReward(id, selectedTask)}
         onUpdateDeadline={updateTaskDeadline}
         language={language}
+        onOpenOrganizationProfile={(orgId) => { setProfileOrgId(orgId); setCurrentPage("organizations"); setShowTaskModal(false) }}
       />
 
       <Toast message={toastMessage} />
