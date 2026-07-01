@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ChevronDown, Calendar, Plus, X } from "lucide-react"
 import { getTokensForChain, type TokenConfig, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
 import { BottomSheet } from "@/components/ui/bottom-sheet"
-import type { Task } from "@/lib/types"
+import type { Task, Organization, Project } from "@/lib/types"
+import { listProjectsByOrganization } from "@/lib/organizations"
 
 interface CreateTaskModalProps {
   chainId: number
@@ -24,11 +25,14 @@ interface CreateTaskModalProps {
     deadline: Date | null,
     tags: string[],
     visibility: Task["visibility"],
+    organizationId: string | null,
+    projectId: string | null,
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
   language: Language
   taskStatuses: Record<string, "idle" | "pending" | "success" | "error">
+  organizations: Organization[]
 }
 
 export function CreateTaskModal({
@@ -40,6 +44,7 @@ export function CreateTaskModal({
   tokenBalances,
   language,
   taskStatuses,
+  organizations,
 }: CreateTaskModalProps) {
   const t = useTranslations(language)
   const [taskIds, setTaskIds] = useState<string[]>([""])
@@ -58,6 +63,20 @@ export function CreateTaskModal({
   const [deadline, setDeadline] = useState<string>("")
   const [tagsInput, setTagsInput] = useState("")
   const [visibility, setVisibility] = useState<NonNullable<Task["visibility"]>>("public")
+  const [selectedOrgId, setSelectedOrgId] = useState("")
+  const [orgProjects, setOrgProjects] = useState<Project[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState("")
+
+  useEffect(() => {
+    if (!selectedOrgId) {
+      setOrgProjects([])
+      return
+    }
+    setSelectedProjectId("")
+    listProjectsByOrganization(selectedOrgId)
+      .then(setOrgProjects)
+      .catch((error) => console.error(error))
+  }, [selectedOrgId])
 
   if (!open) return null
 
@@ -83,6 +102,8 @@ export function CreateTaskModal({
       parsedDeadline,
       parsedTags,
       visibility,
+      selectedOrgId || null,
+      selectedProjectId || null,
     )
   }
 
@@ -247,6 +268,43 @@ export function CreateTaskModal({
                 : (language === "en" ? "Only people with the task ID can access" : "Apenas pessoas com o ID da tarefa podem acessar")}
             </p>
           </div>
+
+          {/* Organization + Project (optional) */}
+          {organizations.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.selectOrganization}</label>
+              <select
+                value={selectedOrgId}
+                onChange={(e) => setSelectedOrgId(e.target.value)}
+                className="w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none"
+              >
+                <option value="">{t.optionNone}</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+
+              {selectedOrgId && (
+                <div className="mt-3">
+                  <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.selectProject}</label>
+                  <select
+                    value={selectedProjectId}
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none"
+                  >
+                    <option value="">{t.optionNone}</option>
+                    {orgProjects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Category + Complexity side by side */}
           <div className="grid grid-cols-2 gap-3">
