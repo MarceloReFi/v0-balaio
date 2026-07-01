@@ -8,7 +8,14 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ProjectsView } from "./projects-view"
 import { OrganizationProfile } from "./organization-profile"
 import { OrganizationDashboard } from "./organization-dashboard"
-import { getOrganizationsByWallet, createOrganization, updateOrganization, deleteOrganization } from "@/lib/organizations"
+import { SectionLabel, Card } from "./org-ui"
+import {
+  getOrganizationsByWallet,
+  getPublicOrganizations,
+  createOrganization,
+  updateOrganization,
+  deleteOrganization,
+} from "@/lib/organizations"
 
 interface OrganizationsViewProps {
   account: string
@@ -29,6 +36,7 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
   const [projectsOrg, setProjectsOrg] = useState<Organization | null>(null)
   const [profileOrg, setProfileOrg] = useState<Organization | null>(null)
   const [dashboardOrg, setDashboardOrg] = useState<Organization | null>(null)
+  const [publicOrgs, setPublicOrgs] = useState<Organization[]>([])
 
   const refresh = useCallback(async () => {
     if (!account) return
@@ -36,6 +44,8 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
     try {
       const result = await getOrganizationsByWallet(account)
       setOrgs(result)
+      const publicResult = await getPublicOrganizations()
+      setPublicOrgs(publicResult)
     } catch (error) {
       console.error(error)
     } finally {
@@ -173,6 +183,8 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
         </button>
       </div>
 
+      <SectionLabel>{t.myOrganizations}</SectionLabel>
+
       {loading ? (
         <p className="text-sm text-on-surface-variant">{t.loading}</p>
       ) : orgs.length === 0 ? (
@@ -182,7 +194,7 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
           {orgs.map((org) => {
             const isOwner = org.ownerAddress.toLowerCase() === account.toLowerCase()
             return (
-              <div key={org.id} className="bg-surface-container-low rounded-lg p-4 flex items-center justify-between">
+              <Card key={org.id} className="flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => {
@@ -237,11 +249,39 @@ export function OrganizationsView({ account, language }: OrganizationsViewProps)
                     </button>
                   )}
                 </div>
-              </div>
+              </Card>
             )
           })}
         </div>
       )}
+
+      {(() => {
+        const managedIds = new Set(orgs.map((org) => org.id))
+        const filteredPublicOrgs = publicOrgs.filter((org) => !managedIds.has(org.id))
+        if (filteredPublicOrgs.length === 0) return null
+        return (
+          <div className="mt-6">
+            <SectionLabel>{t.publicOrganizations}</SectionLabel>
+            <div className="flex flex-col gap-3">
+              {filteredPublicOrgs.map((org) => (
+                <Card
+                  key={org.id}
+                  onClick={() => {
+                    setProfileOrg(org)
+                    setMode("profile")
+                  }}
+                  className="flex items-center justify-between"
+                >
+                  <p className="font-semibold text-on-surface">{org.name}</p>
+                  <p className="text-xs text-on-surface-variant">
+                    {[org.nature, org.region].filter(Boolean).join(" · ")}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
 
       <ConfirmDialog
         open={confirming !== null}
