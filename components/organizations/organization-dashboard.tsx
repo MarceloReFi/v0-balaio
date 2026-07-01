@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ArrowLeft } from "lucide-react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization, Project } from "@/lib/types"
 import { listProjectsByOrganization, listTasksByProject, type ProjectTaskSummary } from "@/lib/organizations"
+import { ScreenHeader, SectionLabel, Card, StatusChip } from "./org-ui"
+import { ProjectDetail } from "./project-detail"
 
 interface OrganizationDashboardProps {
   organization: Organization
@@ -14,17 +15,10 @@ interface OrganizationDashboardProps {
 
 export function OrganizationDashboard({ organization, language, onBack }: OrganizationDashboardProps) {
   const t = useTranslations(language)
-
   const [projects, setProjects] = useState<Project[]>([])
   const [tasksByProject, setTasksByProject] = useState<Record<string, ProjectTaskSummary[]>>({})
   const [loading, setLoading] = useState(false)
-
-  const STATUS_LABEL: Record<ProjectTaskSummary["status"], string> = {
-    open: t.statusOpen,
-    claimed: t.statusClaimed,
-    submitted: t.statusSubmitted,
-    completed: t.statusCompleted,
-  }
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -44,49 +38,50 @@ export function OrganizationDashboard({ organization, language, onBack }: Organi
     refresh()
   }, [refresh])
 
+  if (selectedProject) {
+    return <ProjectDetail project={selectedProject} language={language} onBack={() => setSelectedProject(null)} />
+  }
+
   return (
     <div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:opacity-70 mb-4"
-      >
-        <ArrowLeft size={16} />
-        {organization.name}
-      </button>
-
-      <h2 className="font-display text-2xl text-on-surface mb-5">{t.orgDashboard}</h2>
-
-      {loading ? (
-        <p className="text-sm text-on-surface-variant">{t.loading}</p>
-      ) : projects.length === 0 ? (
-        <p className="text-sm text-on-surface-variant">{t.noProjects}</p>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {projects.map((project) => {
-            const tasks = tasksByProject[project.id] ?? []
-            return (
-              <div key={project.id} className="bg-surface-container-low rounded-lg p-4">
-                <p className="font-semibold text-on-surface mb-2">{project.title}</p>
-                {tasks.length === 0 ? (
-                  <p className="text-sm text-on-surface-variant">{t.orgDashboardNoTasks}</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {tasks.map((task) => (
-                      <div key={task.id} className="flex items-center justify-between">
-                        <p className="text-sm text-on-surface">{task.title}</p>
-                        <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-surface-container-high text-on-surface-variant">
-                          {STATUS_LABEL[task.status]}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      <ScreenHeader title={organization.name} onBack={onBack} />
+      <div className="mt-5">
+        <SectionLabel>{t.orgDashboard}</SectionLabel>
+        {loading ? (
+          <p className="text-sm text-on-surface-variant">{t.loading}</p>
+        ) : projects.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">{t.noProjects}</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {projects.map((project) => {
+              const tasks = tasksByProject[project.id] ?? []
+              return (
+                <Card key={project.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProject(project)}
+                    className="font-semibold text-on-surface mb-2 text-left hover:text-secondary"
+                  >
+                    {project.title}
+                  </button>
+                  {tasks.length === 0 ? (
+                    <p className="text-sm text-on-surface-variant">{t.orgDashboardNoTasks}</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {tasks.map((task) => (
+                        <div key={task.id} className="flex items-center justify-between">
+                          <p className="text-sm text-on-surface">{task.title}</p>
+                          <StatusChip status={task.status} language={language} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
