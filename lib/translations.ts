@@ -216,6 +216,12 @@ export const translations = {
     selectProject: "Project (optional)",
     optionNone: "None",
     viewProfile: "View",
+    orgDashboard: "Dashboard",
+    orgDashboardNoTasks: "No tasks yet.",
+    statusOpen: "Open",
+    statusClaimed: "Claimed",
+    statusSubmitted: "Submitted",
+    statusCompleted: "Approved",
   },
   "pt-BR": {
     // Header
@@ -431,6 +437,12 @@ export const translations = {
     selectProject: "Projeto (opcional)",
     optionNone: "Nenhuma",
     viewProfile: "Ver perfil",
+    orgDashboard: "Painel",
+    orgDashboardNoTasks: "Nenhuma tarefa ainda.",
+    statusOpen: "Aberta",
+    statusClaimed: "Reivindicada",
+    statusSubmitted: "Enviada",
+    statusCompleted: "Aprovada",
   },
 }
 
