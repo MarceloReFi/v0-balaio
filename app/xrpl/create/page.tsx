@@ -9,6 +9,8 @@ import { saveXrplTask, updateEscrowSequence } from "@/lib/xrpl/tasks"
 const inputClass =
   "w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none focus:ring-1 focus:ring-secondary"
 const labelClass = "block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2"
+const primaryButtonClass =
+  "w-full px-4 py-2 text-sm font-semibold rounded-full bg-primary-container text-on-primary hover:opacity-90 transition-opacity disabled:opacity-40"
 
 export default function CreateXrplTaskPage() {
   const router = useRouter()
@@ -62,8 +64,10 @@ export default function CreateXrplTaskPage() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-[22px] py-8">
-      <h1 className="font-display text-2xl text-on-surface mb-6">Create XRPL Task</h1>
+    <main className="max-w-3xl mx-auto px-[22px] py-5">
+      <h1 className="text-2xl font-bold text-on-surface mb-6" style={{ fontFamily: "'Noto Serif', serif" }}>
+        Create XRPL Task
+      </h1>
 
       <div className="flex flex-col gap-4">
         <div>
@@ -94,14 +98,10 @@ export default function CreateXrplTaskPage() {
           />
         </div>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
 
         {!ownerAddress ? (
-          <button
-            type="button"
-            onClick={handleConnect}
-            className="w-full py-3 rounded-lg font-semibold text-sm bg-primary-container text-on-primary hover:opacity-90 transition-opacity"
-          >
+          <button type="button" onClick={handleConnect} className={primaryButtonClass}>
             Connect Xaman
           </button>
         ) : (
@@ -109,7 +109,7 @@ export default function CreateXrplTaskPage() {
             type="button"
             onClick={handleSubmit}
             disabled={submitting || !title || !description || !amountXrp}
-            className="w-full py-3 rounded-lg font-semibold text-sm bg-primary-container text-on-primary hover:opacity-90 transition-opacity disabled:opacity-40"
+            className={primaryButtonClass}
           >
             {submitting ? "Creating..." : "Create Task"}
           </button>

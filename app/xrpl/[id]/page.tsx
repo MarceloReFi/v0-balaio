@@ -9,8 +9,11 @@ import { connectXaman, signAndSubmit } from "@/lib/xrpl/xaman"
 const inputClass =
   "w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none focus:ring-1 focus:ring-secondary"
 const labelClass = "block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2"
-const buttonClass =
-  "px-4 py-2.5 rounded-lg font-semibold text-sm bg-primary-container text-on-primary hover:opacity-90 transition-opacity disabled:opacity-40"
+const sectionLabelClass = "text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-1"
+const primaryButtonClass =
+  "px-4 py-2 text-sm font-semibold rounded-full bg-primary-container text-on-primary hover:opacity-90 transition-opacity disabled:opacity-40"
+const secondaryButtonClass =
+  "px-4 py-2 text-sm font-semibold rounded-full bg-secondary text-on-secondary hover:opacity-90 transition-opacity disabled:opacity-40"
 
 function deriveStatus(task: Task): string {
   const claim = task.claims?.[0]
@@ -140,8 +143,8 @@ export default function XrplTaskDetailPage() {
 
   if (!detail) {
     return (
-      <main className="max-w-2xl mx-auto px-[22px] py-8">
-        {error ? <p className="text-sm text-red-500">{error}</p> : <p className="text-sm text-on-surface-variant">Loading...</p>}
+      <main className="max-w-3xl mx-auto px-[22px] py-5">
+        {error ? <p className="text-xs text-red-500">{error}</p> : <p className="text-sm text-on-surface-variant">Loading...</p>}
       </main>
     )
   }
@@ -152,44 +155,67 @@ export default function XrplTaskDetailPage() {
   const pendingClaims = task.claims?.filter((c) => c.submittedAt && !c.approvedAt) ?? []
 
   return (
-    <main className="max-w-2xl mx-auto px-[22px] py-8">
-      <h1 className="font-display text-2xl text-on-surface mb-2">{task.title}</h1>
-      <p className="text-sm text-on-surface-variant mb-4">{task.description}</p>
+    <main className="max-w-3xl mx-auto px-[22px] py-5">
+      <h1 className="text-2xl font-bold text-on-surface mb-2" style={{ fontFamily: "'Noto Serif', serif" }}>
+        {task.title}
+      </h1>
+      <p className="text-xs text-on-surface-variant line-clamp-2 mb-4">{task.description}</p>
 
-      <div className="flex flex-col gap-1 mb-6 text-sm text-on-surface-variant">
-        <p>Amount: {task.reward} XRP</p>
-        <p>Status: {deriveStatus(task)}</p>
-        <p>Creator: {task.creator}</p>
+      <div className="flex flex-col gap-3 mb-6">
+        <div>
+          <p className={sectionLabelClass}>Amount</p>
+          <p className="text-sm text-on-surface">{task.reward} XRP</p>
+        </div>
+        <div>
+          <p className={sectionLabelClass}>Status</p>
+          <p className="text-sm text-on-surface">{deriveStatus(task)}</p>
+        </div>
+        <div>
+          <p className={sectionLabelClass}>Creator</p>
+          <p className="text-sm text-on-surface break-all">{task.creator}</p>
+        </div>
       </div>
 
-      {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
-      {txHash && <p className="text-sm text-on-surface-variant mb-4">Transaction confirmed: {txHash}</p>}
+      {error && <p className="text-xs text-red-500 mb-4">{error}</p>}
+      {txHash && <p className="text-xs text-on-surface-variant mb-4 break-all">Transaction confirmed: {txHash}</p>}
 
       {!address ? (
-        <button type="button" onClick={handleConnect} className={buttonClass}>
+        <button type="button" onClick={handleConnect} className={`w-full ${primaryButtonClass}`}>
           Connect Xaman
         </button>
       ) : isCreator ? (
-        <div className="flex flex-col gap-3">
-          {pendingClaims.length === 0 && <p className="text-sm text-on-surface-variant">No submissions to approve yet.</p>}
+        <div className="flex flex-col">
+          {pendingClaims.length === 0 && (
+            <div className="bg-surface-container-low rounded-2xl p-10 text-center">
+              <p className="text-sm text-on-surface-variant">No submissions to approve yet.</p>
+            </div>
+          )}
           {pendingClaims.map((claim) => (
-            <div key={claim.id} className="flex items-center justify-between px-4 py-3 bg-surface-container-low rounded-lg">
-              <div className="text-sm text-on-surface">
-                <p className="font-semibold">{claim.workerAddress}</p>
-                {claim.submissionLink && <p className="text-on-surface-variant">{claim.submissionLink}</p>}
+            <div
+              key={claim.id}
+              className="flex items-center justify-between gap-3 py-4 border-b border-outline-variant/20"
+            >
+              <div className="text-sm text-on-surface min-w-0">
+                <p className="font-semibold truncate">{claim.workerAddress}</p>
+                {claim.submissionLink && <p className="text-xs text-on-surface-variant truncate">{claim.submissionLink}</p>}
               </div>
-              <button type="button" onClick={() => handleApprove(claim.workerAddress)} disabled={busy} className={buttonClass}>
+              <button
+                type="button"
+                onClick={() => handleApprove(claim.workerAddress)}
+                disabled={busy}
+                className={`${primaryButtonClass} flex-shrink-0`}
+              >
                 Approve
               </button>
             </div>
           ))}
         </div>
       ) : !myClaim ? (
-        <button type="button" onClick={handleClaim} disabled={busy} className={buttonClass}>
+        <button type="button" onClick={handleClaim} disabled={busy} className={`w-full ${primaryButtonClass}`}>
           Claim
         </button>
       ) : myClaim.approvedAt ? (
-        <button type="button" onClick={handleWithdraw} disabled={busy} className={buttonClass}>
+        <button type="button" onClick={handleWithdraw} disabled={busy} className={`w-full ${secondaryButtonClass}`}>
           Withdraw
         </button>
       ) : !myClaim.submittedAt ? (
@@ -203,7 +229,12 @@ export default function XrplTaskDetailPage() {
               className={inputClass}
             />
           </div>
-          <button type="button" onClick={handleSubmitProof} disabled={busy || !proofLink} className={buttonClass}>
+          <button
+            type="button"
+            onClick={handleSubmitProof}
+            disabled={busy || !proofLink}
+            className={`w-full ${secondaryButtonClass}`}
+          >
             Submit
           </button>
         </div>

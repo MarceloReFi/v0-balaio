@@ -15,36 +15,41 @@ export default function XrplTasksPage() {
   }, [])
 
   return (
-    <main className="max-w-2xl mx-auto px-[22px] py-8">
+    <main className="max-w-3xl mx-auto px-[22px] py-5">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl text-on-surface">XRPL Tasks</h1>
+        <h1 className="text-2xl font-bold text-on-surface" style={{ fontFamily: "'Noto Serif', serif" }}>
+          XRPL Tasks
+        </h1>
         <Link
           href="/xrpl/create"
-          className="px-4 py-2 rounded-lg font-semibold text-sm bg-primary-container text-on-primary hover:opacity-90 transition-opacity"
+          className="bg-primary-container text-on-primary px-4 py-2 text-sm font-semibold rounded-full hover:opacity-90 transition-opacity"
         >
           New Task
         </Link>
       </div>
 
-      {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+      {error && <p className="text-xs text-red-500 mb-4">{error}</p>}
 
-      <div className="flex flex-col gap-2">
-        {tasks.map((task) => (
-          <Link
-            key={task.id}
-            href={`/xrpl/${task.id}`}
-            className="flex items-center justify-between px-4 py-3 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors"
-          >
-            <span className="text-sm font-semibold text-on-surface">{task.title}</span>
-            <span className="text-sm text-on-surface-variant">
-              {task.reward} XRP · {task.statusLabel}
-            </span>
-          </Link>
-        ))}
-        {tasks.length === 0 && !error && (
+      {tasks.length === 0 && !error ? (
+        <div className="bg-surface-container-low rounded-2xl p-10 text-center">
           <p className="text-sm text-on-surface-variant">No XRPL tasks yet.</p>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {tasks.map((task) => (
+            <Link
+              key={task.id}
+              href={`/xrpl/${task.id}`}
+              className="flex items-center justify-between gap-3 py-4 border-b border-outline-variant/20 cursor-pointer hover:bg-surface-container-low/50 transition-colors"
+            >
+              <span className="text-sm font-semibold text-on-surface truncate">{task.title}</span>
+              <span className="text-xs text-on-surface-variant flex-shrink-0">
+                {task.reward} XRP · {task.statusLabel}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </main>
   )
 }
