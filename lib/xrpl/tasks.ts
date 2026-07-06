@@ -1,10 +1,22 @@
 import { createClient } from "@/lib/supabase/client"
-import type { Task } from "@/lib/types"
+import type { Task, TaskClaim } from "@/lib/types"
 import { taskStatusLabel, type TaskStatusLabel } from "@/lib/task-status"
 
 const XRPL_CHAIN_ID = 0
 
-function rowToTask(row: any): Task {
+function rowToClaim(row: any): TaskClaim {
+  return {
+    id: row.id,
+    taskId: row.task_id,
+    workerAddress: row.worker_address,
+    claimedAt: new Date(row.claimed_at),
+    submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
+    approvedAt: row.approved_at ? new Date(row.approved_at) : null,
+    submissionLink: row.submission_link ?? null,
+  }
+}
+
+function rowToTask(row: any, claims: TaskClaim[]): Task {
   return {
     id: row.id,
     title: row.title,
@@ -17,6 +29,7 @@ function rowToTask(row: any): Task {
     creator: row.creator_address,
     createdAt: new Date(row.created_at),
     mySlot: null,
+    claims,
   }
 }
 
@@ -115,8 +128,15 @@ export async function getXrplTask(taskId: string): Promise<XrplTaskDetail | null
 
   if (escrowError) throw escrowError
 
+  const { data: claimRows, error: claimsError } = await supabase
+    .from("task_claims")
+    .select("id, task_id, worker_address, claimed_at, submitted_at, approved_at, submission_link")
+    .eq("task_id", taskId)
+
+  if (claimsError) throw claimsError
+
   return {
-    task: rowToTask(taskRow),
+    task: rowToTask(taskRow, (claimRows ?? []).map(rowToClaim)),
     escrow: escrowRow
       ? {
           condition: escrowRow.condition,
@@ -126,4 +146,38 @@ export async function getXrplTask(taskId: string): Promise<XrplTaskDetail | null
         }
       : null,
   }
+}
+
+export async function claimXrplTask(taskId: string, workerAddress: string): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("task_claims")
+    .upsert({ task_id: taskId, worker_address: workerAddress }, { onConflict: "task_id,worker_address" })
+
+  if (error) throw error
+}
+
+export async function submitXrplTask(taskId: string, workerAddress: string, proofLink: string): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("task_claims")
+    .update({ submission_link: proofLink, submitted_at: new Date().toISOString() })
+    .eq("task_id", taskId)
+    .eq("worker_address", workerAddress)
+
+  if (error) throw error
+}
+
+export async function approveXrplTask(taskId: string, workerAddress: string): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("task_claims")
+    .update({ approved_at: new Date().toISOString() })
+    .eq("task_id", taskId)
+    .eq("worker_address", workerAddress)
+
+  if (error) throw error
 }
