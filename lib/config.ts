@@ -13,3 +13,5 @@ export const CELO_CONTRACT_ADDRESS_V1 = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7a
 export const CELO_DEPLOYMENT_BLOCK_V1 = 51778358
 export const CELO_CONTRACT_ADDRESS_V2 = "0xe60aa33E8Dee3Bb1B2218bF025AcB624312D519E"
 export const CELO_DEPLOYMENT_BLOCK_V2 = 67475023
+
+export const XRPL_RPC = "wss://xrplcluster.com"
