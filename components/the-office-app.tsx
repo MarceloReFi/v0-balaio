@@ -29,6 +29,7 @@ import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { AgentsPage } from "@/components/pages/agents-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
+import { XrplTasksPage } from "@/components/pages/xrpl/xrpl-tasks-page"
 import { OrganizationsView } from "@/components/organizations/organizations-view"
 import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
@@ -141,7 +142,7 @@ export function TheOfficeApp() {
   const [account, setAccount] = useState<string>("")
   const [contract, setContract] = useState<ethers.Contract | null>(null)
   const [tokenContracts, setTokenContracts] = useState<Record<string, ethers.Contract | null>>({})
-  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents" | "organizations">("home")
+  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents" | "organizations" | "xrpl">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -1099,12 +1100,16 @@ export function TheOfficeApp() {
                 >
                   <img src="/gnosis-logo.svg" alt="Gnosis" className="h-5 w-auto object-contain" />
                 </button>
-                <a
-                  href="/xrpl"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-surface-container-low text-on-surface-variant hover:opacity-80 transition-colors"
+                <button
+                  onClick={() => setCurrentPage("xrpl")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                    currentPage === "xrpl"
+                      ? "bg-primary-container text-on-primary"
+                      : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
+                  }`}
                 >
                   XRPL
-                </a>
+                </button>
               </div>
             )}
             {account && (
@@ -1142,12 +1147,16 @@ export function TheOfficeApp() {
                 <img src="/gnosis-logo.svg" alt="Gnosis" className="h-4 w-auto object-contain" />
                 Gnosis
               </button>
-              <a
-                href="/xrpl"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-surface-container-low text-on-surface-variant hover:opacity-80 transition-colors"
+              <button
+                onClick={() => setCurrentPage("xrpl")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                  currentPage === "xrpl"
+                    ? "bg-primary-container text-on-primary"
+                    : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
+                }`}
               >
                 XRPL
-              </a>
+              </button>
             </div>
             <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
           </>
@@ -1197,6 +1206,9 @@ export function TheOfficeApp() {
         )}
         {account && currentPage === "blog" && <BlogPage language={language} />}
         {account && currentPage === "stats" && <StatsPage language={language} />}
+        {account && currentPage === "xrpl" && (
+          <XrplTasksPage account={account} language={language} />
+        )}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
             <OrgNavProvider openTask={async (id) => { const task = await getTask(id); if (task) openTaskModal(task) }}>
