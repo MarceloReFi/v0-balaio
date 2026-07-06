@@ -4,7 +4,8 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
-export async function GET(request: Request, { params }: { params: { uuid: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ uuid: string }> }) {
+  const { uuid } = await params
   const ip = getClientIp(request)
   if (!checkRateLimit(`${ip}:xaman-payload-status`, 60, 60 * 1000)) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 })
@@ -16,7 +17,7 @@ export async function GET(request: Request, { params }: { params: { uuid: string
     return NextResponse.json({ error: "Missing Xaman API configuration" }, { status: 500 })
   }
 
-  const xamanResponse = await fetch(`https://xumm.app/api/v1/platform/payload/${params.uuid}`, {
+  const xamanResponse = await fetch(`https://xumm.app/api/v1/platform/payload/${uuid}`, {
     headers: {
       "X-API-Key": apiKey,
       "X-API-Secret": apiSecret,

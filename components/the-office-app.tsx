@@ -1099,6 +1099,12 @@ export function TheOfficeApp() {
                 >
                   <img src="/gnosis-logo.svg" alt="Gnosis" className="h-5 w-auto object-contain" />
                 </button>
+                <a
+                  href="/xrpl"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-surface-container-low text-on-surface-variant hover:opacity-80 transition-colors"
+                >
+                  XRPL
+                </a>
               </div>
             )}
             {account && (
@@ -1136,6 +1142,12 @@ export function TheOfficeApp() {
                 <img src="/gnosis-logo.svg" alt="Gnosis" className="h-4 w-auto object-contain" />
                 Gnosis
               </button>
+              <a
+                href="/xrpl"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-surface-container-low text-on-surface-variant hover:opacity-80 transition-colors"
+              >
+                XRPL
+              </a>
             </div>
             <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
           </>
