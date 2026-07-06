@@ -5,8 +5,13 @@ const RIPPLE_EPOCH_OFFSET_SECONDS = 946684800 // seconds between 1970-01-01 and 
 
 export function generateEscrowPair(): { condition: string; fulfillment: string } {
   const preimage = crypto.randomBytes(32)
-  const condition = crypto.createHash("sha256").update(preimage).digest("hex").toUpperCase()
-  const fulfillment = preimage.toString("hex").toUpperCase()
+  const hash = crypto.createHash("sha256").update(preimage).digest()
+
+  // PREIMAGE-SHA-256 fulfillment: A0 22 80 20 <32 bytes preimage>
+  const fulfillment = ("A0228020" + preimage.toString("hex")).toUpperCase()
+
+  // PREIMAGE-SHA-256 condition: A0 25 80 20 <32 bytes hash> 81 01 20
+  const condition = ("A0258020" + hash.toString("hex") + "810120").toUpperCase()
 
   return { condition, fulfillment }
 }
