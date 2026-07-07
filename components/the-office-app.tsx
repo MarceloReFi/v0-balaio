@@ -591,11 +591,11 @@ export function TheOfficeApp() {
   const openTaskModal = useCallback(async (task: Task) => {
     setSelectedTask(task)
     setShowTaskModal(true)
-    if (account) {
+    if (activeAccount) {
       const fresh = await getTask(task.id)
       if (fresh) setSelectedTask(fresh)
     }
-  }, [account, getTask])
+  }, [activeAccount, getTask])
 
   const searchTask = async (searchQuery: string) => {
     if (!searchQuery || connectionMode === "none") return
@@ -1210,7 +1210,7 @@ export function TheOfficeApp() {
     <div className="min-h-screen bg-surface flex flex-col">
       <header className="sticky top-0 bg-surface px-[22px] py-3 border-b border-outline-variant/20 z-40">
         <div className="flex items-center justify-between">
-          {account && currentPage !== "home" && (
+          {activeAccount && currentPage !== "home" && (
             <button onClick={() => setCurrentPage("home")} className="text-on-surface p-1 hover:opacity-70 mr-2">
               <ArrowLeft size={20} />
             </button>
