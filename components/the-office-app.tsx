@@ -167,6 +167,7 @@ export function TheOfficeApp() {
   const t = useTranslations(language)
   const supabase = createClient()
 
+  const connectionMode = xamanAccount ? "ripple" : account ? "evm" : "none"
 
   const toast = useCallback((msg: string) => {
     setToastMessage(msg)
@@ -439,6 +440,17 @@ export function TheOfficeApp() {
   const connectWallet = () => {
     if (isMiniPay()) return // handled by useMiniPayAutoConnect
     open()
+  }
+
+  const connectRipple = async () => {
+    try {
+      const { connectXaman } = await import("@/lib/xrpl/xaman")
+      const address = await connectXaman()
+      setXamanAccount(address)
+      setCurrentPage("home")
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Failed to connect Xaman")
+    }
   }
 
   const parseContractError = (error: unknown): string => {
@@ -1108,6 +1120,18 @@ export function TheOfficeApp() {
     }
   }, [wagmiConnected, wagmiAddress, account])
 
+  const prevAccountRef = useRef(account)
+  const prevConnectionModeRef = useRef(connectionMode)
+  useEffect(() => {
+    const wasEmpty = !prevAccountRef.current
+    const isFilled = !!account
+    if (wasEmpty && isFilled && prevConnectionModeRef.current !== "evm") {
+      setCurrentPage("home")
+    }
+    prevAccountRef.current = account
+    prevConnectionModeRef.current = connectionMode
+  }, [account, connectionMode])
+
   useEffect(() => {
     if (!wagmiConnected || !wagmiAddress || !signer || contract) return
     try {
@@ -1166,9 +1190,9 @@ export function TheOfficeApp() {
                   <img src="/gnosis-logo.svg" alt="Gnosis" className="h-5 w-auto object-contain" />
                 </button>
                 <button
-                  onClick={() => setCurrentPage("xrpl")}
+                  onClick={() => (connectionMode === "ripple" ? setXamanAccount(null) : connectRipple())}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                    currentPage === "xrpl"
+                    connectionMode === "ripple"
                       ? "bg-primary-container text-on-primary"
                       : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
                   }`}
@@ -1187,7 +1211,7 @@ export function TheOfficeApp() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-16">
-        {!account && currentPage !== "agents" && (
+        {connectionMode === "none" && currentPage !== "agents" && (
           <>
             <div className="flex items-center gap-2 justify-center mb-4">
               <button
@@ -1213,12 +1237,8 @@ export function TheOfficeApp() {
                 Gnosis
               </button>
               <button
-                onClick={() => setCurrentPage("xrpl")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                  currentPage === "xrpl"
-                    ? "bg-primary-container text-on-primary"
-                    : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
-                }`}
+                onClick={connectRipple}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors bg-surface-container-low text-on-surface-variant hover:opacity-80"
               >
                 XRPL
               </button>
@@ -1278,7 +1298,7 @@ export function TheOfficeApp() {
             </OrgNavProvider>
           </div>
         )}
-        {currentPage === "xrpl" && (
+        {connectionMode === "ripple" && (
           <XrplPage
             xamanAccount={xamanAccount}
             onConnect={setXamanAccount}
@@ -1320,10 +1340,10 @@ export function TheOfficeApp() {
       )}
 
       <CreateTaskModal
-        chainId={currentPage === "xrpl" ? 0 : chainId}
+        chainId={connectionMode === "ripple" ? 0 : chainId}
         open={showCreateModal}
         onClose={() => { setShowCreateModal(false); setMultiTaskStatuses({}) }}
-        onCreateTask={currentPage === "xrpl" ? createXrplTask : createTask}
+        onCreateTask={connectionMode === "ripple" ? createXrplTask : createTask}
         loading={loading}
         tokenBalances={tokenBalances}
         language={language}
