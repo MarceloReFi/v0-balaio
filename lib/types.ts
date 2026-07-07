@@ -52,6 +52,7 @@ export interface Task {
   pixPaymentConfirmed?: boolean
   pixPaymentConfirmedAt?: Date | null
   contractAddress?: string
+  network?: "evm" | "ripple"
   organizationId?: string | null
   projectId?: string | null
 }

@@ -29,7 +29,6 @@ import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { AgentsPage } from "@/components/pages/agents-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
-import { XrplPage } from "@/components/pages/xrpl/xrpl-page"
 import { OrganizationsView } from "@/components/organizations/organizations-view"
 import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
@@ -168,6 +167,7 @@ export function TheOfficeApp() {
   const supabase = createClient()
 
   const connectionMode = xamanAccount ? "ripple" : account ? "evm" : "none"
+  const activeAccount = connectionMode === "ripple" ? (xamanAccount ?? "") : account
 
   const toast = useCallback((msg: string) => {
     setToastMessage(msg)
@@ -319,6 +319,24 @@ export function TheOfficeApp() {
       setLoading(false)
     }
   }, [account, supabase, isVerified, toast])
+
+  const loadRippleTasks = useCallback(async () => {
+    try {
+      setLoading(true)
+      const { listXrplTasks, getXrplTask } = await import("@/lib/xrpl/tasks")
+      const summaries = await listXrplTasks()
+      const details = await Promise.all(summaries.map((summary) => getXrplTask(summary.id)))
+      const loadedTasks = details
+        .map((detail) => detail?.task ?? null)
+        .filter((task): task is Task => task !== null)
+      setTasks(loadedTasks)
+    } catch (error) {
+      console.error("Error loading Ripple tasks:", error)
+      toast("Error loading Ripple tasks")
+    } finally {
+      setLoading(false)
+    }
+  }, [toast])
 
   const loadUserActivity = useCallback(async (userAddress: string, currentTasks: Task[]) => {
     if (loadingActivityRef.current) return
@@ -488,6 +506,12 @@ export function TheOfficeApp() {
 
   const getTask = useCallback(
     async (id: string): Promise<Task | null> => {
+      if (connectionMode === "ripple") {
+        const { getXrplTask } = await import("@/lib/xrpl/tasks")
+        const detail = await getXrplTask(id)
+        return detail?.task ?? null
+      }
+
       if (!contract || !account) return null
 
       try {
@@ -561,7 +585,7 @@ export function TheOfficeApp() {
         return null
       }
     },
-    [contract, account, supabase, chainId],
+    [contract, account, supabase, chainId, connectionMode],
   )
 
   const openTaskModal = useCallback(async (task: Task) => {
@@ -574,7 +598,7 @@ export function TheOfficeApp() {
   }, [account, getTask])
 
   const searchTask = async (searchQuery: string) => {
-    if (!searchQuery || !contract) return
+    if (!searchQuery || connectionMode === "none") return
 
     setLoading(true)
     const task = await getTask(searchQuery)
@@ -830,20 +854,25 @@ export function TheOfficeApp() {
   }, [contract, signer])
 
   const claimTask = async (id: string, task?: Task | null) => {
-    const writeContract = getWriteContract(task)
-    if (!writeContract) return
+    const writeContract = connectionMode === "ripple" ? null : getWriteContract(task)
+    if (connectionMode !== "ripple" && !writeContract) return
 
     try {
       setLoading(true)
       toast("Claiming task...")
 
-      const tx = await writeContract.claimTask(id)
-      await tx.wait()
+      if (connectionMode === "ripple") {
+        const { claimXrplTask } = await import("@/lib/xrpl/tasks")
+        await claimXrplTask(id, xamanAccount!)
+      } else {
+        const tx = await writeContract!.claimTask(id)
+        await tx.wait()
 
-      await supabase.from("task_claims").upsert(
-        { task_id: id, worker_address: account.toLowerCase(), claimed_at: new Date().toISOString() },
-        { onConflict: "task_id,worker_address" }
-      )
+        await supabase.from("task_claims").upsert(
+          { task_id: id, worker_address: account.toLowerCase(), claimed_at: new Date().toISOString() },
+          { onConflict: "task_id,worker_address" }
+        )
+      }
 
       toast("Task claimed!")
 
@@ -852,7 +881,7 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
       }
-      if (account) await loadUserActivity(account, tasks)
+      if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -862,20 +891,26 @@ export function TheOfficeApp() {
   }
 
   const submitTask = async (id: string, proof: string, task?: Task | null) => {
-    const writeContract = getWriteContract(task)
-    if (!proof || !writeContract) return
+    if (!proof) return
+    const writeContract = connectionMode === "ripple" ? null : getWriteContract(task)
+    if (connectionMode !== "ripple" && !writeContract) return
 
     try {
       setLoading(true)
       toast("Submitting proof...")
 
-      const tx = await writeContract.submitTask(id, proof)
-      await tx.wait()
+      if (connectionMode === "ripple") {
+        const { submitXrplTask } = await import("@/lib/xrpl/tasks")
+        await submitXrplTask(id, xamanAccount!, proof)
+      } else {
+        const tx = await writeContract!.submitTask(id, proof)
+        await tx.wait()
 
-      await supabase.from("task_claims").upsert(
-        { task_id: id, worker_address: account.toLowerCase(), submitted_at: new Date().toISOString(), submission_link: proof },
-        { onConflict: "task_id,worker_address" }
-      )
+        await supabase.from("task_claims").upsert(
+          { task_id: id, worker_address: account.toLowerCase(), submitted_at: new Date().toISOString(), submission_link: proof },
+          { onConflict: "task_id,worker_address" }
+        )
+      }
 
       toast("Work submitted!")
 
@@ -884,7 +919,7 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
       }
-      if (account) await loadUserActivity(account, tasks)
+      if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -894,6 +929,10 @@ export function TheOfficeApp() {
   }
 
   const approveTaskSubmission = async (id: string, claimant: string, task?: Task | null) => {
+    if (connectionMode === "ripple") {
+      toast(language === "en" ? "Not available yet for Ripple" : "Ainda não disponível para Ripple")
+      return
+    }
     const writeContract = getWriteContract(task)
     if (!writeContract) return
 
@@ -959,6 +998,10 @@ export function TheOfficeApp() {
   }
 
   const cancelTask = async (id: string, task?: Task | null) => {
+    if (connectionMode === "ripple") {
+      toast(language === "en" ? "Not available yet for Ripple" : "Ainda não disponível para Ripple")
+      return
+    }
     const writeContract = getWriteContract(task)
     if (!writeContract) return
     try {
@@ -978,18 +1021,25 @@ export function TheOfficeApp() {
   }
 
   const rejectSubmission = async (id: string, claimant: string, task?: Task | null) => {
-    const writeContract = getWriteContract(task)
-    if (!writeContract) return
+    const writeContract = connectionMode === "ripple" ? null : getWriteContract(task)
+    if (connectionMode !== "ripple" && !writeContract) return
     try {
       setLoading(true)
       toast("Rejecting submission...")
-      const tx = await writeContract.rejectSubmission(id, claimant)
-      await tx.wait()
-      await supabase.from("task_claims")
-        .update({ submitted_at: null, submission_link: null })
-        .match({ task_id: id, worker_address: claimant.toLowerCase() })
+
+      if (connectionMode === "ripple") {
+        const { rejectXrplTask } = await import("@/lib/xrpl/tasks")
+        await rejectXrplTask(id, claimant)
+      } else {
+        const tx = await writeContract!.rejectSubmission(id, claimant)
+        await tx.wait()
+        await supabase.from("task_claims")
+          .update({ submitted_at: null, submission_link: null })
+          .match({ task_id: id, worker_address: claimant.toLowerCase() })
+      }
+
       toast("Submission rejected — worker can resubmit")
-      if (account) await loadUserActivity(account, tasks)
+      if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
@@ -1078,6 +1128,7 @@ export function TheOfficeApp() {
     setCurrentPage("home")
     setTasks([])
     setUserActivity({ created: [], worked: [] })
+    setXamanAccount(null)
     toast("Disconnected")
   }
 
@@ -1091,8 +1142,10 @@ export function TheOfficeApp() {
     .join(" | ") || "0.00"
 
   useEffect(() => {
-    loadTasksFromBlockchain()
-  }, [loadTasksFromBlockchain])
+    if (connectionMode === "evm") {
+      loadTasksFromBlockchain()
+    }
+  }, [connectionMode, loadTasksFromBlockchain])
 
   useEffect(() => {
     if (contract && account) {
@@ -1101,10 +1154,16 @@ export function TheOfficeApp() {
   }, [contract, account, loadTasksFromBlockchain])
 
   useEffect(() => {
-    if (account) {
-      loadUserActivity(account, tasks)
+    if (connectionMode === "ripple") {
+      loadRippleTasks()
     }
-  }, [account, tasks, loadUserActivity])
+  }, [connectionMode, loadRippleTasks])
+
+  useEffect(() => {
+    if (activeAccount) {
+      loadUserActivity(activeAccount, tasks)
+    }
+  }, [activeAccount, tasks, loadUserActivity])
 
   useEffect(() => {
     if (!account) return
@@ -1173,22 +1232,26 @@ export function TheOfficeApp() {
               <Languages size={13} />
               {language === "en" ? "PT" : "EN"}
             </button>
-            {account && (
+            {connectionMode !== "none" && (
               <div className="flex items-center gap-1">
-                <button
-                  onClick={() => switchChain({ chainId: celo.id })}
-                  title="Switch to Celo"
-                  className={`p-1 rounded-full transition-opacity ${chainId === celo.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
-                >
-                  <img src="/celo.png" alt="Celo" className="h-5 w-auto object-contain" />
-                </button>
-                <button
-                  onClick={() => switchChain({ chainId: gnosis.id })}
-                  title="Switch to Gnosis"
-                  className={`p-1 rounded-full transition-opacity ${chainId === gnosis.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
-                >
-                  <img src="/gnosis-logo.svg" alt="Gnosis" className="h-5 w-auto object-contain" />
-                </button>
+                {account && (
+                  <>
+                    <button
+                      onClick={() => switchChain({ chainId: celo.id })}
+                      title="Switch to Celo"
+                      className={`p-1 rounded-full transition-opacity ${chainId === celo.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
+                    >
+                      <img src="/celo.png" alt="Celo" className="h-5 w-auto object-contain" />
+                    </button>
+                    <button
+                      onClick={() => switchChain({ chainId: gnosis.id })}
+                      title="Switch to Gnosis"
+                      className={`p-1 rounded-full transition-opacity ${chainId === gnosis.id ? "opacity-100 ring-2 ring-secondary" : "opacity-40 hover:opacity-70"}`}
+                    >
+                      <img src="/gnosis-logo.svg" alt="Gnosis" className="h-5 w-auto object-contain" />
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => (connectionMode === "ripple" ? setXamanAccount(null) : connectRipple())}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
@@ -1201,7 +1264,7 @@ export function TheOfficeApp() {
                 </button>
               </div>
             )}
-            {account && (
+            {connectionMode !== "none" && (
               <button onClick={handleDisconnect} className="text-on-surface-variant hover:text-on-surface transition-colors">
                 <LogOut size={18} />
               </button>
@@ -1249,25 +1312,25 @@ export function TheOfficeApp() {
         {currentPage === "agents" && (
           <AgentsPage onBack={() => setCurrentPage("home")} language={language} />
         )}
-        {account && currentPage === "home" && (
+        {activeAccount && currentPage === "home" && (
           <HomePage
             onConnect={connectWallet}
             language={language}
             tasks={tasks}
-            account={account}
+            account={activeAccount}
             onViewTask={(task) => openTaskModal(task)}
             onClaimTask={(task) => claimTask(task.id, task)}
             onNavigateToTasks={() => setCurrentPage("tasks")}
             onNavigateToFeatures={() => setCurrentPage("features")}
           />
         )}
-        {account && currentPage === "features" && (
+        {activeAccount && currentPage === "features" && (
           <ExploreFeaturesPage onBack={() => setCurrentPage("home")} language={language} />
         )}
-        {account && currentPage === "tasks" && (
+        {activeAccount && currentPage === "tasks" && (
           <TasksPage
             tasks={tasks}
-            account={account}
+            account={activeAccount}
             searchTask={searchTask}
             loadMyTasks={loadMyTasks}
             onViewTask={openTaskModal}
@@ -1275,9 +1338,9 @@ export function TheOfficeApp() {
             language={language}
           />
         )}
-        {account && currentPage === "profile" && (
+        {activeAccount && currentPage === "profile" && (
           <ProfilePage
-            account={account}
+            account={activeAccount}
             balance={displayBalance}
             tasks={tasks}
             userActivity={userActivity}
@@ -1289,8 +1352,8 @@ export function TheOfficeApp() {
             language={language}
           />
         )}
-        {account && currentPage === "blog" && <BlogPage language={language} />}
-        {account && currentPage === "stats" && <StatsPage language={language} />}
+        {activeAccount && currentPage === "blog" && <BlogPage language={language} />}
+        {activeAccount && currentPage === "stats" && <StatsPage language={language} />}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
             <OrgNavProvider openTask={async (id) => { const task = await getTask(id); if (task) openTaskModal(task) }}>
@@ -1298,17 +1361,9 @@ export function TheOfficeApp() {
             </OrgNavProvider>
           </div>
         )}
-        {connectionMode === "ripple" && (
-          <XrplPage
-            xamanAccount={xamanAccount}
-            onConnect={setXamanAccount}
-            language={language}
-            onCreateTask={() => setShowCreateModal(true)}
-          />
-        )}
       </main>
 
-      {account && (
+      {activeAccount && (
         <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-outline-variant/20 flex z-40" style={{ height: 56 }}>
           {[
             { id: "home" as const, icon: Home, label: t.home },
@@ -1317,7 +1372,7 @@ export function TheOfficeApp() {
             { id: "blog" as const, icon: BookOpen, label: "Blog" },
             { id: "stats" as const, icon: TrendingUp, label: "Stats" },
             { id: "organizations" as const, icon: Building2, label: t.orgsNav },
-          ].map((tab) => {
+          ].filter((tab) => connectionMode !== "ripple" || tab.id !== "organizations").map((tab) => {
             const Icon = tab.icon
             const isActive = currentPage === tab.id
             return (
