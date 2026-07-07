@@ -1288,6 +1288,7 @@ export function TheOfficeApp() {
                       : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
                   }`}
                 >
+                  <img src="/ripple-logo.png" alt="Ripple" className="h-5 w-auto object-contain" />
                   Ripple
                 </button>
               </div>
@@ -1331,6 +1332,7 @@ export function TheOfficeApp() {
                 onClick={connectRipple}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors bg-surface-container-low text-on-surface-variant hover:opacity-80"
               >
+                <img src="/ripple-logo.png" alt="Ripple" className="h-4 w-auto object-contain" />
                 Ripple
               </button>
             </div>
