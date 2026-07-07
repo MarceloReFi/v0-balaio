@@ -3,12 +3,17 @@ import { useState, useEffect } from "react"
 import { RefreshCw, TrendingUp, Users, CheckCircle, ListChecks, Clock, History } from "lucide-react"
 import { ethers } from "ethers"
 import { CONTRACT_ABI } from "@/lib/web3"
+import { createClient } from "@/lib/supabase/client"
 import {
   CELO_CONTRACT_ADDRESS_V1,
   CELO_CONTRACT_ADDRESS_V2,
   CELO_DEPLOYMENT_BLOCK_V1,
   CELO_DEPLOYMENT_BLOCK_V2,
   CELO_RPC,
+  GNOSIS_CONTRACT_ADDRESS,
+  GNOSIS_DEPLOYMENT_BLOCK,
+  GNOSIS_RPC,
+  BLOCKS_PER_DAY,
 } from "@/lib/config"
 
 interface StatsPageProps {
@@ -44,16 +49,91 @@ const INITIAL_PANEL: PanelState = {
 
 const BATCH_SIZE = 50000
 const DEFAULT_DAYS = 60
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+
+// Celo L2 ~1s/block; Gnosis ~5s/block (matches BLOCKS_PER_DAY in lib/config.ts)
+const CELO_BLOCKS_PER_DAY = 86400
+
+const EVM_SOURCES = [
+  { contractAddress: CELO_CONTRACT_ADDRESS_V1, deploymentBlock: CELO_DEPLOYMENT_BLOCK_V1, rpc: CELO_RPC },
+  { contractAddress: CELO_CONTRACT_ADDRESS_V2, deploymentBlock: CELO_DEPLOYMENT_BLOCK_V2, rpc: CELO_RPC },
+  { contractAddress: GNOSIS_CONTRACT_ADDRESS, deploymentBlock: GNOSIS_DEPLOYMENT_BLOCK, rpc: GNOSIS_RPC },
+]
+
+function blocksPerDayFor(rpc: string): number {
+  return rpc === GNOSIS_RPC ? BLOCKS_PER_DAY : CELO_BLOCKS_PER_DAY
+}
+
+type WeeklyMap = Record<number, { created: number; claimed: number; approved: number }>
+
+function bumpWeek(map: WeeklyMap, weeksAgo: number, field: "created" | "claimed" | "approved") {
+  if (!map[weeksAgo]) map[weeksAgo] = { created: 0, claimed: 0, approved: 0 }
+  map[weeksAgo][field]++
+}
+
+function weeksAgoFromDate(date: Date): number {
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / WEEK_MS))
+}
+
+function buildGrowthRows(map: WeeklyMap) {
+  const weeksAgoValues = Object.keys(map).map(Number)
+  if (weeksAgoValues.length === 0) return []
+  const maxWeeksAgo = Math.max(...weeksAgoValues)
+  return weeksAgoValues
+    .sort((a, b) => b - a)
+    .map((weeksAgo) => ({ date: `Week ${maxWeeksAgo - weeksAgo + 1}`, ...map[weeksAgo] }))
+}
+
+type RippleStats = {
+  tasksCreated: number
+  tasksClaimed: number
+  tasksApproved: number
+  wallets: Set<string>
+  createdAt: Date[]
+  claimedAt: Date[]
+  approvedAt: Date[]
+}
+
+async function fetchRippleStats(windowStart: Date | null): Promise<RippleStats> {
+  const supabase = createClient()
+
+  let taskQuery = supabase.from("tasks").select("id, creator_address, created_at").eq("chain_id", 0)
+  if (windowStart) taskQuery = taskQuery.gte("created_at", windowStart.toISOString())
+  const { data: taskRows } = await taskQuery
+
+  const rows = taskRows ?? []
+  const taskIds = rows.map((row: any) => row.id)
+  const wallets = new Set<string>()
+  rows.forEach((row: any) => { if (row.creator_address) wallets.add(row.creator_address.toLowerCase()) })
+
+  let claimRows: any[] = []
+  if (taskIds.length > 0) {
+    const { data } = await supabase
+      .from("task_claims")
+      .select("worker_address, claimed_at, approved_at")
+      .in("task_id", taskIds)
+    claimRows = data ?? []
+  }
+  claimRows.forEach((row: any) => { if (row.worker_address) wallets.add(row.worker_address.toLowerCase()) })
+
+  return {
+    tasksCreated: rows.length,
+    tasksClaimed: claimRows.length,
+    tasksApproved: claimRows.filter((row: any) => row.approved_at).length,
+    wallets,
+    createdAt: rows.map((row: any) => new Date(row.created_at)),
+    claimedAt: claimRows.map((row: any) => new Date(row.claimed_at)),
+    approvedAt: claimRows.filter((row: any) => row.approved_at).map((row: any) => new Date(row.approved_at)),
+  }
+}
 
 export function StatsPage({ language }: StatsPageProps) {
-  const [v1, setV1] = useState<PanelState>(INITIAL_PANEL)
-  const [v2, setV2] = useState<PanelState>(INITIAL_PANEL)
+  const [stats, setStats] = useState<PanelState>(INITIAL_PANEL)
 
   const strings = {
     en: {
       title: "Platform Stats",
-      v1Label: "Celo V1 — Legacy",
-      v2Label: "Celo V2",
+      panelLabel: "All Networks",
       lastUpdated: "Last updated",
       refresh: "Refresh",
       viewFullHistory: "View Full History",
@@ -74,12 +154,10 @@ export function StatsPage({ language }: StatsPageProps) {
       loading: "Loading...",
       error: "Failed to load stats",
       ago: "ago",
-      notDeployed: "Not yet deployed",
     },
     "pt-BR": {
       title: "Estatísticas da Plataforma",
-      v1Label: "Celo V1 — Legado",
-      v2Label: "Celo V2",
+      panelLabel: "Todas as Redes",
       lastUpdated: "Atualizado",
       refresh: "Atualizar",
       viewFullHistory: "Ver Histórico Completo",
@@ -100,7 +178,6 @@ export function StatsPage({ language }: StatsPageProps) {
       loading: "Carregando...",
       error: "Falha ao carregar",
       ago: "atrás",
-      notDeployed: "Ainda não deployado",
     },
   }[language]
 
@@ -112,49 +189,63 @@ export function StatsPage({ language }: StatsPageProps) {
     return `${Math.floor(minutes / 60)}h ${strings.ago}`
   }
 
-  async function loadRecent(
-    setter: React.Dispatch<React.SetStateAction<PanelState>>,
-    contractAddress: string,
-    deploymentBlock: number,
-  ) {
-    if (!contractAddress || deploymentBlock === 0) {
-      setter(p => ({ ...p, loading: false, error: strings.notDeployed }))
-      return
-    }
+  async function loadRecent(setter: React.Dispatch<React.SetStateAction<PanelState>>) {
     setter(p => ({ ...p, loading: true, error: null }))
     try {
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const currentBlock = await provider.getBlockNumber()
-      // 60 days: Celo L2 ~1s/block = 86400 blocks/day
-      const startBlock = Math.max(deploymentBlock, currentBlock - 86400 * DEFAULT_DAYS)
-      const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, provider)
+      const evmResults = await Promise.all(
+        EVM_SOURCES.map(async (source) => {
+          const provider = new ethers.JsonRpcProvider(source.rpc)
+          const currentBlock = await provider.getBlockNumber()
+          const blocksPerDay = blocksPerDayFor(source.rpc)
+          const startBlock = Math.max(source.deploymentBlock, currentBlock - blocksPerDay * DEFAULT_DAYS)
+          const contract = new ethers.Contract(source.contractAddress, CONTRACT_ABI, provider)
 
-      const [created, claimed, approved] = await Promise.all([
-        contract.queryFilter(contract.filters.TaskCreated(), startBlock, currentBlock),
-        contract.queryFilter(contract.filters.TaskClaimed(), startBlock, currentBlock),
-        contract.queryFilter(contract.filters.TaskApproved(), startBlock, currentBlock),
-      ])
+          const [created, claimed, approved] = await Promise.all([
+            contract.queryFilter(contract.filters.TaskCreated(), startBlock, currentBlock),
+            contract.queryFilter(contract.filters.TaskClaimed(), startBlock, currentBlock),
+            contract.queryFilter(contract.filters.TaskApproved(), startBlock, currentBlock),
+          ])
 
-      const creators = new Set(created.map((e: any) => e.args?.[1]?.toLowerCase()).filter(Boolean))
-      const claimants = new Set(claimed.map((e: any) => e.args?.[1]?.toLowerCase()).filter(Boolean))
-      const wallets = new Set([...creators, ...claimants])
+          return { currentBlock, blocksPerDay, created, claimed, approved }
+        })
+      )
 
-      const weeklyMap: Record<string, { created: number; claimed: number; approved: number }> = {}
-      const toWeek = (blockNumber: number) => {
-        const w = Math.floor((blockNumber - deploymentBlock) / (86400 * 7)) + 1
-        return `Week ${w}`
-      }
-      ;[...created, ...claimed, ...approved].forEach((e: any) => {
-        const key = toWeek(e.blockNumber)
-        if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
+      const windowStart = new Date(Date.now() - DEFAULT_DAYS * 24 * 60 * 60 * 1000)
+      const ripple = await fetchRippleStats(windowStart)
+
+      const creators = new Set<string>()
+      const claimants = new Set<string>()
+      let tasksCreated = 0, tasksClaimed = 0, tasksApproved = 0
+      const weeklyMap: WeeklyMap = {}
+
+      evmResults.forEach(({ currentBlock, blocksPerDay, created, claimed, approved }) => {
+        const blocksPerWeek = blocksPerDay * 7
+        const weekKey = (blockNumber: number) => Math.floor((currentBlock - blockNumber) / blocksPerWeek)
+
+        created.forEach((e: any) => {
+          const addr = e.args?.[1]
+          if (addr) creators.add(addr.toLowerCase())
+          bumpWeek(weeklyMap, weekKey(e.blockNumber), "created")
+        })
+        claimed.forEach((e: any) => {
+          const addr = e.args?.[1]
+          if (addr) claimants.add(addr.toLowerCase())
+          bumpWeek(weeklyMap, weekKey(e.blockNumber), "claimed")
+        })
+        approved.forEach((e: any) => {
+          bumpWeek(weeklyMap, weekKey(e.blockNumber), "approved")
+        })
+
+        tasksCreated += created.length
+        tasksClaimed += claimed.length
+        tasksApproved += approved.length
       })
-      created.forEach((e: any) => { weeklyMap[toWeek(e.blockNumber)].created++ })
-      claimed.forEach((e: any) => { weeklyMap[toWeek(e.blockNumber)].claimed++ })
-      approved.forEach((e: any) => { weeklyMap[toWeek(e.blockNumber)].approved++ })
 
-      const growth = Object.entries(weeklyMap)
-        .map(([date, s]) => ({ date, ...s }))
-        .sort((a, b) => parseInt(a.date.replace("Week ", "")) - parseInt(b.date.replace("Week ", "")))
+      ripple.createdAt.forEach((d) => bumpWeek(weeklyMap, weeksAgoFromDate(d), "created"))
+      ripple.claimedAt.forEach((d) => bumpWeek(weeklyMap, weeksAgoFromDate(d), "claimed"))
+      ripple.approvedAt.forEach((d) => bumpWeek(weeklyMap, weeksAgoFromDate(d), "approved"))
+
+      const wallets = new Set([...creators, ...claimants, ...ripple.wallets])
 
       setter({
         loading: false,
@@ -164,10 +255,10 @@ export function StatsPage({ language }: StatsPageProps) {
         error: null,
         stats: {
           wallets: wallets.size,
-          tasksCreated: created.length,
-          tasksClaimed: claimed.length,
-          tasksApproved: approved.length,
-          growth,
+          tasksCreated: tasksCreated + ripple.tasksCreated,
+          tasksClaimed: tasksClaimed + ripple.tasksClaimed,
+          tasksApproved: tasksApproved + ripple.tasksApproved,
+          growth: buildGrowthRows(weeklyMap),
           lastUpdated: Date.now(),
         },
       })
@@ -177,68 +268,72 @@ export function StatsPage({ language }: StatsPageProps) {
     }
   }
 
-  async function loadFullHistory(
-    setter: React.Dispatch<React.SetStateAction<PanelState>>,
-    contractAddress: string,
-    deploymentBlock: number,
-  ) {
-    if (!contractAddress || deploymentBlock === 0) return
+  async function loadFullHistory(setter: React.Dispatch<React.SetStateAction<PanelState>>) {
     setter(p => ({ ...p, loadingFullHistory: true, progress: 0, error: null }))
     try {
-      const provider = new ethers.JsonRpcProvider(CELO_RPC)
-      const currentBlock = await provider.getBlockNumber()
-      const numBatches = Math.ceil((currentBlock - deploymentBlock) / BATCH_SIZE)
+      const evmMeta = await Promise.all(
+        EVM_SOURCES.map(async (source) => {
+          const provider = new ethers.JsonRpcProvider(source.rpc)
+          const currentBlock = await provider.getBlockNumber()
+          const numBatches = Math.max(1, Math.ceil((currentBlock - source.deploymentBlock) / BATCH_SIZE))
+          return { source, currentBlock, numBatches, blocksPerDay: blocksPerDayFor(source.rpc) }
+        })
+      )
+
+      const totalBatches = evmMeta.reduce((sum, m) => sum + m.numBatches, 0)
+      let completedBatches = 0
 
       const creators = new Set<string>()
       const claimants = new Set<string>()
-      let totalCreated = 0, totalClaimed = 0, totalApproved = 0
-      const weeklyMap: Record<string, { created: number; claimed: number; approved: number }> = {}
+      let tasksCreated = 0, tasksClaimed = 0, tasksApproved = 0
+      const weeklyMap: WeeklyMap = {}
 
-      const toWeek = (blockNumber: number) => {
-        const w = Math.floor((blockNumber - deploymentBlock) / (86400 * 7)) + 1
-        return `Week ${w}`
-      }
+      await Promise.all(
+        evmMeta.map(async ({ source, currentBlock, numBatches, blocksPerDay }) => {
+          const blocksPerWeek = blocksPerDay * 7
+          const weekKey = (blockNumber: number) => Math.floor((currentBlock - blockNumber) / blocksPerWeek)
 
-      for (let i = 0; i < numBatches; i++) {
-        const startBlock = deploymentBlock + i * BATCH_SIZE
-        const endBlock = Math.min(startBlock + BATCH_SIZE - 1, currentBlock)
+          for (let i = 0; i < numBatches; i++) {
+            const startBlock = source.deploymentBlock + i * BATCH_SIZE
+            const endBlock = Math.min(startBlock + BATCH_SIZE - 1, currentBlock)
 
-        const res = await fetch("/api/stats/batch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ startBlock, endBlock, contractAddress }),
+            const res = await fetch("/api/stats/batch", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ startBlock, endBlock, contractAddress: source.contractAddress, rpc: source.rpc }),
+            })
+
+            if (res.ok) {
+              const batch = await res.json()
+
+              batch.events.created.forEach((e: any) => {
+                if (e.creator) creators.add(e.creator.toLowerCase())
+                tasksCreated++
+                bumpWeek(weeklyMap, weekKey(e.blockNumber), "created")
+              })
+              batch.events.claimed.forEach((e: any) => {
+                if (e.claimant) claimants.add(e.claimant.toLowerCase())
+                tasksClaimed++
+                bumpWeek(weeklyMap, weekKey(e.blockNumber), "claimed")
+              })
+              batch.events.approved.forEach((e: any) => {
+                tasksApproved++
+                bumpWeek(weeklyMap, weekKey(e.blockNumber), "approved")
+              })
+            }
+
+            completedBatches++
+            setter(p => ({ ...p, progress: Math.round((completedBatches / totalBatches) * 100) }))
+          }
         })
-        if (!res.ok) { continue }
-        const batch = await res.json()
+      )
 
-        batch.events.created.forEach((e: any) => {
-          if (e.creator) creators.add(e.creator.toLowerCase())
-          totalCreated++
-          const key = toWeek(e.blockNumber)
-          if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
-          weeklyMap[key].created++
-        })
-        batch.events.claimed.forEach((e: any) => {
-          if (e.claimant) claimants.add(e.claimant.toLowerCase())
-          totalClaimed++
-          const key = toWeek(e.blockNumber)
-          if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
-          weeklyMap[key].claimed++
-        })
-        batch.events.approved.forEach((e: any) => {
-          totalApproved++
-          const key = toWeek(e.blockNumber)
-          if (!weeklyMap[key]) weeklyMap[key] = { created: 0, claimed: 0, approved: 0 }
-          weeklyMap[key].approved++
-        })
+      const ripple = await fetchRippleStats(null)
+      ripple.createdAt.forEach((d) => bumpWeek(weeklyMap, weeksAgoFromDate(d), "created"))
+      ripple.claimedAt.forEach((d) => bumpWeek(weeklyMap, weeksAgoFromDate(d), "claimed"))
+      ripple.approvedAt.forEach((d) => bumpWeek(weeklyMap, weeksAgoFromDate(d), "approved"))
 
-        setter(p => ({ ...p, progress: Math.round(((i + 1) / numBatches) * 100) }))
-      }
-
-      const wallets = new Set([...creators, ...claimants])
-      const growth = Object.entries(weeklyMap)
-        .map(([date, s]) => ({ date, ...s }))
-        .sort((a, b) => parseInt(a.date.replace("Week ", "")) - parseInt(b.date.replace("Week ", "")))
+      const wallets = new Set([...creators, ...claimants, ...ripple.wallets])
 
       setter({
         loading: false,
@@ -248,10 +343,10 @@ export function StatsPage({ language }: StatsPageProps) {
         error: null,
         stats: {
           wallets: wallets.size,
-          tasksCreated: totalCreated,
-          tasksClaimed: totalClaimed,
-          tasksApproved: totalApproved,
-          growth,
+          tasksCreated: tasksCreated + ripple.tasksCreated,
+          tasksClaimed: tasksClaimed + ripple.tasksClaimed,
+          tasksApproved: tasksApproved + ripple.tasksApproved,
+          growth: buildGrowthRows(weeklyMap),
           lastUpdated: Date.now(),
         },
       })
@@ -262,8 +357,7 @@ export function StatsPage({ language }: StatsPageProps) {
   }
 
   useEffect(() => {
-    loadRecent(setV1, CELO_CONTRACT_ADDRESS_V1, CELO_DEPLOYMENT_BLOCK_V1)
-    loadRecent(setV2, CELO_CONTRACT_ADDRESS_V2, CELO_DEPLOYMENT_BLOCK_V2)
+    loadRecent(setStats)
   }, [])
 
   function StatsPanel({
@@ -395,17 +489,10 @@ export function StatsPage({ language }: StatsPageProps) {
         <h1 className="text-3xl font-bold mb-8">{strings.title}</h1>
 
         <StatsPanel
-          panel={v1}
-          label={strings.v1Label}
-          onRefresh={() => loadRecent(setV1, CELO_CONTRACT_ADDRESS_V1, CELO_DEPLOYMENT_BLOCK_V1)}
-          onFullHistory={() => loadFullHistory(setV1, CELO_CONTRACT_ADDRESS_V1, CELO_DEPLOYMENT_BLOCK_V1)}
-        />
-
-        <StatsPanel
-          panel={v2}
-          label={strings.v2Label}
-          onRefresh={() => loadRecent(setV2, CELO_CONTRACT_ADDRESS_V2, CELO_DEPLOYMENT_BLOCK_V2)}
-          onFullHistory={() => loadFullHistory(setV2, CELO_CONTRACT_ADDRESS_V2, CELO_DEPLOYMENT_BLOCK_V2)}
+          panel={stats}
+          label={strings.panelLabel}
+          onRefresh={() => loadRecent(setStats)}
+          onFullHistory={() => loadFullHistory(setStats)}
         />
       </div>
     </div>

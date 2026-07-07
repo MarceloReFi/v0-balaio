@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { startBlock, endBlock, contractAddress } = await request.json()
+    const { startBlock, endBlock, contractAddress, rpc } = await request.json()
 
     if (!startBlock || !endBlock) {
       return NextResponse.json(
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     console.log(`[Stats Batch API] Querying blocks ${startBlock} to ${endBlock}`)
 
-    const provider = new ethers.JsonRpcProvider(CELO_RPC)
+    const provider = new ethers.JsonRpcProvider(rpc || CELO_RPC)
     const resolvedAddress = contractAddress || getContractAddress(42220)
     const contract = new ethers.Contract(resolvedAddress, CONTRACT_ABI, provider)
 
