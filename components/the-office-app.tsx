@@ -753,13 +753,13 @@ export function TheOfficeApp() {
     rewardPerSlot: string,
     _totalSlots: string,
     _token: TokenSymbol,
-    _category: Task["category"],
-    _complexity: Task["complexity"],
+    category: Task["category"],
+    complexity: Task["complexity"],
     _validationMethod: string,
-    _deadline: Date | null,
-    _tags: string[],
-    _visibility: Task["visibility"],
-    _organizationId: string | null,
+    deadline: Date | null,
+    tags: string[],
+    visibility: Task["visibility"],
+    organizationId: string | null,
     _projectId: string | null,
   ) => {
     if (!xamanAccount) return
@@ -791,6 +791,12 @@ export function TheOfficeApp() {
         description: taskDescription,
         amountXrp: rewardPerSlot,
         ownerAddress: xamanAccount,
+        category,
+        complexity,
+        deadline,
+        tags,
+        visibility,
+        organizationId,
       })
       await updateEscrowSequence(taskId, sequence)
 
