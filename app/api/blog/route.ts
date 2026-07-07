@@ -1,64 +1,47 @@
 import { NextResponse } from "next/server"
 
-const HASHNODE_GQL = "https://gql.hashnode.com"
-const HOST = "balaio.hashnode.dev"
+const SUBSTACK_FEED_URL = "https://usebalaio.substack.com/feed"
+
+function extract(pattern: RegExp, block: string): string {
+  return block.match(pattern)?.[1]?.trim() ?? ""
+}
 
 export async function GET() {
   try {
-    const res = await fetch(HASHNODE_GQL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: `
-          query {
-            publication(host: "${HOST}") {
-              posts(first: 20) {
-                edges {
-                  node {
-                    title
-                    brief
-                    slug
-                    publishedAt
-                    readTimeInMinutes
-                    tags { name }
-                    author { name }
-                  }
-                }
-              }
-            }
-          }
-        `,
-      }),
-      cache: "no-store",
+    const res = await fetch(SUBSTACK_FEED_URL, { cache: "no-store" })
+    const xml = await res.text()
+
+    const items = xml.match(/<item>([\s\S]*?)<\/item>/g) ?? []
+
+    const posts = items.map((item) => {
+      const title = extract(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/, item)
+      const link = extract(/<link>([\s\S]*?)<\/link>/, item)
+      const pubDate = extract(/<pubDate>([\s\S]*?)<\/pubDate>/, item)
+      const description = extract(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/, item)
+      const creator = extract(/<dc:creator><!\[CDATA\[([\s\S]*?)\]\]><\/dc:creator>/, item)
+      const contentEncoded = extract(/<content:encoded><!\[CDATA\[([\s\S]*?)\]\]><\/content:encoded>/, item)
+
+      const plainText = contentEncoded.replace(/<[^>]+>/g, "")
+      const wordCount = plainText.split(/\s+/).filter(Boolean).length
+      const readTime = Math.max(1, Math.ceil(wordCount / 200))
+
+      return {
+        id: link.split("/").filter(Boolean).pop() ?? link,
+        title,
+        excerpt: description,
+        date: pubDate,
+        readTime,
+        tags: [] as string[],
+        author: creator,
+        url: link,
+      }
     })
 
-    const json = await res.json()
-    const edges: { node: HashnodePost }[] = json?.data?.publication?.posts?.edges ?? []
-
-    const posts = edges.map(({ node }) => ({
-      id: node.slug,
-      title: node.title,
-      excerpt: node.brief,
-      date: node.publishedAt,
-      readTime: node.readTimeInMinutes,
-      tags: (node.tags ?? []).map((t) => t.name),
-      author: node.author?.name ?? "",
-      url: `https://${HOST}/${node.slug}`,
-    }))
+    posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
     return NextResponse.json(posts)
   } catch (err) {
-    console.error("[Blog API] Error fetching from Hashnode:", err)
+    console.error("[Blog API] Error fetching from Substack:", err)
     return NextResponse.json([], { status: 500 })
   }
-}
-
-interface HashnodePost {
-  title: string
-  brief: string
-  slug: string
-  publishedAt: string
-  readTimeInMinutes: number
-  tags: { name: string }[]
-  author: { name: string }
 }
