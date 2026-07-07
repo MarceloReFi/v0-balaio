@@ -30,6 +30,7 @@ function rowToTask(row: any, claims: TaskClaim[]): Task {
     createdAt: new Date(row.created_at),
     mySlot: null,
     claims,
+    network: "ripple",
   }
 }
 
@@ -188,6 +189,18 @@ export async function approveXrplTask(taskId: string, workerAddress: string): Pr
   const { error } = await supabase
     .from("task_claims")
     .update({ approved_at: new Date().toISOString() })
+    .eq("task_id", taskId)
+    .eq("worker_address", workerAddress)
+
+  if (error) throw error
+}
+
+export async function rejectXrplTask(taskId: string, workerAddress: string): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("task_claims")
+    .update({ submitted_at: null, submission_link: null })
     .eq("task_id", taskId)
     .eq("worker_address", workerAddress)
 
