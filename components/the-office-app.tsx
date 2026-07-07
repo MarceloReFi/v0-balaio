@@ -929,24 +929,52 @@ export function TheOfficeApp() {
   }
 
   const approveTaskSubmission = async (id: string, claimant: string, task?: Task | null) => {
-    if (connectionMode === "ripple") {
-      toast(language === "en" ? "Not available yet for Ripple" : "Ainda não disponível para Ripple")
-      return
-    }
-    const writeContract = getWriteContract(task)
-    if (!writeContract) return
+    const writeContract = connectionMode === "ripple" ? null : getWriteContract(task)
+    if (connectionMode !== "ripple" && !writeContract) return
 
     try {
       setLoading(true)
       toast("Approving submission...")
 
-      const tx = await writeContract.approveTask(id, claimant)
-      await tx.wait()
+      if (connectionMode === "ripple") {
+        const { getXrplTask, approveXrplTask } = await import("@/lib/xrpl/tasks")
+        const detail = await getXrplTask(id)
+        if (!detail?.escrow) {
+          toast(language === "en" ? "No escrow found for this task" : "Nenhum escrow encontrado para esta tarefa")
+          return
+        }
 
-      await supabase.from("task_claims").upsert(
-        { task_id: id, worker_address: claimant.toLowerCase(), approved_at: new Date().toISOString() },
-        { onConflict: "task_id,worker_address" }
-      )
+        const res = await fetch("/api/xrpl/approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskId: id }),
+        })
+        if (!res.ok) {
+          toast("Failed to prepare EscrowFinish")
+          return
+        }
+        const { fulfillment, condition, sequence } = await res.json()
+
+        const { signAndSubmit } = await import("@/lib/xrpl/xaman")
+        await signAndSubmit({
+          TransactionType: "EscrowFinish",
+          Account: xamanAccount,
+          Owner: detail.escrow.ownerAccount,
+          OfferSequence: sequence,
+          Condition: condition,
+          Fulfillment: fulfillment,
+        })
+
+        await approveXrplTask(id, claimant)
+      } else {
+        const tx = await writeContract!.approveTask(id, claimant)
+        await tx.wait()
+
+        await supabase.from("task_claims").upsert(
+          { task_id: id, worker_address: claimant.toLowerCase(), approved_at: new Date().toISOString() },
+          { onConflict: "task_id,worker_address" }
+        )
+      }
 
       toast("Submission approved!")
 
@@ -955,7 +983,7 @@ export function TheOfficeApp() {
         setTasks(tasks.map((t) => (t.id === id ? updated : t)))
         setSelectedTask(updated)
       }
-      if (account) await loadUserActivity(account, tasks)
+      if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
       toast("Error: " + parseContractError(error))
