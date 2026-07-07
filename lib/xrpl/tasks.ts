@@ -39,6 +39,12 @@ export async function saveXrplTask(task: {
   description: string
   amountXrp: string
   ownerAddress: string
+  category?: Task["category"] | null
+  complexity?: Task["complexity"] | null
+  deadline?: Date | null
+  tags?: string[] | null
+  visibility?: Task["visibility"] | null
+  organizationId?: string | null
 }): Promise<void> {
   const supabase = createClient()
 
@@ -54,6 +60,12 @@ export async function saveXrplTask(task: {
     slots: 1,
     claimed_slots: 0,
     chain_id: XRPL_CHAIN_ID,
+    category: task.category ?? null,
+    complexity: task.complexity ?? null,
+    deadline: task.deadline ? task.deadline.toISOString() : null,
+    tags: task.tags ?? null,
+    visibility: task.visibility ?? null,
+    organization_id: task.organizationId ?? null,
   })
 
   if (error) throw error
