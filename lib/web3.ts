@@ -27,6 +27,7 @@ export type TokenSymbol =
   | "G$"
   | "GPBRV"
   | "GPBR"
+  | "XRP"
 
 export interface TokenConfig {
   symbol: TokenSymbol
@@ -162,6 +163,12 @@ export const SUPPORTED_TOKENS: Record<TokenSymbol, TokenConfig> = {
     decimals: 6,
     name: "GPBR",
   },
+  XRP: {
+    symbol: "XRP",
+    address: "",
+    decimals: 6,
+    name: "XRP",
+  },
 }
 
 export const GNOSIS_TOKENS = {
@@ -206,6 +213,12 @@ export const GNOSIS_TOKENS = {
 export type GnosisTokenSymbol = keyof typeof GNOSIS_TOKENS
 
 export function getTokensForChain(chainId: number): TokenConfig[] {
+  if (chainId === 0) return [{
+    symbol: "XRP" as TokenSymbol,
+    name: "XRP",
+    address: "",
+    decimals: 6,
+  }]
   if (chainId === 100) return Object.values(GNOSIS_TOKENS) as TokenConfig[]
   return Object.values(SUPPORTED_TOKENS)
 }
