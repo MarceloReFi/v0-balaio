@@ -29,7 +29,7 @@ import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { AgentsPage } from "@/components/pages/agents-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
-import { XrplTasksPage } from "@/components/pages/xrpl/xrpl-tasks-page"
+import { XrplPage } from "@/components/pages/xrpl/xrpl-page"
 import { OrganizationsView } from "@/components/organizations/organizations-view"
 import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
@@ -158,6 +158,7 @@ export function TheOfficeApp() {
   const [language, setLanguage] = useState<Language>("en")
   const [multiTaskStatuses, setMultiTaskStatuses] = useState<Record<string, "idle" | "pending" | "success" | "error">>({})
   const [myOrgs, setMyOrgs] = useState<Organization[]>([])
+  const [xamanAccount, setXamanAccount] = useState<string | null>(null)
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
@@ -745,6 +746,64 @@ export function TheOfficeApp() {
     }
   }
 
+  const createXrplTask = async (
+    _taskIds: string[],
+    taskTitle: string,
+    taskDescription: string,
+    rewardPerSlot: string,
+    _totalSlots: string,
+    _token: TokenSymbol,
+    _category: Task["category"],
+    _complexity: Task["complexity"],
+    _validationMethod: string,
+    _deadline: Date | null,
+    _tags: string[],
+    _visibility: Task["visibility"],
+    _organizationId: string | null,
+    _projectId: string | null,
+  ) => {
+    if (!xamanAccount) return
+
+    try {
+      setLoading(true)
+
+      const taskId = crypto.randomUUID()
+      const amountDrops = String(Math.round(Number(rewardPerSlot) * 1_000_000))
+
+      const res = await fetch("/api/xrpl/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, ownerAddress: xamanAccount, amountDrops }),
+      })
+      if (!res.ok) {
+        toast("Failed to create XRPL escrow")
+        return
+      }
+
+      const { escrowCreateTx } = await res.json()
+      const { signAndSubmit } = await import("@/lib/xrpl/xaman")
+      const { sequence } = await signAndSubmit(escrowCreateTx)
+
+      const { saveXrplTask, updateEscrowSequence } = await import("@/lib/xrpl/tasks")
+      await saveXrplTask({
+        id: taskId,
+        title: taskTitle,
+        description: taskDescription,
+        amountXrp: rewardPerSlot,
+        ownerAddress: xamanAccount,
+      })
+      await updateEscrowSequence(taskId, sequence)
+
+      setShowCreateModal(false)
+      toast("XRPL task created!")
+    } catch (error) {
+      console.error("Create XRPL task error:", error)
+      toast(error instanceof Error ? error.message : "Failed to create XRPL task")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getWriteContract = useCallback((task?: Task | null) => {
     if (task?.contractAddress && signer) {
       return new ethers.Contract(task.contractAddress, CONTRACT_ABI, signer)
@@ -1206,15 +1265,20 @@ export function TheOfficeApp() {
         )}
         {account && currentPage === "blog" && <BlogPage language={language} />}
         {account && currentPage === "stats" && <StatsPage language={language} />}
-        {account && currentPage === "xrpl" && (
-          <XrplTasksPage account={account} language={language} />
-        )}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
             <OrgNavProvider openTask={async (id) => { const task = await getTask(id); if (task) openTaskModal(task) }}>
               <OrganizationsView account={account} language={language} initialProfileOrgId={profileOrgId} initialProjectId={detailProjectId} />
             </OrgNavProvider>
           </div>
+        )}
+        {currentPage === "xrpl" && (
+          <XrplPage
+            xamanAccount={xamanAccount}
+            onConnect={setXamanAccount}
+            language={language}
+            onCreateTask={() => setShowCreateModal(true)}
+          />
         )}
       </main>
 
@@ -1250,10 +1314,10 @@ export function TheOfficeApp() {
       )}
 
       <CreateTaskModal
-        chainId={chainId}
+        chainId={currentPage === "xrpl" ? 0 : chainId}
         open={showCreateModal}
         onClose={() => { setShowCreateModal(false); setMultiTaskStatuses({}) }}
-        onCreateTask={createTask}
+        onCreateTask={currentPage === "xrpl" ? createXrplTask : createTask}
         loading={loading}
         tokenBalances={tokenBalances}
         language={language}
