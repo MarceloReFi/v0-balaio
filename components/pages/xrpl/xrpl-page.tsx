@@ -57,7 +57,7 @@ export function XrplPage({ xamanAccount, onConnect, language, onCreateTask }: Xr
         setMyCreated(created)
         setMyClaimed(claimed)
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load XRPL tasks")
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load Ripple tasks")
       }
     }
 
@@ -87,7 +87,7 @@ export function XrplPage({ xamanAccount, onConnect, language, onCreateTask }: Xr
       <div className="max-w-3xl mx-auto px-[22px] py-5">
         <div className="bg-surface-container-low rounded-2xl p-10 text-center">
           <p className="font-semibold text-on-surface mb-4">
-            {language === "en" ? "Connect Xaman to use XRPL tasks" : "Conecte a Xaman para usar tarefas XRPL"}
+            {language === "en" ? "Connect Xaman to use Ripple tasks" : "Conecte a Xaman para usar tarefas Ripple"}
           </p>
           <button
             type="button"
@@ -108,7 +108,7 @@ export function XrplPage({ xamanAccount, onConnect, language, onCreateTask }: Xr
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant">XRPL</p>
+          <p className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant">Ripple</p>
           <h2 className="font-headline text-2xl text-on-surface">{t.tasks}</h2>
         </div>
         <button
@@ -155,7 +155,7 @@ export function XrplPage({ xamanAccount, onConnect, language, onCreateTask }: Xr
       {/* My XRPL Activity */}
       <div className="mt-8">
         <p className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-3">
-          {language === "en" ? "My XRPL Activity" : "Minha Atividade XRPL"}
+          {language === "en" ? "My Ripple Activity" : "Minha Atividade Ripple"}
         </p>
 
         <div className="mb-4">

@@ -788,7 +788,7 @@ export function TheOfficeApp() {
         body: JSON.stringify({ taskId, ownerAddress: xamanAccount, amountDrops }),
       })
       if (!res.ok) {
-        toast("Failed to create XRPL escrow")
+        toast("Failed to create Ripple escrow")
         return
       }
 
@@ -813,10 +813,10 @@ export function TheOfficeApp() {
       await updateEscrowSequence(taskId, sequence)
 
       setShowCreateModal(false)
-      toast("XRPL task created!")
+      toast("Ripple task created!")
     } catch (error) {
       console.error("Create XRPL task error:", error)
-      toast(error instanceof Error ? error.message : "Failed to create XRPL task")
+      toast(error instanceof Error ? error.message : "Failed to create Ripple task")
     } finally {
       setLoading(false)
     }
@@ -1197,7 +1197,7 @@ export function TheOfficeApp() {
                       : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
                   }`}
                 >
-                  XRPL
+                  Ripple
                 </button>
               </div>
             )}
@@ -1240,7 +1240,7 @@ export function TheOfficeApp() {
                 onClick={connectRipple}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors bg-surface-container-low text-on-surface-variant hover:opacity-80"
               >
-                XRPL
+                Ripple
               </button>
             </div>
             <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
