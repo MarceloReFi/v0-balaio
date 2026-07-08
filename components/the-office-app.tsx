@@ -325,7 +325,7 @@ export function TheOfficeApp() {
       setLoading(true)
       const { listXrplTasks, getXrplTask } = await import("@/lib/xrpl/tasks")
       const summaries = await listXrplTasks()
-      const details = await Promise.all(summaries.map((summary) => getXrplTask(summary.id)))
+      const details = await Promise.all(summaries.map((summary) => getXrplTask(summary.id, xamanAccount)))
       const loadedTasks = details
         .map((detail) => detail?.task ?? null)
         .filter((task): task is Task => task !== null)
@@ -336,7 +336,7 @@ export function TheOfficeApp() {
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, [toast, xamanAccount])
 
   const loadUserActivity = useCallback(async (userAddress: string, currentTasks: Task[]) => {
     if (loadingActivityRef.current) return
@@ -508,7 +508,7 @@ export function TheOfficeApp() {
     async (id: string): Promise<Task | null> => {
       if (connectionMode === "ripple") {
         const { getXrplTask } = await import("@/lib/xrpl/tasks")
-        const detail = await getXrplTask(id)
+        const detail = await getXrplTask(id, xamanAccount)
         return detail?.task ?? null
       }
 
@@ -585,7 +585,7 @@ export function TheOfficeApp() {
         return null
       }
     },
-    [contract, account, supabase, chainId, connectionMode],
+    [contract, account, supabase, chainId, connectionMode, xamanAccount],
   )
 
   const openTaskModal = useCallback(async (task: Task) => {
@@ -967,6 +967,24 @@ export function TheOfficeApp() {
         })
 
         await approveXrplTask(id, claimant)
+
+        const payoutRes = await fetch("/api/xrpl/payout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskId: id, workerAddress: claimant }),
+        })
+        if (!payoutRes.ok) {
+          const payoutData = await payoutRes.json().catch(() => ({}))
+          toast("Approved, but payout failed: " + (payoutData.error ?? "Unknown error"))
+
+          const updated = await getTask(id)
+          if (updated) {
+            setTasks(tasks.map((t) => (t.id === id ? updated : t)))
+            setSelectedTask(updated)
+          }
+          if (activeAccount) await loadUserActivity(activeAccount, tasks)
+          return
+        }
       } else {
         const tx = await writeContract!.approveTask(id, claimant)
         await tx.wait()
@@ -1440,7 +1458,7 @@ export function TheOfficeApp() {
       <TaskDetailModal
         open={showTaskModal}
         task={selectedTask}
-        account={account}
+        account={activeAccount}
         loading={loading}
         onClose={() => setShowTaskModal(false)}
         onClaimTask={(id) => claimTask(id, selectedTask)}

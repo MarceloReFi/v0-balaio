@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client"
-import type { Task, TaskClaim } from "@/lib/types"
+import type { Task, TaskClaim, TaskSlot } from "@/lib/types"
 import { taskStatusLabel, type TaskStatusLabel } from "@/lib/task-status"
 
 const XRPL_CHAIN_ID = 0
@@ -12,7 +12,22 @@ function rowToClaim(row: any): TaskClaim {
     claimedAt: new Date(row.claimed_at),
     submittedAt: row.submitted_at ? new Date(row.submitted_at) : null,
     approvedAt: row.approved_at ? new Date(row.approved_at) : null,
+    withdrawnAt: row.withdrawn_at ? new Date(row.withdrawn_at) : null,
     submissionLink: row.submission_link ?? null,
+  }
+}
+
+export function deriveMySlot(claims: TaskClaim[], currentAddress?: string | null): TaskSlot | null {
+  if (!currentAddress) return null
+
+  const claim = claims.find((c) => c.workerAddress.toLowerCase() === currentAddress.toLowerCase())
+  if (!claim) return null
+
+  return {
+    claimed: true,
+    submitted: !!claim.submittedAt,
+    approved: !!claim.approvedAt,
+    withdrawn: !!claim.withdrawnAt,
   }
 }
 
@@ -120,7 +135,7 @@ export interface XrplTaskDetail {
   escrow: XrplEscrow | null
 }
 
-export async function getXrplTask(taskId: string): Promise<XrplTaskDetail | null> {
+export async function getXrplTask(taskId: string, currentAddress?: string | null): Promise<XrplTaskDetail | null> {
   const supabase = createClient()
 
   const { data: taskRow, error: taskError } = await supabase
@@ -143,13 +158,17 @@ export async function getXrplTask(taskId: string): Promise<XrplTaskDetail | null
 
   const { data: claimRows, error: claimsError } = await supabase
     .from("task_claims")
-    .select("id, task_id, worker_address, claimed_at, submitted_at, approved_at, submission_link")
+    .select("id, task_id, worker_address, claimed_at, submitted_at, approved_at, withdrawn_at, submission_link")
     .eq("task_id", taskId)
 
   if (claimsError) throw claimsError
 
+  const claims = (claimRows ?? []).map(rowToClaim)
+  const task = rowToTask(taskRow, claims)
+  task.mySlot = deriveMySlot(claims, currentAddress)
+
   return {
-    task: rowToTask(taskRow, (claimRows ?? []).map(rowToClaim)),
+    task,
     escrow: escrowRow
       ? {
           condition: escrowRow.condition,
@@ -189,6 +208,18 @@ export async function approveXrplTask(taskId: string, workerAddress: string): Pr
   const { error } = await supabase
     .from("task_claims")
     .update({ approved_at: new Date().toISOString() })
+    .eq("task_id", taskId)
+    .eq("worker_address", workerAddress)
+
+  if (error) throw error
+}
+
+export async function markXrplTaskWithdrawn(taskId: string, workerAddress: string): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from("task_claims")
+    .update({ withdrawn_at: new Date().toISOString() })
     .eq("task_id", taskId)
     .eq("worker_address", workerAddress)
 

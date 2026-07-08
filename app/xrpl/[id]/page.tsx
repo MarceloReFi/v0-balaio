@@ -86,7 +86,7 @@ export default function XrplTaskDetailPage() {
   }
 
   const handleApprove = async (workerAddress: string) => {
-    if (!address || !detail?.escrow) return
+    if (!address) return
     setBusy(true)
     setError(null)
     try {
@@ -100,10 +100,15 @@ export default function XrplTaskDetailPage() {
         throw new Error(data.error || "Failed to approve task")
       }
 
+      if (!detail?.escrow) {
+        setError("No escrow found for this task")
+        return
+      }
+
       const escrowFinishTx = {
         TransactionType: "EscrowFinish",
         Account: address,
-        Owner: detail.escrow?.ownerAccount,
+        Owner: detail.escrow.ownerAccount,
         OfferSequence: data.sequence,
         Condition: data.condition,
         Fulfillment: data.fulfillment,
@@ -114,10 +119,20 @@ export default function XrplTaskDetailPage() {
       setTxHash(hash)
 
       await approveXrplTask(taskId, workerAddress)
-      await load()
+
+      const payoutResponse = await fetch("/api/xrpl/payout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, workerAddress }),
+      })
+      if (!payoutResponse.ok) {
+        const payoutData = await payoutResponse.json().catch(() => ({}))
+        setError("Approved, but payout failed: " + (payoutData.error ?? "Unknown error"))
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to approve task")
     } finally {
+      await load()
       setBusy(false)
     }
   }
