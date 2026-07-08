@@ -17,6 +17,7 @@ export interface TaskClaim {
   claimedAt: Date
   submittedAt?: Date | null
   approvedAt?: Date | null
+  withdrawnAt?: Date | null
   submissionLink?: string | null
 }
 
