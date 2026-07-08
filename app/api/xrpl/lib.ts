@@ -50,6 +50,12 @@ export function buildEscrowFinish(params: {
   }
 }
 
+export function calculateEscrowFinishFee(fulfillmentHex: string): string {
+  const fulfillmentBytes = Math.ceil(fulfillmentHex.length / 2)
+  const blocks = Math.ceil(fulfillmentBytes / 16)
+  return String(330 + blocks * 10)
+}
+
 export function rippleTimeFromDate(date: Date): number {
   return Math.floor(date.getTime() / 1000) - RIPPLE_EPOCH_OFFSET_SECONDS
 }

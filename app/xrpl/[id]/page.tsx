@@ -86,6 +86,7 @@ export default function XrplTaskDetailPage() {
   }
 
   const handleApprove = async (workerAddress: string) => {
+    if (!address || !detail?.escrow) return
     setBusy(true)
     setError(null)
     try {
@@ -99,43 +100,23 @@ export default function XrplTaskDetailPage() {
         throw new Error(data.error || "Failed to approve task")
       }
 
-      await approveXrplTask(taskId, workerAddress)
-      await load()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to approve task")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const handleWithdraw = async () => {
-    if (!address || !detail) return
-    setBusy(true)
-    setError(null)
-    try {
-      const response = await fetch("/api/xrpl/approve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId }),
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch escrow release data")
-      }
-
       const escrowFinishTx = {
         TransactionType: "EscrowFinish",
         Account: address,
-        Owner: detail.task.creator,
+        Owner: detail.escrow?.ownerAccount,
         OfferSequence: data.sequence,
         Condition: data.condition,
         Fulfillment: data.fulfillment,
+        Fee: data.fee,
       }
 
       const { hash } = await signAndSubmit(escrowFinishTx)
       setTxHash(hash)
+
+      await approveXrplTask(taskId, workerAddress)
+      await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to withdraw")
+      setError(err instanceof Error ? err.message : "Failed to approve task")
     } finally {
       setBusy(false)
     }
@@ -215,9 +196,7 @@ export default function XrplTaskDetailPage() {
           Claim
         </button>
       ) : myClaim.approvedAt ? (
-        <button type="button" onClick={handleWithdraw} disabled={busy} className={`w-full ${secondaryButtonClass}`}>
-          Withdraw
-        </button>
+        <p className="text-sm text-on-surface-variant">Payment released to your wallet.</p>
       ) : !myClaim.submittedAt ? (
         <div className="flex flex-col gap-3">
           <div>

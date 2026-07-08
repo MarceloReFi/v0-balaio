@@ -953,7 +953,7 @@ export function TheOfficeApp() {
           toast("Failed to prepare EscrowFinish")
           return
         }
-        const { fulfillment, condition, sequence } = await res.json()
+        const { fulfillment, condition, sequence, fee } = await res.json()
 
         const { signAndSubmit } = await import("@/lib/xrpl/xaman")
         await signAndSubmit({
@@ -963,6 +963,7 @@ export function TheOfficeApp() {
           OfferSequence: sequence,
           Condition: condition,
           Fulfillment: fulfillment,
+          Fee: fee,
         })
 
         await approveXrplTask(id, claimant)

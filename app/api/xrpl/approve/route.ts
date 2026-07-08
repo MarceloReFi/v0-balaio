@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { calculateEscrowFinishFee } from "@/app/api/xrpl/lib"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -48,5 +49,6 @@ export async function POST(request: Request) {
     fulfillment: data.fulfillment,
     condition: data.condition,
     sequence: data.sequence,
+    fee: calculateEscrowFinishFee(data.fulfillment),
   })
 }
