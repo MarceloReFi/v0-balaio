@@ -32,14 +32,16 @@ export async function POST(request: Request) {
     const contract = new ethers.Contract(resolvedAddress, CONTRACT_ABI, provider)
 
     // Query events in parallel
-    const [createdEvents, claimedEvents, approvedEvents] = await Promise.all([
+    const [createdEvents, claimedEvents, submittedEvents, approvedEvents, rewardClaimedEvents] = await Promise.all([
       contract.queryFilter(contract.filters.TaskCreated(), startBlock, endBlock),
       contract.queryFilter(contract.filters.TaskClaimed(), startBlock, endBlock),
+      contract.queryFilter(contract.filters.TaskSubmitted(), startBlock, endBlock),
       contract.queryFilter(contract.filters.TaskApproved(), startBlock, endBlock),
+      contract.queryFilter(contract.filters.RewardClaimed(), startBlock, endBlock),
     ])
 
     console.log(
-      `[Stats Batch API] Found ${createdEvents.length} created, ${claimedEvents.length} claimed, ${approvedEvents.length} approved`
+      `[Stats Batch API] Found ${createdEvents.length} created, ${claimedEvents.length} claimed, ${submittedEvents.length} submitted, ${approvedEvents.length} approved, ${rewardClaimedEvents.length} reward claimed`
     )
 
     const result = {
@@ -56,7 +58,17 @@ export async function POST(request: Request) {
           claimant: e.args?.[1] || null,
           taskId: e.args?.[0] || null,
         })),
+        submitted: submittedEvents.map((e: any) => ({
+          blockNumber: e.blockNumber,
+          claimant: e.args?.[1] || null,
+          taskId: e.args?.[0] || null,
+        })),
         approved: approvedEvents.map((e: any) => ({
+          blockNumber: e.blockNumber,
+          claimant: e.args?.[1] || null,
+          taskId: e.args?.[0] || null,
+        })),
+        rewardClaimed: rewardClaimedEvents.map((e: any) => ({
           blockNumber: e.blockNumber,
           claimant: e.args?.[1] || null,
           taskId: e.args?.[0] || null,

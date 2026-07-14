@@ -34,6 +34,7 @@ import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { getOrganizationsByWallet } from "@/lib/organizations"
+import { recordWalletConnection } from "@/lib/wallet-connections"
 import { taskStatusLabel } from "@/lib/task-status"
 import { isMiniPay } from "@/lib/minipay"
 import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
@@ -465,6 +466,7 @@ export function TheOfficeApp() {
       const { connectXaman } = await import("@/lib/xrpl/xaman")
       const address = await connectXaman()
       setXamanAccount(address)
+      recordWalletConnection(address)
       setCurrentPage("home")
     } catch (error) {
       toast(error instanceof Error ? error.message : "Failed to connect Xaman")
@@ -1222,6 +1224,7 @@ export function TheOfficeApp() {
   useEffect(() => {
     if (wagmiConnected && wagmiAddress && !account) {
       setAccount(wagmiAddress)
+      recordWalletConnection(wagmiAddress)
       toast("Wallet connected via WalletConnect!")
     }
   }, [wagmiConnected, wagmiAddress, account])
