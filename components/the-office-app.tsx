@@ -1422,7 +1422,6 @@ export function TheOfficeApp() {
             { id: "tasks" as const, icon: Clipboard, label: t.tasks },
             { id: "profile" as const, icon: User, label: t.profile },
             { id: "blog" as const, icon: BookOpen, label: "Blog" },
-            { id: "stats" as const, icon: TrendingUp, label: "Stats" },
             { id: "organizations" as const, icon: Building2, label: t.orgsNav },
           ].filter((tab) => connectionMode !== "ripple" || tab.id !== "organizations").map((tab) => {
             const Icon = tab.icon
