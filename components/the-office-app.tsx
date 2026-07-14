@@ -466,6 +466,7 @@ export function TheOfficeApp() {
       const { connectXaman } = await import("@/lib/xrpl/xaman")
       const address = await connectXaman()
       setXamanAccount(address)
+      recordWalletConnection(address)
       setCurrentPage("home")
     } catch (error) {
       toast(error instanceof Error ? error.message : "Failed to connect Xaman")
@@ -1221,13 +1222,9 @@ export function TheOfficeApp() {
   }, [account])
 
   useEffect(() => {
-    if (!activeAccount) return
-    recordWalletConnection(activeAccount)
-  }, [activeAccount])
-
-  useEffect(() => {
     if (wagmiConnected && wagmiAddress && !account) {
       setAccount(wagmiAddress)
+      recordWalletConnection(wagmiAddress)
       toast("Wallet connected via WalletConnect!")
     }
   }, [wagmiConnected, wagmiAddress, account])
