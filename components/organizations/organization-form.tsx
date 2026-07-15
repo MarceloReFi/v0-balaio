@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import { NATURE_OPTIONS, NICHE_OPTIONS, SOCIAL_FIELDS } from "./organization-options"
+import { Card } from "./org-ui"
 import type { Organization } from "@/lib/types"
 
 export interface OrgFormValues {
@@ -28,6 +29,7 @@ interface OrganizationFormProps {
 const inputClass =
   "w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none focus:ring-1 focus:ring-secondary text-on-surface"
 const labelClass = "block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2"
+const sectionClass = "flex flex-col gap-4 pb-6 mb-6 border-b border-outline-variant/40"
 
 export function OrganizationForm({ initialValue, submitting, language, onSubmit, onCancel }: OrganizationFormProps) {
   const t = useTranslations(language)
@@ -55,141 +57,163 @@ export function OrganizationForm({ initialValue, submitting, language, onSubmit,
   }
 
   const nameEmpty = name.trim().length === 0
+  const [websiteField, ...otherSocialFields] = SOCIAL_FIELDS
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <label className={labelClass}>{t.orgName}</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        {nameEmpty && <p className="text-xs text-red-500 mt-1">{t.orgNameRequired}</p>}
-      </div>
+      <Card>
+        <div className={sectionClass}>
+          <div>
+            <label className={labelClass}>{t.orgName}</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+            {nameEmpty && <p className="text-xs text-red-500 mt-1">{t.orgNameRequired}</p>}
+          </div>
 
-      <div>
-        <label className={labelClass}>{t.orgDescription}</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className={`${inputClass} resize-none`}
-        />
-      </div>
+          <div>
+            <label className={labelClass}>{t.orgDescription}</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className={`${inputClass} resize-none`}
+            />
+          </div>
 
-      <div>
-        <label className={labelClass}>{t.orgLogoUrl}</label>
-        <input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className={inputClass} />
-      </div>
-
-      <div>
-        <label className={labelClass}>{t.orgNature}</label>
-        <select value={nature} onChange={(e) => setNature(e.target.value)} className={inputClass}>
-          <option value=""></option>
-          {NATURE_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-on-surface-variant mt-2">{t.orgNatureNote}</p>
-      </div>
-
-      <div>
-        <label className={labelClass}>{t.orgNiches}</label>
-        <div className="flex flex-wrap gap-2">
-          {NICHE_OPTIONS.map((niche) => (
-            <button
-              key={niche}
-              type="button"
-              onClick={() => toggleNiche(niche)}
-              className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
-                niches.includes(niche)
-                  ? "bg-secondary text-on-secondary"
-                  : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
-              }`}
-            >
-              {niche}
-            </button>
-          ))}
+          <div>
+            <label className={labelClass}>{t.orgLogoUrl}</label>
+            <input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className={inputClass} />
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label className={labelClass}>{t.orgRegion}</label>
-        <input value={region} onChange={(e) => setRegion(e.target.value)} className={inputClass} />
-      </div>
+        <div className={sectionClass}>
+          <div>
+            <label className={labelClass}>{t.orgNature}</label>
+            <select value={nature} onChange={(e) => setNature(e.target.value)} className={inputClass}>
+              <option value=""></option>
+              {NATURE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-on-surface-variant mt-2">{t.orgNatureNote}</p>
+          </div>
 
-      <div>
-        <label className={labelClass}>{t.orgContactEmail}</label>
-        <input
-          type="email"
-          value={contactEmail}
-          onChange={(e) => setContactEmail(e.target.value)}
-          className={inputClass}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>{t.orgSocialLinks}</label>
-        <div className="flex flex-col gap-2">
-          {SOCIAL_FIELDS.map((field) => (
-            <div key={field.key}>
-              <label className="block text-xs text-on-surface-variant mb-1">{field.label}</label>
-              <input
-                value={socialLinks[field.key] ?? ""}
-                onChange={(e) => setSocialLink(field.key, e.target.value)}
-                placeholder={field.placeholder}
-                className={inputClass}
-              />
+          <div>
+            <label className={labelClass}>{t.orgNiches}</label>
+            <div className="flex flex-wrap gap-2">
+              {NICHE_OPTIONS.map((niche) => (
+                <button
+                  key={niche}
+                  type="button"
+                  onClick={() => toggleNiche(niche)}
+                  className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
+                    niches.includes(niche)
+                      ? "bg-secondary text-on-secondary"
+                      : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
+                  }`}
+                >
+                  {niche}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <div>
-        <label className={labelClass}>{t.orgVisibility}</label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setIsPublic(false)}
-            className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
-              !isPublic
-                ? "bg-secondary text-on-secondary"
-                : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
-            }`}
-          >
-            {t.orgPrivate}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPublic(true)}
-            className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
-              isPublic
-                ? "bg-secondary text-on-secondary"
-                : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
-            }`}
-          >
-            {t.orgPublic}
-          </button>
+          <div>
+            <label className={labelClass}>{t.orgRegion}</label>
+            <input value={region} onChange={(e) => setRegion(e.target.value)} className={inputClass} />
+          </div>
         </div>
-        <p className="text-xs text-on-surface-variant mt-2">{t.orgPublicHint}</p>
-      </div>
 
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 py-3 font-semibold rounded-lg bg-surface-container-low text-on-surface-variant hover:opacity-80 transition-opacity"
-        >
-          {t.orgCancel}
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={submitting || nameEmpty}
-          className="flex-1 py-3 font-semibold rounded-lg bg-secondary text-on-secondary disabled:opacity-40 hover:opacity-90 transition-opacity"
-        >
-          {t.orgSave}
-        </button>
-      </div>
+        <div className={sectionClass}>
+          <div>
+            <label className={labelClass}>{t.orgContactEmail}</label>
+            <input
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>{t.orgSocialLinks}</label>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs text-on-surface-variant mb-1">{websiteField.label}</label>
+                <input
+                  value={socialLinks[websiteField.key] ?? ""}
+                  onChange={(e) => setSocialLink(websiteField.key, e.target.value)}
+                  placeholder={websiteField.placeholder}
+                  className={inputClass}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {otherSocialFields.map((field) => (
+                  <div key={field.key}>
+                    <label className="block text-xs text-on-surface-variant mb-1">{field.label}</label>
+                    <input
+                      value={socialLinks[field.key] ?? ""}
+                      onChange={(e) => setSocialLink(field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      className={inputClass}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className={labelClass}>{t.orgVisibility}</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPublic(false)}
+                className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
+                  !isPublic
+                    ? "bg-secondary text-on-secondary"
+                    : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
+                }`}
+              >
+                {t.orgPrivate}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsPublic(true)}
+                className={`py-1.5 px-3 text-xs font-semibold rounded-full transition-colors ${
+                  isPublic
+                    ? "bg-secondary text-on-secondary"
+                    : "bg-surface-container-low text-on-surface-variant hover:bg-outline-variant"
+                }`}
+              >
+                {t.orgPublic}
+              </button>
+            </div>
+            <p className="text-xs text-on-surface-variant mt-2">{t.orgPublicHint}</p>
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 py-3 font-semibold rounded-lg bg-surface-container-low text-on-surface-variant hover:opacity-80 transition-opacity"
+            >
+              {t.orgCancel}
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting || nameEmpty}
+              className="flex-1 py-3 font-semibold rounded-lg bg-secondary text-on-secondary disabled:opacity-40 hover:opacity-90 transition-opacity"
+            >
+              {t.orgSave}
+            </button>
+          </div>
+        </div>
+      </Card>
     </div>
   )
 }
