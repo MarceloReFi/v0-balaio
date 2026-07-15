@@ -41,6 +41,27 @@ export function OrganizationProfile({ organization, language, onBack }: Organiza
   }
 
   const socials = SOCIAL_FIELDS.filter((f) => organization.socialLinks[f.key])
+  const hasDetails = Boolean(organization.nature || organization.region)
+
+  const detailRows = [
+    organization.nature && { label: t.orgNature, value: organization.nature },
+    organization.region && { label: t.orgRegion, value: organization.region },
+  ].filter(Boolean) as { label: string; value: string }[]
+
+  const contactRows = [
+    organization.contactEmail && {
+      key: "email",
+      href: `mailto:${organization.contactEmail}`,
+      label: organization.contactEmail,
+      external: false,
+    },
+    ...socials.map((field) => ({
+      key: field.key,
+      href: socialHref(field.key, organization.socialLinks[field.key]),
+      label: organization.socialLinks[field.key],
+      external: true,
+    })),
+  ].filter(Boolean) as { key: string; href: string; label: string; external: boolean }[]
 
   return (
     <div>
@@ -52,90 +73,102 @@ export function OrganizationProfile({ organization, language, onBack }: Organiza
         <ArrowLeft size={16} />
       </button>
 
-      <div className="flex items-center gap-3 mb-6">
+      <Card className="flex items-start gap-5 mb-4">
         {organization.logoUrl && (
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low">
-            <img src={organization.logoUrl} alt={organization.name} className="w-full h-full object-cover" />
-          </div>
-        )}
-        <h2 className="font-display text-2xl text-on-surface border-l-2 border-secondary pl-3">{organization.name}</h2>
-      </div>
-
-      <div className="flex flex-col gap-6">
-        {organization.description && (
-          <p className="text-sm text-on-surface-variant leading-relaxed">{organization.description}</p>
-        )}
-
-        {organization.nature && (
-          <div>
-            <SectionLabel>{t.orgNature}</SectionLabel>
-            <p className="text-sm text-on-surface">{organization.nature}</p>
-          </div>
-        )}
-
-        {organization.niches.length > 0 && (
-          <div>
-            <SectionLabel>{t.orgNiches}</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              {organization.niches.map((niche) => (
-                <Chip key={niche}>{niche}</Chip>
-              ))}
+          <>
+            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-low">
+              <img src={organization.logoUrl} alt={organization.name} className="w-full h-full object-cover" />
             </div>
-          </div>
+            <div className="w-0.5 self-stretch bg-secondary rounded-full flex-shrink-0" />
+          </>
         )}
+        <div className="min-w-0">
+          <h1 className="font-display text-3xl text-on-surface mb-2">{organization.name}</h1>
+          {organization.description && (
+            <p className="text-sm text-on-surface-variant leading-relaxed">{organization.description}</p>
+          )}
+        </div>
+      </Card>
 
-        {organization.region && (
-          <div>
-            <SectionLabel>{t.orgRegion}</SectionLabel>
-            <p className="text-sm text-on-surface">{organization.region}</p>
-          </div>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-4 items-start">
+        <div className="flex flex-col gap-4 min-w-0">
+          {organization.niches.length > 0 && (
+            <Card>
+              <SectionLabel>{t.orgNiches}</SectionLabel>
+              <div className="flex flex-wrap gap-2">
+                {organization.niches.map((niche) => (
+                  <Chip key={niche}>{niche}</Chip>
+                ))}
+              </div>
+            </Card>
+          )}
 
-        {organization.contactEmail && (
-          <div>
-            <SectionLabel>{t.orgContactEmail}</SectionLabel>
-            <a href={`mailto:${organization.contactEmail}`} className="text-sm text-secondary hover:opacity-70">
-              {organization.contactEmail}
-            </a>
-          </div>
-        )}
+          <Card>
+            <SectionLabel>{t.projects}</SectionLabel>
+            {loading ? (
+              <p className="text-sm text-on-surface-variant">{t.loading}</p>
+            ) : projects.length === 0 ? (
+              <div className="border border-dashed border-outline-variant rounded-xl py-7 text-center">
+                <p className="text-sm text-on-surface-variant">{t.noProjects}</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {projects.map((project) => (
+                  <Card
+                    key={project.id}
+                    onClick={() => setSelectedProject(project)}
+                    className="bg-surface-container-high"
+                  >
+                    <p className="font-semibold text-on-surface">{project.title}</p>
+                    {project.description && (
+                      <p className="text-sm text-on-surface-variant mt-1">{project.description}</p>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
 
-        {socials.length > 0 && (
-          <div>
-            <SectionLabel>{t.orgSocialLinks}</SectionLabel>
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {socials.map((field) => (
-                <a
-                  key={field.key}
-                  href={socialHref(field.key, organization.socialLinks[field.key])}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-secondary hover:opacity-70"
-                >
-                  {organization.socialLinks[field.key]}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="flex flex-col gap-4 min-w-0">
+          {hasDetails && (
+            <Card>
+              <SectionLabel>{t.orgDetails}</SectionLabel>
+              <div className="flex flex-col">
+                {detailRows.map((row, i) => (
+                  <div
+                    key={row.label}
+                    className={i < detailRows.length - 1 ? "pb-3 mb-3 border-b border-outline-variant/40" : ""}
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-on-surface-variant mb-1">
+                      {row.label}
+                    </p>
+                    <p className="text-sm text-on-surface font-medium">{row.value}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
-        <div>
-          <SectionLabel>{t.projects}</SectionLabel>
-          {loading ? (
-            <p className="text-sm text-on-surface-variant">{t.loading}</p>
-          ) : projects.length === 0 ? (
-            <p className="text-sm text-on-surface-variant">{t.noProjects}</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {projects.map((project) => (
-                <Card key={project.id} onClick={() => setSelectedProject(project)}>
-                  <p className="font-semibold text-on-surface">{project.title}</p>
-                  {project.description && (
-                    <p className="text-sm text-on-surface-variant mt-1">{project.description}</p>
-                  )}
-                </Card>
-              ))}
-            </div>
+          {contactRows.length > 0 && (
+            <Card>
+              <SectionLabel>{t.orgContact}</SectionLabel>
+              <div className="flex flex-col">
+                {contactRows.map((row, i) => (
+                  <a
+                    key={row.key}
+                    href={row.href}
+                    target={row.external ? "_blank" : undefined}
+                    rel={row.external ? "noopener noreferrer" : undefined}
+                    className={`block text-sm font-medium text-secondary hover:opacity-70 pb-3 ${
+                      i < contactRows.length - 1 ? "mb-3 border-b border-outline-variant/40" : ""
+                    }`}
+                  >
+                    {row.label}
+                  </a>
+                ))}
+              </div>
+            </Card>
           )}
         </div>
       </div>

@@ -197,6 +197,15 @@ export const translations = {
     orgDelete: "Delete",
     orgConfirmDelete: "Delete this organization? This can't be undone.",
     orgNameRequired: "Name is required.",
+    orgDetails: "Details",
+    orgContact: "Contact",
+    orgMembers: "Members",
+    orgMembersEmpty: "No members yet.",
+    orgMembersInvitePlaceholder: "Wallet address",
+    orgMembersInviteButton: "Invite",
+    orgMembersRemoveConfirm: "Remove this member from the organization?",
+    orgMembersRoleOwner: "Owner",
+    orgMembersRoleAdmin: "Admin",
 
     // Projects
     projects: "Projects",
@@ -427,6 +436,15 @@ export const translations = {
     orgDelete: "Excluir",
     orgConfirmDelete: "Excluir esta organização? Esta ação não pode ser desfeita.",
     orgNameRequired: "O nome é obrigatório.",
+    orgDetails: "Detalhes",
+    orgContact: "Contato",
+    orgMembers: "Membros",
+    orgMembersEmpty: "Nenhum membro ainda.",
+    orgMembersInvitePlaceholder: "Endereço da carteira",
+    orgMembersInviteButton: "Convidar",
+    orgMembersRemoveConfirm: "Remover este membro da organização?",
+    orgMembersRoleOwner: "Proprietário",
+    orgMembersRoleAdmin: "Admin",
 
     // Projects
     projects: "Projetos",

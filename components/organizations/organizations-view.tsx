@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization, Project } from "@/lib/types"
 import { OrganizationForm, type OrgFormValues } from "./organization-form"
+import { OrganizationMembers } from "./organization-members"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ProjectsView } from "./projects-view"
 import { OrganizationProfile } from "./organization-profile"
@@ -140,6 +141,7 @@ export function OrganizationsView({ account, language, initialProfileOrgId, init
   }
 
   if (mode === "edit") {
+    const canManageMembers = selected !== null && orgs.some((org) => org.id === selected.id)
     return (
       <div>
         <h2 className="font-display text-2xl text-on-surface mb-5">{t.editOrganization}</h2>
@@ -150,6 +152,11 @@ export function OrganizationsView({ account, language, initialProfileOrgId, init
           onSubmit={handleUpdate}
           onCancel={handleCancel}
         />
+        {canManageMembers && selected && (
+          <div className="mt-4">
+            <OrganizationMembers organization={selected} account={account} language={language} />
+          </div>
+        )}
       </div>
     )
   }
