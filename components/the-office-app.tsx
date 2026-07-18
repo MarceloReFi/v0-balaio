@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { ethers } from "ethers"
-import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp, BookOpen, Building2 } from "lucide-react"
+import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp, BookOpen, Building2, Shield } from "lucide-react"
 import {
   getContractAddress,
   CONTRACT_ABI,
@@ -29,6 +29,7 @@ import { BlogPage } from "@/components/pages/blog-page"
 import { ExploreFeaturesPage } from "@/components/pages/explore-features-page"
 import { AgentsPage } from "@/components/pages/agents-page"
 import { StatsPage } from "@/components/pages/stats/stats-page"
+import { AdminPage } from "@/components/pages/admin/admin-page"
 import { OrganizationsView } from "@/components/organizations/organizations-view"
 import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
@@ -37,6 +38,7 @@ import { getOrganizationsByWallet } from "@/lib/organizations"
 import { recordWalletConnection } from "@/lib/wallet-connections"
 import { taskStatusLabel } from "@/lib/task-status"
 import { isMiniPay } from "@/lib/minipay"
+import { isAdminWallet } from "@/lib/admin"
 import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
@@ -142,7 +144,7 @@ export function TheOfficeApp() {
   const [account, setAccount] = useState<string>("")
   const [contract, setContract] = useState<ethers.Contract | null>(null)
   const [tokenContracts, setTokenContracts] = useState<Record<string, ethers.Contract | null>>({})
-  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents" | "organizations" | "xrpl">("home")
+  const [currentPage, setCurrentPage] = useState<"home" | "tasks" | "profile" | "blog" | "features" | "stats" | "agents" | "organizations" | "xrpl" | "admin">("home")
   const [toastMessage, setToastMessage] = useState("")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -169,6 +171,7 @@ export function TheOfficeApp() {
 
   const connectionMode = xamanAccount ? "ripple" : account ? "evm" : "none"
   const activeAccount = connectionMode === "ripple" ? (xamanAccount ?? "") : account
+  const isAdmin = isAdminWallet(activeAccount)
 
   const toast = useCallback((msg: string) => {
     setToastMessage(msg)
@@ -1406,6 +1409,7 @@ export function TheOfficeApp() {
         )}
         {activeAccount && currentPage === "blog" && <BlogPage language={language} />}
         {activeAccount && currentPage === "stats" && <StatsPage language={language} />}
+        {activeAccount && currentPage === "admin" && isAdmin && <AdminPage language={language} />}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
             <OrgNavProvider openTask={async (id) => { const task = await getTask(id); if (task) openTaskModal(task) }}>
@@ -1423,6 +1427,7 @@ export function TheOfficeApp() {
             { id: "profile" as const, icon: User, label: t.profile },
             { id: "blog" as const, icon: BookOpen, label: "Blog" },
             { id: "organizations" as const, icon: Building2, label: t.orgsNav },
+            ...(isAdmin ? [{ id: "admin" as const, icon: Shield, label: "Admin" }] : []),
           ].filter((tab) => connectionMode !== "ripple" || tab.id !== "organizations").map((tab) => {
             const Icon = tab.icon
             const isActive = currentPage === tab.id
