@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/backfill-claims",
       "schedule": "0 3 */2 * *"
+    },
+    {
+      "path": "/api/cron/stats-checkpoint",
+      "schedule": "0 4 * * *"
     }
   ]
 }
