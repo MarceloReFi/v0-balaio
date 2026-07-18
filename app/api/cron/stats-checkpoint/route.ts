@@ -62,7 +62,7 @@ async function runStatsCheckpoint() {
         .eq("source", source)
         .maybeSingle()
 
-      const fromBlock = syncState?.last_synced_block ?? deploymentBlock
+      const fromBlock = syncState?.last_synced_block ? syncState.last_synced_block + 1 : deploymentBlock
       const currentBlock = await provider.getBlockNumber()
 
       let sourceEvents = 0
