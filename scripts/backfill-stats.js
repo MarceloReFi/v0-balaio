@@ -30,7 +30,6 @@ const GNOSIS_BLOCKS_PER_DAY = 17280
 const CONTRACT_ABI = [
   "event TaskCreated(string indexed taskId, address indexed creator, address token, uint256 rewardPerSlot, uint256 totalSlots)",
   "event TaskClaimed(string indexed taskId, address indexed claimant)",
-  "event TaskSubmitted(string indexed taskId, address indexed claimant, string proofHash)",
   "event TaskApproved(string indexed taskId, address indexed claimant, uint256 reward)",
   "event RewardClaimed(string indexed taskId, address indexed claimant, uint256 amount)",
 ]
@@ -67,8 +66,11 @@ function isoDateFromBlock(blockNumber, currentBlock, blocksPerDay) {
   return date.toISOString().slice(0, 10)
 }
 
-function bumpDay(counts, isoDate) {
-  counts[isoDate] = (counts[isoDate] ?? 0) + 1
+function bumpDay(counts, isoDate, type) {
+  if (!counts[isoDate]) {
+    counts[isoDate] = { created: 0, claimed: 0, approved: 0, rewardClaimed: 0 }
+  }
+  counts[isoDate][type]++
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -96,17 +98,21 @@ async function main() {
     for (let start = deploymentBlock; start <= currentBlock; start += MAX_LOG_BLOCK_RANGE) {
       const end = Math.min(start + MAX_LOG_BLOCK_RANGE - 1, currentBlock)
 
-      const [created, claimed, submitted, approved, rewardClaimed] = await Promise.all([
+      const [created, claimed, approved, rewardClaimed] = await Promise.all([
         contract.queryFilter(contract.filters.TaskCreated(), start, end),
         contract.queryFilter(contract.filters.TaskClaimed(), start, end),
-        contract.queryFilter(contract.filters.TaskSubmitted(), start, end),
         contract.queryFilter(contract.filters.TaskApproved(), start, end),
         contract.queryFilter(contract.filters.RewardClaimed(), start, end),
       ])
 
-      for (const events of [created, claimed, submitted, approved, rewardClaimed]) {
+      for (const [events, type] of [
+        [created, "created"],
+        [claimed, "claimed"],
+        [approved, "approved"],
+        [rewardClaimed, "rewardClaimed"],
+      ]) {
         for (const e of events) {
-          bumpDay(counts, isoDateFromBlock(e.blockNumber, currentBlock, blocksPerDay))
+          bumpDay(counts, isoDateFromBlock(e.blockNumber, currentBlock, blocksPerDay), type)
         }
       }
 
@@ -123,18 +129,30 @@ async function main() {
 
   const { data: existingRows, error: fetchError } = await supabase
     .from("stats_daily")
-    .select("date, interactions")
+    .select("date, created, claimed, approved, reward_claimed")
     .in("date", dates)
 
   if (fetchError) throw new Error(`Failed to read existing stats_daily rows: ${fetchError.message}`)
 
-  const existingMap = Object.fromEntries((existingRows ?? []).map((row) => [row.date, row.interactions]))
+  const existingMap = Object.fromEntries((existingRows ?? []).map((row) => [row.date, row]))
 
-  const dailyRows = dates.map((date) => ({
-    date,
-    interactions: (existingMap[date] ?? 0) + counts[date],
-    updated_at: new Date().toISOString(),
-  }))
+  const dailyRows = dates.map((date) => {
+    const existing = existingMap[date]
+    const created = (existing?.created ?? 0) + counts[date].created
+    const claimed = (existing?.claimed ?? 0) + counts[date].claimed
+    const approved = (existing?.approved ?? 0) + counts[date].approved
+    const rewardClaimed = (existing?.reward_claimed ?? 0) + counts[date].rewardClaimed
+
+    return {
+      date,
+      created,
+      claimed,
+      approved,
+      reward_claimed: rewardClaimed,
+      interactions: created + claimed + approved + rewardClaimed,
+      updated_at: new Date().toISOString(),
+    }
+  })
 
   const { error: upsertError } = await supabase.from("stats_daily").upsert(dailyRows, { onConflict: "date" })
   if (upsertError) throw new Error(`Failed to upsert stats_daily: ${upsertError.message}`)
@@ -146,7 +164,10 @@ async function main() {
   if (syncError) throw new Error(`Failed to upsert stats_sync_state: ${syncError.message}`)
 
   const totalInteractions = dailyRows.reduce((sum, row) => sum + row.interactions, 0)
-  console.log(`\nDone. ${dailyRows.length} days written, ${totalInteractions} total interactions recorded.`)
+  const totalCreated = dailyRows.reduce((sum, row) => sum + row.created, 0)
+  console.log(
+    `\nDone. ${dailyRows.length} days written, ${totalCreated} tasks created, ${totalInteractions} total interactions recorded.`
+  )
 }
 
 main().catch((err) => {
