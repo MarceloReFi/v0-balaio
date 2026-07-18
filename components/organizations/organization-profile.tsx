@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Mail } from "lucide-react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization, Project } from "@/lib/types"
 import { listProjectsByOrganization } from "@/lib/organizations"
-import { SOCIAL_FIELDS, socialHref } from "./organization-options"
+import { SOCIAL_FIELDS, socialHref, getSocialIcon } from "./organization-options"
 import { SectionLabel, Chip, Card } from "./org-ui"
 import { ProjectDetail } from "./project-detail"
 
@@ -13,6 +13,14 @@ interface OrganizationProfileProps {
   organization: Organization
   language: Language
   onBack: () => void
+}
+
+function ContactIcon({ icon: Icon }: { icon: typeof Mail }) {
+  return (
+    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-secondary">
+      <Icon size={16} />
+    </div>
+  )
 }
 
 export function OrganizationProfile({ organization, language, onBack }: OrganizationProfileProps) {
@@ -54,14 +62,16 @@ export function OrganizationProfile({ organization, language, onBack }: Organiza
       href: `mailto:${organization.contactEmail}`,
       label: organization.contactEmail,
       external: false,
+      icon: Mail,
     },
     ...socials.map((field) => ({
       key: field.key,
       href: socialHref(field.key, organization.socialLinks[field.key]),
       label: organization.socialLinks[field.key],
       external: true,
+      icon: getSocialIcon(field.key),
     })),
-  ].filter(Boolean) as { key: string; href: string; label: string; external: boolean }[]
+  ].filter(Boolean) as { key: string; href: string; label: string; external: boolean; icon: typeof Mail }[]
 
   return (
     <div>
@@ -155,17 +165,22 @@ export function OrganizationProfile({ organization, language, onBack }: Organiza
               <SectionLabel>{t.orgContact}</SectionLabel>
               <div className="flex flex-col">
                 {contactRows.map((row, i) => (
-                  <a
+                  <div
                     key={row.key}
-                    href={row.href}
-                    target={row.external ? "_blank" : undefined}
-                    rel={row.external ? "noopener noreferrer" : undefined}
-                    className={`block text-sm font-medium text-secondary hover:opacity-70 pb-3 ${
+                    className={`flex items-center gap-3 pb-3 ${
                       i < contactRows.length - 1 ? "mb-3 border-b border-outline-variant/40" : ""
                     }`}
                   >
-                    {row.label}
-                  </a>
+                    <ContactIcon icon={row.icon} />
+                    <a
+                      href={row.href}
+                      target={row.external ? "_blank" : undefined}
+                      rel={row.external ? "noopener noreferrer" : undefined}
+                      className="min-w-0 flex-1 text-sm font-medium text-secondary hover:opacity-70 truncate"
+                    >
+                      {row.label}
+                    </a>
+                  </div>
                 ))}
               </div>
             </Card>
