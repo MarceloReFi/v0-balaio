@@ -3,7 +3,7 @@
 import { useTranslations, type Language } from "@/lib/translations"
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task } from "@/lib/types"
-import { Leaf, GraduationCap, Building2, Users, Bot } from "lucide-react"
+import { Leaf, GraduationCap, Building2, Users, Bot, Shield } from "lucide-react"
 
 interface HomePageProps {
   onConnect: () => void
@@ -187,26 +187,6 @@ export function HomePage({
 
   return (
     <div className="max-w-3xl mx-auto px-[22px] py-5 pb-24">
-
-      {/* Partnerships strip */}
-      <section className="bg-surface-container-low rounded-2xl p-5 mb-8">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-secondary text-center mb-4">
-          {language === "en" ? "Partnerships" : "Parcerias"}
-        </p>
-        <div className="flex justify-center items-center gap-6 flex-wrap">
-          <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-            <Leaf size={16} className="text-green-600" />
-            <span className="font-bold text-sm text-on-surface">Green Pill Brasil</span>
-          </div>
-          <div className="opacity-60 hover:opacity-100 transition-opacity">
-            <span className="font-black text-sm" style={{ color: "#00DAE4" }}>GoodDollar</span>
-          </div>
-          <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-            <GraduationCap size={16} className="text-on-surface" />
-            <span className="font-bold text-sm text-on-surface">Blockchain na Escola</span>
-          </div>
-        </div>
-      </section>
 
       {/* Latest Tasks */}
       {latestTasks.length > 0 && (
@@ -404,6 +384,30 @@ export function HomePage({
           ))}
         </div>
       </div>
+
+      {/* Partnerships strip */}
+      <section className="bg-surface-container-low rounded-2xl p-5 mb-8">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-secondary text-center mb-4">
+          {language === "en" ? "Partnerships" : "Parcerias"}
+        </p>
+        <div className="flex justify-center items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+            <Leaf size={16} className="text-green-600" />
+            <span className="font-bold text-sm text-on-surface">Green Pill Brasil</span>
+          </div>
+          <div className="opacity-60 hover:opacity-100 transition-opacity">
+            <span className="font-black text-sm" style={{ color: "#00DAE4" }}>GoodDollar</span>
+          </div>
+          <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+            <GraduationCap size={16} className="text-on-surface" />
+            <span className="font-bold text-sm text-on-surface">Blockchain na Escola</span>
+          </div>
+          <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
+            <Shield size={16} className="text-[#000000]" />
+            <span className="font-bold text-sm text-on-surface">Fiel Espírito Santo</span>
+          </div>
+        </div>
+      </section>
 
       {/* Explore Features Banner */}
       <div className="bg-primary-container rounded-2xl p-6 relative overflow-hidden">
