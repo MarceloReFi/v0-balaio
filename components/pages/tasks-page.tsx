@@ -47,18 +47,6 @@ export function TasksPage({
     return "bg-yellow-400"
   }
 
-  const getDeadlineInfo = (deadline: Date | null | undefined) => {
-    if (!deadline) return null
-    const now = new Date()
-    const deadlineDate = new Date(deadline)
-    const diffMs = deadlineDate.getTime() - now.getTime()
-    const diffDays = diffMs / (1000 * 60 * 60 * 24)
-    if (diffMs < 0) return { color: "text-red-500", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-on-surface", text: language === "en" ? "1 day left" : "1 dia restante" }
-    if (diffDays <= 7) return { color: "text-on-surface", text: `${Math.ceil(diffDays)} ${language === "en" ? "days left" : "dias restantes"}` }
-    return { color: "text-on-surface-variant", text: deadlineDate.toLocaleDateString() }
-  }
-
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
 
   const getTimeAgo = (date: Date) => {
@@ -176,7 +164,6 @@ export function TasksPage({
         <div className="flex flex-col">
           {filteredTasks.map((task, idx) => {
             const status = getStatusBadge(task)
-            const deadlineInfo = getDeadlineInfo(task.deadline)
             return (
               <div
                 key={idx}
@@ -201,12 +188,6 @@ export function TasksPage({
                       <span>{task.availableSlots}/{task.totalSlots} {language === "en" ? "slots" : "vagas"}</span>
                       <span>·</span>
                       <span>{getTimeAgo(task.createdAt)}</span>
-                      {deadlineInfo && (
-                        <>
-                          <span>·</span>
-                          <span className={deadlineInfo.color}>{deadlineInfo.text}</span>
-                        </>
-                      )}
                     </div>
                   </div>
 

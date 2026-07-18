@@ -68,17 +68,6 @@ export function HomePage({
     return "bg-yellow-400"
   }
 
-  const getDeadlineInfo = (deadline: Date | null | undefined) => {
-    if (!deadline) return null
-    const now = new Date()
-    const deadlineDate = new Date(deadline)
-    const diffMs = deadlineDate.getTime() - now.getTime()
-    const diffDays = diffMs / (1000 * 60 * 60 * 24)
-    if (diffMs < 0) return { color: "text-red-500", text: language === "en" ? "Expired" : "Expirado" }
-    if (diffDays <= 1) return { color: "text-[#8A6D00]", text: language === "en" ? "1 day" : "1 dia" }
-    return { color: "text-[#4A7B5E]", text: `${Math.ceil(diffDays)}d` }
-  }
-
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
 
   const opportunities = [
@@ -212,7 +201,6 @@ export function HomePage({
 
           <div className="flex flex-col">
             {latestTasks.map((task) => {
-              const deadlineInfo = getDeadlineInfo(task.deadline)
               return (
                 <div key={task.id} className="py-4 border-b border-outline-variant/20">
                   <div className="flex items-start justify-between gap-3">
@@ -233,12 +221,6 @@ export function HomePage({
                         <span>{task.availableSlots || task.totalSlots || 1} {language === "en" ? "slots" : "vagas"}</span>
                         <span>·</span>
                         <span>{getTimeAgo(task.createdAt)}</span>
-                        {deadlineInfo && (
-                          <>
-                            <span>·</span>
-                            <span className={deadlineInfo.color}>{deadlineInfo.text}</span>
-                          </>
-                        )}
                       </div>
                     </div>
 
