@@ -1,3 +1,5 @@
+import { Mail, Globe, Instagram, Twitter, Send } from "lucide-react"
+
 export interface SocialField {
   key: string
   label: string
@@ -36,6 +38,16 @@ export const SOCIAL_FIELDS: SocialField[] = [
   { key: "x", label: "X", placeholder: "@handle" },
   { key: "telegram", label: "Telegram", placeholder: "@handle or t.me/..." },
 ]
+
+export function getSocialIcon(key: string) {
+  switch (key) {
+    case "website": return Globe
+    case "instagram": return Instagram
+    case "x": return Twitter
+    case "telegram": return Send
+    default: return Mail
+  }
+}
 
 export function socialHref(key: string, value: string): string {
   const raw = value.trim()
