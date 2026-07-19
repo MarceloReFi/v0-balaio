@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { RefreshCw, TrendingUp, Users, Building2, Clock, History } from "lucide-react"
+import { RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface StatsPageProps {
@@ -11,6 +11,7 @@ type StatsData = {
   users: number
   interactions: number
   organizationsCreated: number
+  tasksCreated: number
   growth: { date: string; interactions: number }[]
   lastUpdated: number
 }
@@ -107,9 +108,9 @@ async function fetchChainStats(chainIds: number[], windowStart: Date | null): Pr
   }
 }
 
-async function fetchDailyStats(windowStart: Date | null): Promise<{ date: string; interactions: number }[]> {
+async function fetchDailyStats(windowStart: Date | null): Promise<{ date: string; created: number; interactions: number }[]> {
   const supabase = createClient()
-  let query = supabase.from("stats_daily").select("date, interactions").order("date", { ascending: true })
+  let query = supabase.from("stats_daily").select("date, created, interactions").order("date", { ascending: true })
   if (windowStart) query = query.gte("date", isoDate(windowStart))
   const { data } = await query
   return data ?? []
@@ -144,6 +145,7 @@ export function StatsPage({ language }: StatsPageProps) {
       users: "Users",
       interactions: "Interactions",
       organizationsCreated: "Organizations Created",
+      tasksCreated: "Tasks Created",
       growthSinceLaunch: "Growth Since Launch",
       growth60Days: "Growth (Last 60 Days)",
       date: "Date",
@@ -164,6 +166,7 @@ export function StatsPage({ language }: StatsPageProps) {
       users: "Usuários",
       interactions: "Interações",
       organizationsCreated: "Organizações Criadas",
+      tasksCreated: "Tarefas Criadas",
       growthSinceLaunch: "Crescimento Desde o Lançamento",
       growth60Days: "Crescimento (Últimos 60 Dias)",
       date: "Data",
@@ -200,13 +203,15 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
-      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
+      const evmCreated = dailyRows.reduce((sum, row) => sum + row.created, 0)
+      const tasksCreated = evmCreated + ripple.created
+
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
-        ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
+        ripple.created + ripple.claimed + ripple.approved + ripple.withdrawn
 
       setter({
         loading: false,
@@ -218,6 +223,7 @@ export function StatsPage({ language }: StatsPageProps) {
           users,
           interactions,
           organizationsCreated,
+          tasksCreated,
           growth: buildGrowthRows(dailyMap),
           lastUpdated: Date.now(),
         },
@@ -245,13 +251,15 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
-      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
+      const evmCreated = dailyRows.reduce((sum, row) => sum + row.created, 0)
+      const tasksCreated = evmCreated + ripple.created
+
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
-        ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
+        ripple.created + ripple.claimed + ripple.approved + ripple.withdrawn
 
       setter({
         loading: false,
@@ -263,6 +271,7 @@ export function StatsPage({ language }: StatsPageProps) {
           users,
           interactions,
           organizationsCreated,
+          tasksCreated,
           growth: buildGrowthRows(dailyMap),
           lastUpdated: Date.now(),
         },
@@ -345,9 +354,10 @@ export function StatsPage({ language }: StatsPageProps) {
         )}
 
         {/* Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           {[
             { icon: Users, label: strings.users, value: panel.stats.users },
+            { icon: ClipboardList, label: strings.tasksCreated, value: panel.stats.tasksCreated },
             { icon: TrendingUp, label: strings.interactions, value: panel.stats.interactions },
             { icon: Building2, label: strings.organizationsCreated, value: panel.stats.organizationsCreated },
           ].map(({ icon: Icon, label: l, value }) => (

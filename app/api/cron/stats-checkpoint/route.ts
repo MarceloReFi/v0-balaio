@@ -26,31 +26,33 @@ const SOURCES = [
 ]
 
 async function countEventsInRange(contract: ethers.Contract, fromBlock: number, currentBlock: number) {
-  let total = 0
+  const totals = { created: 0, claimed: 0, approved: 0, rewardClaimed: 0 }
 
   for (let start = fromBlock; start <= currentBlock; start += MAX_LOG_BLOCK_RANGE) {
     const end = Math.min(start + MAX_LOG_BLOCK_RANGE - 1, currentBlock)
 
-    const [created, claimed, submitted, approved, rewardClaimed] = await Promise.all([
+    const [created, claimed, approved, rewardClaimed] = await Promise.all([
       retryQuery(() => contract.queryFilter(contract.filters.TaskCreated(), start, end)),
       retryQuery(() => contract.queryFilter(contract.filters.TaskClaimed(), start, end)),
-      retryQuery(() => contract.queryFilter(contract.filters.TaskSubmitted(), start, end)),
       retryQuery(() => contract.queryFilter(contract.filters.TaskApproved(), start, end)),
       retryQuery(() => contract.queryFilter(contract.filters.RewardClaimed(), start, end)),
     ])
 
-    total += created.length + claimed.length + submitted.length + approved.length + rewardClaimed.length
+    totals.created += created.length
+    totals.claimed += claimed.length
+    totals.approved += approved.length
+    totals.rewardClaimed += rewardClaimed.length
   }
 
-  return total
+  return totals
 }
 
 async function runStatsCheckpoint() {
   try {
     const supabase = await createClient()
 
-    let newEvents = 0
-    const perSource: Record<string, number> = {}
+    const totals = { created: 0, claimed: 0, approved: 0, rewardClaimed: 0 }
+    const perSource: Record<string, typeof totals> = {}
 
     for (const { source, contractAddress, deploymentBlock, rpc } of SOURCES) {
       const provider = new ethers.JsonRpcProvider(rpc)
@@ -65,13 +67,16 @@ async function runStatsCheckpoint() {
       const fromBlock = syncState?.last_synced_block ? syncState.last_synced_block + 1 : deploymentBlock
       const currentBlock = await provider.getBlockNumber()
 
-      let sourceEvents = 0
+      let sourceEvents = { created: 0, claimed: 0, approved: 0, rewardClaimed: 0 }
       if (fromBlock <= currentBlock) {
         sourceEvents = await countEventsInRange(contract, fromBlock, currentBlock)
       }
 
       perSource[source] = sourceEvents
-      newEvents += sourceEvents
+      totals.created += sourceEvents.created
+      totals.claimed += sourceEvents.claimed
+      totals.approved += sourceEvents.approved
+      totals.rewardClaimed += sourceEvents.rewardClaimed
 
       const { error: syncError } = await supabase
         .from("stats_sync_state")
@@ -89,16 +94,28 @@ async function runStatsCheckpoint() {
 
     const { data: existingRow } = await supabase
       .from("stats_daily")
-      .select("interactions")
+      .select("created, claimed, approved, reward_claimed")
       .eq("date", today)
       .maybeSingle()
 
-    const interactions = (existingRow?.interactions ?? 0) + newEvents
+    const created = (existingRow?.created ?? 0) + totals.created
+    const claimed = (existingRow?.claimed ?? 0) + totals.claimed
+    const approved = (existingRow?.approved ?? 0) + totals.approved
+    const rewardClaimed = (existingRow?.reward_claimed ?? 0) + totals.rewardClaimed
+    const interactions = created + claimed + approved + rewardClaimed
 
     const { error: dailyError } = await supabase
       .from("stats_daily")
       .upsert(
-        { date: today, interactions, updated_at: new Date().toISOString() },
+        {
+          date: today,
+          created,
+          claimed,
+          approved,
+          reward_claimed: rewardClaimed,
+          interactions,
+          updated_at: new Date().toISOString(),
+        },
         { onConflict: "date" }
       )
 
@@ -106,7 +123,7 @@ async function runStatsCheckpoint() {
       return NextResponse.json({ error: dailyError.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, date: today, newEvents, perSource })
+    return NextResponse.json({ success: true, date: today, totals, perSource })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },
