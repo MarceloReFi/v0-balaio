@@ -101,11 +101,18 @@ async function runStatsCheckpoint() {
       const provider = new ethers.JsonRpcProvider(rpc)
       const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, provider)
 
-      const { data: syncState } = await supabase
+      const { data: syncState, error: syncReadError } = await supabase
         .from("stats_sync_state")
         .select("last_synced_block")
         .eq("source", source)
         .maybeSingle()
+
+      if (syncReadError) {
+        return NextResponse.json(
+          { error: `stats_sync_state read (${source}): ${syncReadError.message}` },
+          { status: 500 }
+        )
+      }
 
       const fromBlock = syncState?.last_synced_block ? syncState.last_synced_block + 1 : deploymentBlock
       const currentBlock = await provider.getBlockNumber()
@@ -117,11 +124,18 @@ async function runStatsCheckpoint() {
         if (!done) allDone = false
 
         for (const [date, counts] of Object.entries(perDate)) {
-          const { data: existingRow } = await supabase
+          const { data: existingRow, error: dailyReadError } = await supabase
             .from("stats_daily")
             .select("created, claimed, submitted, approved, reward_claimed")
             .eq("date", date)
             .maybeSingle()
+
+          if (dailyReadError) {
+            return NextResponse.json(
+              { error: `stats_daily read (${date}): ${dailyReadError.message}` },
+              { status: 500 }
+            )
+          }
 
           const created = (existingRow?.created ?? 0) + counts.created
           const claimed = (existingRow?.claimed ?? 0) + counts.claimed
@@ -129,7 +143,7 @@ async function runStatsCheckpoint() {
           const approved = (existingRow?.approved ?? 0) + counts.approved
           const rewardClaimed = (existingRow?.reward_claimed ?? 0) + counts.rewardClaimed
 
-          await supabase.from("stats_daily").upsert(
+          const { error: dailyUpsertError } = await supabase.from("stats_daily").upsert(
             {
               date,
               created,
@@ -143,6 +157,13 @@ async function runStatsCheckpoint() {
             { onConflict: "date" }
           )
 
+          if (dailyUpsertError) {
+            return NextResponse.json(
+              { error: `stats_daily upsert (${date}): ${dailyUpsertError.message}` },
+              { status: 500 }
+            )
+          }
+
           sourceTotals.created += counts.created
           sourceTotals.claimed += counts.claimed
           sourceTotals.submitted += counts.submitted
@@ -150,12 +171,19 @@ async function runStatsCheckpoint() {
           sourceTotals.rewardClaimed += counts.rewardClaimed
         }
 
-        await supabase
+        const { error: syncUpsertError } = await supabase
           .from("stats_sync_state")
           .upsert(
             { source, last_synced_block: lastProcessedBlock, updated_at: new Date().toISOString() },
             { onConflict: "source" }
           )
+
+        if (syncUpsertError) {
+          return NextResponse.json(
+            { error: `stats_sync_state upsert (${source}): ${syncUpsertError.message}` },
+            { status: 500 }
+          )
+        }
 
         perSource[source] = { totals: sourceTotals, done, lastProcessedBlock, currentBlock }
       } else {
