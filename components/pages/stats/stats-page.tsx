@@ -203,7 +203,6 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
-      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
@@ -252,7 +251,6 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
-      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
