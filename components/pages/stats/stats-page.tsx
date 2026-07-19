@@ -51,10 +51,23 @@ function formatDayLabel(isoDateStr: string): string {
   return `${day}/${month}`
 }
 
-function buildGrowthRows(map: DailyMap) {
-  return Object.keys(map)
-    .sort()
-    .map((date) => ({ date: formatDayLabel(date), interactions: map[date] }))
+function getWeekStart(reference: Date): Date {
+  const d = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()))
+  const day = d.getUTCDay()
+  const diff = (day - 2 + 7) % 7
+  d.setUTCDate(d.getUTCDate() - diff)
+  return d
+}
+
+function buildWeekRows(map: DailyMap, weekStart: Date) {
+  const rows: { date: string; interactions: number }[] = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart)
+    d.setUTCDate(d.getUTCDate() + i)
+    const iso = isoDate(d)
+    rows.push({ date: formatDayLabel(iso), interactions: map[iso] ?? 0 })
+  }
+  return rows
 }
 
 type ChainStats = {
@@ -108,9 +121,14 @@ async function fetchChainStats(chainIds: number[], windowStart: Date | null): Pr
   }
 }
 
-async function fetchDailyStats(windowStart: Date | null): Promise<{ date: string; created: number; interactions: number }[]> {
+async function fetchDailyStats(
+  windowStart: Date | null
+): Promise<{ date: string; created: number; submitted: number; interactions: number }[]> {
   const supabase = createClient()
-  let query = supabase.from("stats_daily").select("date, created, interactions").order("date", { ascending: true })
+  let query = supabase
+    .from("stats_daily")
+    .select("date, created, submitted, interactions")
+    .order("date", { ascending: true })
   if (windowStart) query = query.gte("date", isoDate(windowStart))
   const { data } = await query
   return data ?? []
@@ -203,6 +221,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
+      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
@@ -211,7 +230,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
-        ripple.created + ripple.claimed + ripple.approved + ripple.withdrawn
+        ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
 
       setter({
         loading: false,
@@ -224,7 +243,7 @@ export function StatsPage({ language }: StatsPageProps) {
           interactions,
           organizationsCreated,
           tasksCreated,
-          growth: buildGrowthRows(dailyMap),
+          growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
           lastUpdated: Date.now(),
         },
       })
@@ -251,6 +270,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
+      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
@@ -259,7 +279,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
-        ripple.created + ripple.claimed + ripple.approved + ripple.withdrawn
+        ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
 
       setter({
         loading: false,
@@ -272,7 +292,7 @@ export function StatsPage({ language }: StatsPageProps) {
           interactions,
           organizationsCreated,
           tasksCreated,
-          growth: buildGrowthRows(dailyMap),
+          growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
           lastUpdated: Date.now(),
         },
       })
