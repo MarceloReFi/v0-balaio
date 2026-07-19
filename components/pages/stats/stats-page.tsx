@@ -51,10 +51,23 @@ function formatDayLabel(isoDateStr: string): string {
   return `${day}/${month}`
 }
 
-function buildGrowthRows(map: DailyMap) {
-  return Object.keys(map)
-    .sort()
-    .map((date) => ({ date: formatDayLabel(date), interactions: map[date] }))
+function getWeekStart(reference: Date): Date {
+  const d = new Date(Date.UTC(reference.getUTCFullYear(), reference.getUTCMonth(), reference.getUTCDate()))
+  const day = d.getUTCDay()
+  const diff = (day - 2 + 7) % 7
+  d.setUTCDate(d.getUTCDate() - diff)
+  return d
+}
+
+function buildWeekRows(map: DailyMap, weekStart: Date) {
+  const rows: { date: string; interactions: number }[] = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart)
+    d.setUTCDate(d.getUTCDate() + i)
+    const iso = isoDate(d)
+    rows.push({ date: formatDayLabel(iso), interactions: map[iso] ?? 0 })
+  }
+  return rows
 }
 
 type ChainStats = {
@@ -108,9 +121,14 @@ async function fetchChainStats(chainIds: number[], windowStart: Date | null): Pr
   }
 }
 
-async function fetchDailyStats(windowStart: Date | null): Promise<{ date: string; created: number; interactions: number }[]> {
+async function fetchDailyStats(
+  windowStart: Date | null
+): Promise<{ date: string; created: number; submitted: number; interactions: number }[]> {
   const supabase = createClient()
-  let query = supabase.from("stats_daily").select("date, created, interactions").order("date", { ascending: true })
+  let query = supabase
+    .from("stats_daily")
+    .select("date, created, submitted, interactions")
+    .order("date", { ascending: true })
   if (windowStart) query = query.gte("date", isoDate(windowStart))
   const { data } = await query
   return data ?? []
@@ -130,6 +148,7 @@ async function fetchOrganizationsCount(): Promise<number> {
 
 export function StatsPage({ language }: StatsPageProps) {
   const [stats, setStats] = useState<PanelState>(INITIAL_PANEL)
+  const [backfill, setBackfill] = useState<{ running: boolean; log: string[]; done: boolean | null }>({ running: false, log: [], done: null })
 
   const strings = {
     en: {
@@ -152,6 +171,9 @@ export function StatsPage({ language }: StatsPageProps) {
       loading: "Loading...",
       error: "Failed to load stats",
       ago: "ago",
+      blockchainSync: "Blockchain Sync",
+      syncHistory: "Sync History",
+      syncComplete: "Sync complete",
     },
     "pt-BR": {
       title: "Estatísticas da Plataforma",
@@ -173,6 +195,9 @@ export function StatsPage({ language }: StatsPageProps) {
       loading: "Carregando...",
       error: "Falha ao carregar",
       ago: "atrás",
+      blockchainSync: "Sincronização Blockchain",
+      syncHistory: "Sincronizar Histórico",
+      syncComplete: "Sincronização completa",
     },
   }[language]
 
@@ -203,6 +228,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
+      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
@@ -211,7 +237,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
-        ripple.created + ripple.claimed + ripple.approved + ripple.withdrawn
+        ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
 
       setter({
         loading: false,
@@ -224,7 +250,7 @@ export function StatsPage({ language }: StatsPageProps) {
           interactions,
           organizationsCreated,
           tasksCreated,
-          growth: buildGrowthRows(dailyMap),
+          growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
           lastUpdated: Date.now(),
         },
       })
@@ -251,6 +277,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       ripple.createdAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.claimedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
+      ripple.submittedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.approvedAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
       ripple.withdrawnAt.forEach((d) => bumpDay(dailyMap, isoDate(d)))
 
@@ -259,7 +286,7 @@ export function StatsPage({ language }: StatsPageProps) {
 
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
-        ripple.created + ripple.claimed + ripple.approved + ripple.withdrawn
+        ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
 
       setter({
         loading: false,
@@ -272,13 +299,39 @@ export function StatsPage({ language }: StatsPageProps) {
           interactions,
           organizationsCreated,
           tasksCreated,
-          growth: buildGrowthRows(dailyMap),
+          growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
           lastUpdated: Date.now(),
         },
       })
     } catch (err) {
       console.error("loadFullHistory error:", err)
       setter(p => ({ ...p, loadingFullHistory: false, error: strings.error }))
+    }
+  }
+
+  async function runBackfill() {
+    setBackfill({ running: true, log: [], done: null })
+    let done = false
+    let iterations = 0
+    try {
+      while (!done && iterations < 3000) {
+        const res = await fetch("/api/cron/stats-checkpoint", { method: "POST" })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        done = data.done
+        iterations++
+        const summary = Object.entries(data.perSource as Record<string, any>)
+          .map(([src, s]: [string, any]) => `${src}: ${s.done ? "ok" : `${s.lastProcessedBlock}/${s.currentBlock}`}`)
+          .join(" · ")
+        setBackfill((p) => ({ ...p, log: [...p.log.slice(-30), `Lote ${iterations} — ${summary}`] }))
+      }
+      setBackfill((p) => ({ ...p, running: false, done: true }))
+    } catch (err) {
+      setBackfill((p) => ({
+        ...p,
+        running: false,
+        log: [...p.log, `Erro: ${err instanceof Error ? err.message : String(err)}`],
+      }))
     }
   }
 
@@ -416,6 +469,30 @@ export function StatsPage({ language }: StatsPageProps) {
           onRefresh={() => loadRecent(setStats)}
           onFullHistory={() => loadFullHistory(setStats)}
         />
+
+        <div className="balaio-card mb-8">
+          <h2 className="text-xl font-bold mb-4">{strings.blockchainSync}</h2>
+          <button
+            onClick={runBackfill}
+            disabled={backfill.running}
+            className="balaio-chip green flex items-center gap-1 text-xs mb-4"
+          >
+            <RefreshCw size={12} className={backfill.running ? "animate-spin" : ""} />
+            {strings.syncHistory}
+          </button>
+
+          {backfill.log.length > 0 && (
+            <div className="max-h-40 overflow-y-auto bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono space-y-1">
+              {backfill.log.map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
+          )}
+
+          {backfill.done === true && (
+            <div className="text-sm text-green-600 mt-3">{strings.syncComplete}</div>
+          )}
+        </div>
       </div>
     </div>
   )

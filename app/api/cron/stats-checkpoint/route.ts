@@ -18,6 +18,10 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 const MAX_LOG_BLOCK_RANGE = 5000
+const MAX_CHUNKS_PER_RUN = 8
+
+type EventTotals = { created: number; claimed: number; submitted: number; approved: number; rewardClaimed: number }
+type PerDate = Record<string, EventTotals>
 
 const SOURCES = [
   { source: "celo_v1", contractAddress: CELO_CONTRACT_ADDRESS_V1, deploymentBlock: CELO_DEPLOYMENT_BLOCK_V1, rpc: CELO_RPC },
@@ -25,34 +29,73 @@ const SOURCES = [
   { source: "gnosis", contractAddress: GNOSIS_CONTRACT_ADDRESS, deploymentBlock: GNOSIS_DEPLOYMENT_BLOCK, rpc: GNOSIS_RPC },
 ]
 
-async function countEventsInRange(contract: ethers.Contract, fromBlock: number, currentBlock: number) {
-  const totals = { created: 0, claimed: 0, approved: 0, rewardClaimed: 0 }
+function emptyTotals(): EventTotals {
+  return { created: 0, claimed: 0, submitted: 0, approved: 0, rewardClaimed: 0 }
+}
 
-  for (let start = fromBlock; start <= currentBlock; start += MAX_LOG_BLOCK_RANGE) {
+function bumpDate(perDate: PerDate, date: string, type: keyof EventTotals) {
+  if (!perDate[date]) perDate[date] = emptyTotals()
+  perDate[date][type]++
+}
+
+async function processSource(
+  provider: ethers.JsonRpcProvider,
+  contract: ethers.Contract,
+  fromBlock: number,
+  currentBlock: number
+) {
+  const perDate: PerDate = {}
+  const blockDateCache = new Map<number, string>()
+
+  async function getBlockDate(blockNumber: number): Promise<string> {
+    const cached = blockDateCache.get(blockNumber)
+    if (cached) return cached
+    const block = await retryQuery(() => provider.getBlock(blockNumber))
+    const date = new Date((block?.timestamp ?? Date.now() / 1000) * 1000).toISOString().slice(0, 10)
+    blockDateCache.set(blockNumber, date)
+    return date
+  }
+
+  let lastProcessedBlock = fromBlock - 1
+  let chunksProcessed = 0
+
+  for (let start = fromBlock; start <= currentBlock && chunksProcessed < MAX_CHUNKS_PER_RUN; start += MAX_LOG_BLOCK_RANGE) {
     const end = Math.min(start + MAX_LOG_BLOCK_RANGE - 1, currentBlock)
 
-    const [created, claimed, approved, rewardClaimed] = await Promise.all([
+    const [created, claimed, submitted, approved, rewardClaimed] = await Promise.all([
       retryQuery(() => contract.queryFilter(contract.filters.TaskCreated(), start, end)),
       retryQuery(() => contract.queryFilter(contract.filters.TaskClaimed(), start, end)),
+      retryQuery(() => contract.queryFilter(contract.filters.TaskSubmitted(), start, end)),
       retryQuery(() => contract.queryFilter(contract.filters.TaskApproved(), start, end)),
       retryQuery(() => contract.queryFilter(contract.filters.RewardClaimed(), start, end)),
     ])
 
-    totals.created += created.length
-    totals.claimed += claimed.length
-    totals.approved += approved.length
-    totals.rewardClaimed += rewardClaimed.length
+    for (const [events, type] of [
+      [created, "created"],
+      [claimed, "claimed"],
+      [submitted, "submitted"],
+      [approved, "approved"],
+      [rewardClaimed, "rewardClaimed"],
+    ] as const) {
+      for (const e of events) {
+        const date = await getBlockDate(e.blockNumber)
+        bumpDate(perDate, date, type)
+      }
+    }
+
+    lastProcessedBlock = end
+    chunksProcessed++
   }
 
-  return totals
+  return { perDate, lastProcessedBlock, done: lastProcessedBlock >= currentBlock }
 }
 
 async function runStatsCheckpoint() {
   try {
     const supabase = await createClient()
 
-    const totals = { created: 0, claimed: 0, approved: 0, rewardClaimed: 0 }
-    const perSource: Record<string, typeof totals> = {}
+    let allDone = true
+    const perSource: Record<string, { totals: EventTotals; done: boolean; lastProcessedBlock: number; currentBlock: number }> = {}
 
     for (const { source, contractAddress, deploymentBlock, rpc } of SOURCES) {
       const provider = new ethers.JsonRpcProvider(rpc)
@@ -67,63 +110,60 @@ async function runStatsCheckpoint() {
       const fromBlock = syncState?.last_synced_block ? syncState.last_synced_block + 1 : deploymentBlock
       const currentBlock = await provider.getBlockNumber()
 
-      let sourceEvents = { created: 0, claimed: 0, approved: 0, rewardClaimed: 0 }
+      const sourceTotals = emptyTotals()
+
       if (fromBlock <= currentBlock) {
-        sourceEvents = await countEventsInRange(contract, fromBlock, currentBlock)
-      }
+        const { perDate, lastProcessedBlock, done } = await processSource(provider, contract, fromBlock, currentBlock)
+        if (!done) allDone = false
 
-      perSource[source] = sourceEvents
-      totals.created += sourceEvents.created
-      totals.claimed += sourceEvents.claimed
-      totals.approved += sourceEvents.approved
-      totals.rewardClaimed += sourceEvents.rewardClaimed
+        for (const [date, counts] of Object.entries(perDate)) {
+          const { data: existingRow } = await supabase
+            .from("stats_daily")
+            .select("created, claimed, submitted, approved, reward_claimed")
+            .eq("date", date)
+            .maybeSingle()
 
-      const { error: syncError } = await supabase
-        .from("stats_sync_state")
-        .upsert(
-          { source, last_synced_block: currentBlock, updated_at: new Date().toISOString() },
-          { onConflict: "source" }
-        )
+          const created = (existingRow?.created ?? 0) + counts.created
+          const claimed = (existingRow?.claimed ?? 0) + counts.claimed
+          const submitted = (existingRow?.submitted ?? 0) + counts.submitted
+          const approved = (existingRow?.approved ?? 0) + counts.approved
+          const rewardClaimed = (existingRow?.reward_claimed ?? 0) + counts.rewardClaimed
 
-      if (syncError) {
-        return NextResponse.json({ error: syncError.message }, { status: 500 })
+          await supabase.from("stats_daily").upsert(
+            {
+              date,
+              created,
+              claimed,
+              submitted,
+              approved,
+              reward_claimed: rewardClaimed,
+              interactions: created + claimed + submitted + approved + rewardClaimed,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "date" }
+          )
+
+          sourceTotals.created += counts.created
+          sourceTotals.claimed += counts.claimed
+          sourceTotals.submitted += counts.submitted
+          sourceTotals.approved += counts.approved
+          sourceTotals.rewardClaimed += counts.rewardClaimed
+        }
+
+        await supabase
+          .from("stats_sync_state")
+          .upsert(
+            { source, last_synced_block: lastProcessedBlock, updated_at: new Date().toISOString() },
+            { onConflict: "source" }
+          )
+
+        perSource[source] = { totals: sourceTotals, done, lastProcessedBlock, currentBlock }
+      } else {
+        perSource[source] = { totals: sourceTotals, done: true, lastProcessedBlock: fromBlock - 1, currentBlock }
       }
     }
 
-    const today = new Date().toISOString().slice(0, 10)
-
-    const { data: existingRow } = await supabase
-      .from("stats_daily")
-      .select("created, claimed, approved, reward_claimed")
-      .eq("date", today)
-      .maybeSingle()
-
-    const created = (existingRow?.created ?? 0) + totals.created
-    const claimed = (existingRow?.claimed ?? 0) + totals.claimed
-    const approved = (existingRow?.approved ?? 0) + totals.approved
-    const rewardClaimed = (existingRow?.reward_claimed ?? 0) + totals.rewardClaimed
-    const interactions = created + claimed + approved + rewardClaimed
-
-    const { error: dailyError } = await supabase
-      .from("stats_daily")
-      .upsert(
-        {
-          date: today,
-          created,
-          claimed,
-          approved,
-          reward_claimed: rewardClaimed,
-          interactions,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "date" }
-      )
-
-    if (dailyError) {
-      return NextResponse.json({ error: dailyError.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, date: today, totals, perSource })
+    return NextResponse.json({ success: true, done: allDone, perSource })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },
