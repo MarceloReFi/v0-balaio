@@ -225,11 +225,17 @@ async function runStatsCheckpoint() {
       }
     }
 
-    await supabase.from("stats_sync_state").delete().eq("source", "_lock")
+    const { error: lockDeleteError } = await supabase.from("stats_sync_state").delete().eq("source", "_lock")
+    if (lockDeleteError) {
+      console.error(`stats_sync_state lock delete failed: ${lockDeleteError.message}`)
+    }
 
     return NextResponse.json({ success: true, done: allDone, perSource })
   } catch (error) {
-    await supabase.from("stats_sync_state").delete().eq("source", "_lock")
+    const { error: lockDeleteError } = await supabase.from("stats_sync_state").delete().eq("source", "_lock")
+    if (lockDeleteError) {
+      console.error(`stats_sync_state lock delete failed: ${lockDeleteError.message}`)
+    }
 
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },
