@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList } from "lucide-react"
+import { RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList, CheckCircle2, FolderKanban } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface StatsPageProps {
@@ -12,6 +12,8 @@ type StatsData = {
   interactions: number
   organizationsCreated: number
   tasksCreated: number
+  tasksClaimed: number
+  projectsCreated: number
   growth: { date: string; interactions: number }[]
   lastUpdated: number
 }
@@ -123,11 +125,11 @@ async function fetchChainStats(chainIds: number[], windowStart: Date | null): Pr
 
 async function fetchDailyStats(
   windowStart: Date | null
-): Promise<{ date: string; created: number; submitted: number; interactions: number }[]> {
+): Promise<{ date: string; created: number; claimed: number; submitted: number; interactions: number }[]> {
   const supabase = createClient()
   let query = supabase
     .from("stats_daily")
-    .select("date, created, submitted, interactions")
+    .select("date, created, claimed, submitted, interactions")
     .order("date", { ascending: true })
   if (windowStart) query = query.gte("date", isoDate(windowStart))
   const { data } = await query
@@ -144,6 +146,31 @@ async function fetchOrganizationsCount(): Promise<number> {
   const supabase = createClient()
   const { count } = await supabase.from("organizations").select("*", { count: "exact", head: true })
   return count ?? 0
+}
+
+async function fetchProjectsCount(): Promise<number> {
+  const supabase = createClient()
+  const { count } = await supabase.from("projects").select("*", { count: "exact", head: true })
+  return count ?? 0
+}
+
+function WeeklyBarChart({ data }: { data: { date: string; interactions: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.interactions))
+  const maxBarHeight = 140
+  return (
+    <div className="flex items-end gap-2 h-[180px] flex-1 min-w-[240px]">
+      {data.map((d) => {
+        const height = d.interactions > 0 ? Math.max(4, (d.interactions / max) * maxBarHeight) : 0
+        return (
+          <div key={d.date} className="flex flex-col items-center justify-end flex-1 h-full">
+            <span className="text-[10px] font-bold mb-1">{d.interactions}</span>
+            <div className="w-full bg-orange-300 rounded-t border border-black" style={{ height: `${height}px` }} />
+            <span className="text-[10px] text-gray-500 mt-1">{d.date}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 export function StatsPage({ language }: StatsPageProps) {
@@ -163,8 +190,11 @@ export function StatsPage({ language }: StatsPageProps) {
       fullHistory: "Full History",
       users: "Users",
       interactions: "Interactions",
+      totalInteractions: "Total Interactions",
       organizationsCreated: "Organizations Created",
       tasksCreated: "Tasks Created",
+      tasksClaimed: "Tasks Claimed",
+      projectsCreated: "Projects Created",
       growthSinceLaunch: "Growth Since Launch",
       growth60Days: "Growth (Last 60 Days)",
       date: "Date",
@@ -187,8 +217,11 @@ export function StatsPage({ language }: StatsPageProps) {
       fullHistory: "Histórico Completo",
       users: "Usuários",
       interactions: "Interações",
+      totalInteractions: "Total de Interações",
       organizationsCreated: "Organizações Criadas",
       tasksCreated: "Tarefas Criadas",
+      tasksClaimed: "Tarefas Reivindicadas",
+      projectsCreated: "Projetos Criados",
       growthSinceLaunch: "Crescimento Desde o Lançamento",
       growth60Days: "Crescimento (Últimos 60 Dias)",
       date: "Data",
@@ -214,11 +247,12 @@ export function StatsPage({ language }: StatsPageProps) {
     try {
       const windowStart = new Date(Date.now() - DEFAULT_DAYS * 24 * 60 * 60 * 1000)
 
-      const [ripple, dailyRows, users, organizationsCreated] = await Promise.all([
+      const [ripple, dailyRows, users, organizationsCreated, projectsCreated] = await Promise.all([
         fetchChainStats([0], windowStart),
         fetchDailyStats(windowStart),
         fetchUsersCount(),
         fetchOrganizationsCount(),
+        fetchProjectsCount(),
       ])
 
       const dailyMap: DailyMap = {}
@@ -234,6 +268,9 @@ export function StatsPage({ language }: StatsPageProps) {
 
       const evmCreated = dailyRows.reduce((sum, row) => sum + row.created, 0)
       const tasksCreated = evmCreated + ripple.created
+
+      const evmClaimed = dailyRows.reduce((sum, row) => sum + row.claimed, 0)
+      const tasksClaimed = evmClaimed + ripple.claimed
 
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
@@ -250,6 +287,8 @@ export function StatsPage({ language }: StatsPageProps) {
           interactions,
           organizationsCreated,
           tasksCreated,
+          tasksClaimed,
+          projectsCreated,
           growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
           lastUpdated: Date.now(),
         },
@@ -263,11 +302,12 @@ export function StatsPage({ language }: StatsPageProps) {
   async function loadFullHistory(setter: React.Dispatch<React.SetStateAction<PanelState>>) {
     setter(p => ({ ...p, error: null }))
     try {
-      const [ripple, dailyRows, users, organizationsCreated] = await Promise.all([
+      const [ripple, dailyRows, users, organizationsCreated, projectsCreated] = await Promise.all([
         fetchChainStats([0], null),
         fetchDailyStats(null),
         fetchUsersCount(),
         fetchOrganizationsCount(),
+        fetchProjectsCount(),
       ])
 
       const dailyMap: DailyMap = {}
@@ -284,6 +324,9 @@ export function StatsPage({ language }: StatsPageProps) {
       const evmCreated = dailyRows.reduce((sum, row) => sum + row.created, 0)
       const tasksCreated = evmCreated + ripple.created
 
+      const evmClaimed = dailyRows.reduce((sum, row) => sum + row.claimed, 0)
+      const tasksClaimed = evmClaimed + ripple.claimed
+
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
         ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
@@ -299,6 +342,8 @@ export function StatsPage({ language }: StatsPageProps) {
           interactions,
           organizationsCreated,
           tasksCreated,
+          tasksClaimed,
+          projectsCreated,
           growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
           lastUpdated: Date.now(),
         },
@@ -407,12 +452,14 @@ export function StatsPage({ language }: StatsPageProps) {
         )}
 
         {/* Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
           {[
             { icon: Users, label: strings.users, value: panel.stats.users },
             { icon: ClipboardList, label: strings.tasksCreated, value: panel.stats.tasksCreated },
-            { icon: TrendingUp, label: strings.interactions, value: panel.stats.interactions },
+            { icon: CheckCircle2, label: strings.tasksClaimed, value: panel.stats.tasksClaimed },
+            { icon: TrendingUp, label: strings.totalInteractions, value: panel.stats.interactions },
             { icon: Building2, label: strings.organizationsCreated, value: panel.stats.organizationsCreated },
+            { icon: FolderKanban, label: strings.projectsCreated, value: panel.stats.projectsCreated },
           ].map(({ icon: Icon, label: l, value }) => (
             <div key={l} className="bg-gray-50 rounded border border-gray-200 p-3">
               <div className="flex items-center gap-1 mb-1">
@@ -434,25 +481,28 @@ export function StatsPage({ language }: StatsPageProps) {
         )}
 
         {/* Growth table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b-2 border-black">
-                <th className="text-left py-2 px-3">{strings.date}</th>
-                <th className="text-left py-2 px-3">{strings.interactions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {panel.stats.growth.length > 0 ? panel.stats.growth.map(row => (
-                <tr key={row.date} className="border-b border-gray-100">
-                  <td className="py-1.5 px-3">{row.date}</td>
-                  <td className="py-1.5 px-3">{row.interactions}</td>
+        <div className="flex gap-6 items-start flex-wrap">
+          <div className="w-full sm:w-2/5 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-black">
+                  <th className="text-left py-2 px-3">{strings.date}</th>
+                  <th className="text-left py-2 px-3">{strings.interactions}</th>
                 </tr>
-              )) : (
-                <tr><td colSpan={2} className="py-4 px-3 text-center text-gray-400">No data yet</td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {panel.stats.growth.length > 0 ? panel.stats.growth.map(row => (
+                  <tr key={row.date} className="border-b border-gray-100">
+                    <td className="py-1.5 px-3">{row.date}</td>
+                    <td className="py-1.5 px-3">{row.interactions}</td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={2} className="py-4 px-3 text-center text-gray-400">No data yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <WeeklyBarChart data={panel.stats.growth} />
         </div>
       </div>
     )
