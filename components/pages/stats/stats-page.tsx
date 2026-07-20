@@ -524,7 +524,7 @@ export function StatsPage({ language }: StatsPageProps) {
         <StatsPanel
           panel={stats}
           label={strings.panelLabel}
-          onRefresh={() => loadRecent(setStats)}
+          onRefresh={() => (stats.isFullHistory ? loadFullHistory(setStats) : loadRecent(setStats))}
           onFullHistory={() => loadFullHistory(setStats)}
           onLast60Days={() => loadRecent(setStats)}
         />
