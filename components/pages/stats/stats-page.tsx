@@ -15,7 +15,6 @@ type StatsData = {
   tasksClaimed: number
   projectsCreated: number
   growth: { date: string; interactions: number }[]
-  weeklyTrend: { week: string; interactions: number }[]
   lastUpdated: number
 }
 
@@ -71,18 +70,6 @@ function buildWeekRows(map: DailyMap, weekStart: Date) {
     rows.push({ date: formatDayLabel(iso), interactions: map[iso] ?? 0 })
   }
   return rows
-}
-
-function buildWeeklyTrend(map: DailyMap): { week: string; interactions: number }[] {
-  const weekTotals: Record<string, number> = {}
-  for (const [dateStr, count] of Object.entries(map)) {
-    const weekStartIso = isoDate(getWeekStart(new Date(`${dateStr}T00:00:00Z`)))
-    weekTotals[weekStartIso] = (weekTotals[weekStartIso] ?? 0) + count
-  }
-  return Object.keys(weekTotals).sort().map((weekStartIso) => ({
-    week: formatDayLabel(weekStartIso),
-    interactions: weekTotals[weekStartIso],
-  }))
 }
 
 type ChainStats = {
@@ -186,28 +173,6 @@ function WeeklyBarChart({ data }: { data: { date: string; interactions: number }
   )
 }
 
-function WeeklyTrendChart({ data }: { data: { week: string; interactions: number }[] }) {
-  if (data.length === 0) return null
-  const max = Math.max(1, ...data.map((d) => d.interactions))
-  const maxBarHeight = 160
-  return (
-    <div className="overflow-x-auto">
-      <div className="flex items-end gap-1.5 h-[200px]" style={{ minWidth: `${data.length * 28}px` }}>
-        {data.map((d, i) => {
-          const height = d.interactions > 0 ? Math.max(2, (d.interactions / max) * maxBarHeight) : 0
-          return (
-            <div key={`${d.week}-${i}`} className="flex flex-col items-center justify-end flex-1 h-full min-w-[24px]">
-              <span className="text-[9px] font-bold mb-1">{d.interactions}</span>
-              <div className="w-full bg-blue-300 rounded-t border border-black" style={{ height: `${height}px` }} />
-              <span className="text-[8px] text-gray-500 mt-1 whitespace-nowrap">{d.week}</span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
 export function StatsPage({ language }: StatsPageProps) {
   const [stats, setStats] = useState<PanelState>(INITIAL_PANEL)
   const [backfill, setBackfill] = useState<{ running: boolean; log: string[]; done: boolean | null }>({ running: false, log: [], done: null })
@@ -232,7 +197,6 @@ export function StatsPage({ language }: StatsPageProps) {
       projectsCreated: "Projects Created",
       growthSinceLaunch: "Growth Since Launch",
       growth60Days: "Growth (Last 60 Days)",
-      weeklyTrendTitle: "Weekly Interactions Since Launch",
       date: "Date",
       loading: "Loading...",
       error: "Failed to load stats",
@@ -260,7 +224,6 @@ export function StatsPage({ language }: StatsPageProps) {
       projectsCreated: "Projetos Criados",
       growthSinceLaunch: "Crescimento Desde o Lançamento",
       growth60Days: "Crescimento (Últimos 60 Dias)",
-      weeklyTrendTitle: "Interações Semanais Desde o Lançamento",
       date: "Data",
       loading: "Carregando...",
       error: "Falha ao carregar",
@@ -327,7 +290,6 @@ export function StatsPage({ language }: StatsPageProps) {
           tasksClaimed,
           projectsCreated,
           growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
-          weeklyTrend: buildWeeklyTrend(dailyMap),
           lastUpdated: Date.now(),
         },
       })
@@ -383,7 +345,6 @@ export function StatsPage({ language }: StatsPageProps) {
           tasksClaimed,
           projectsCreated,
           growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
-          weeklyTrend: buildWeeklyTrend(dailyMap),
           lastUpdated: Date.now(),
         },
       })
@@ -550,11 +511,6 @@ export function StatsPage({ language }: StatsPageProps) {
             </table>
           </div>
           <WeeklyBarChart data={panel.stats.growth} />
-        </div>
-
-        <div className="mt-8">
-          <h3 className="text-sm font-bold mb-3">{strings.weeklyTrendTitle}</h3>
-          <WeeklyTrendChart data={panel.stats.weeklyTrend} />
         </div>
       </div>
     )
