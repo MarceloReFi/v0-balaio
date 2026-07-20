@@ -322,7 +322,7 @@ export function TheOfficeApp() {
     } finally {
       setLoading(false)
     }
-  }, [account, supabase, isVerified, toast])
+  }, [account, chainId, supabase, isVerified, toast])
 
   const loadRippleTasks = useCallback(async () => {
     try {
@@ -1244,8 +1244,11 @@ export function TheOfficeApp() {
     prevConnectionModeRef.current = connectionMode
   }, [account, connectionMode])
 
+  const contractChainIdRef = useRef<number | null>(null)
+
   useEffect(() => {
-    if (!wagmiConnected || !wagmiAddress || !signer || contract) return
+    if (!wagmiConnected || !wagmiAddress || !signer) return
+    if (contract && contractChainIdRef.current === chainId) return
     try {
       const taskContract = new ethers.Contract(getContractAddress(chainId), CONTRACT_ABI, signer)
       const contracts: Record<string, ethers.Contract | null> = {}
@@ -1254,10 +1257,11 @@ export function TheOfficeApp() {
       }
       setContract(taskContract)
       setTokenContracts(contracts)
+      contractChainIdRef.current = chainId
     } catch (error) {
       console.error("Wagmi contract init error:", error)
     }
-  }, [wagmiConnected, wagmiAddress, signer, contract])
+  }, [wagmiConnected, wagmiAddress, signer, contract, chainId])
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
