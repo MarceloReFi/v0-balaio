@@ -257,8 +257,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
     return `${Math.floor(minutes / 60)}h ${strings.ago}`
   }
 
-  async function loadRecent(setter: React.Dispatch<React.SetStateAction<PanelState>>) {
-    const cached = getCachedStats<StatsData>()
+  async function loadRecent(setter: React.Dispatch<React.SetStateAction<PanelState>>, options?: { force?: boolean }) {
+    const cached = options?.force ? null : getCachedStats<StatsData>()
     if (cached) {
       setter({ stats: cached, loading: false, isFullHistory: false, loadingFullHistory: false, progress: 0, error: null })
       return
@@ -324,8 +324,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
     }
   }
 
-  async function loadFullHistory(setter: React.Dispatch<React.SetStateAction<PanelState>>) {
-    const cached = getCachedFullHistory<StatsData>()
+  async function loadFullHistory(setter: React.Dispatch<React.SetStateAction<PanelState>>, options?: { force?: boolean }) {
+    const cached = options?.force ? null : getCachedFullHistory<StatsData>()
     if (cached) {
       setter({ stats: cached, loading: false, isFullHistory: true, loadingFullHistory: false, progress: 100, error: null })
       return
@@ -569,7 +569,11 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
         <StatsPanel
           panel={stats}
           label={strings.panelLabel}
-          onRefresh={() => (stats.isFullHistory ? loadFullHistory(setStats) : loadRecent(setStats))}
+          onRefresh={() =>
+            stats.isFullHistory
+              ? loadFullHistory(setStats, { force: isAdmin })
+              : loadRecent(setStats, { force: isAdmin })
+          }
           onFullHistory={() => loadFullHistory(setStats)}
           onLast60Days={() => loadRecent(setStats)}
         />

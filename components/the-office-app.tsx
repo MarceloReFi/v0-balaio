@@ -1413,7 +1413,7 @@ export function TheOfficeApp() {
         )}
         {activeAccount && currentPage === "blog" && <BlogPage language={language} />}
         {activeAccount && currentPage === "stats" && <StatsPage language={language} isAdmin={isAdmin} onBack={() => setCurrentPage("home")} />}
-        {activeAccount && currentPage === "admin" && isAdmin && <AdminPage language={language} />}
+        {activeAccount && currentPage === "admin" && isAdmin && <AdminPage language={language} isAdmin={isAdmin} />}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
             <OrgNavProvider openTask={async (id) => { const task = await getTask(id); if (task) openTaskModal(task) }}>
