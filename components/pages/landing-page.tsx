@@ -10,7 +10,6 @@ interface LandingPageProps {
   onOpenWallet: () => void
   language: Language
   onNavigateToAgents: () => void
-  onNavigateToStats: () => void
 }
 
 // ── Reusable primitives ──────────────────────────────────────────────
@@ -66,7 +65,7 @@ const PARTNERS = [
 ]
 
 // ── Component ────────────────────────────────────────────────────────
-export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAgents, onNavigateToStats }: LandingPageProps) {
+export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAgents }: LandingPageProps) {
   const t = useTranslations(language)
   const [inMiniPay, setInMiniPay] = useState(false)
   const [showEmpresasModal, setShowEmpresasModal] = useState(false)
@@ -194,14 +193,6 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
                 className="h-[52px] object-contain opacity-60 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300"
               />
             ))}
-          </div>
-          <div className="mt-10 flex justify-center">
-            <button
-              onClick={onNavigateToStats}
-              className="flex items-center gap-2 text-sm font-semibold text-secondary"
-            >
-              Ver estatísticas da plataforma <ArrowRight size={14} />
-            </button>
           </div>
         </div>
       </section>
