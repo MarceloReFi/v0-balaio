@@ -91,8 +91,42 @@ async function processSource(
 }
 
 async function runStatsCheckpoint() {
+  const supabase = await createClient()
+
   try {
-    const supabase = await createClient()
+    const { data: lockRow, error: lockReadError } = await supabase
+      .from("stats_sync_state")
+      .select("last_synced_block, updated_at")
+      .eq("source", "_lock")
+      .maybeSingle()
+
+    if (lockReadError) {
+      return NextResponse.json(
+        { error: `stats_sync_state lock read: ${lockReadError.message}` },
+        { status: 500 }
+      )
+    }
+
+    if (lockRow && Date.now() - new Date(lockRow.updated_at).getTime() < 60_000) {
+      return NextResponse.json(
+        { error: "Sync já em andamento (outra chamada ativa há menos de 60s). Aguarde e tente de novo." },
+        { status: 429 }
+      )
+    }
+
+    const { error: lockUpsertError } = await supabase
+      .from("stats_sync_state")
+      .upsert(
+        { source: "_lock", last_synced_block: 0, updated_at: new Date().toISOString() },
+        { onConflict: "source" }
+      )
+
+    if (lockUpsertError) {
+      return NextResponse.json(
+        { error: `stats_sync_state lock upsert: ${lockUpsertError.message}` },
+        { status: 500 }
+      )
+    }
 
     let allDone = true
     const perSource: Record<string, { totals: EventTotals; done: boolean; lastProcessedBlock: number; currentBlock: number }> = {}
@@ -191,8 +225,12 @@ async function runStatsCheckpoint() {
       }
     }
 
+    await supabase.from("stats_sync_state").delete().eq("source", "_lock")
+
     return NextResponse.json({ success: true, done: allDone, perSource })
   } catch (error) {
+    await supabase.from("stats_sync_state").delete().eq("source", "_lock")
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },
       { status: 500 }
