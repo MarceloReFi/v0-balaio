@@ -1,10 +1,13 @@
 "use client"
 import { useState, useEffect } from "react"
-import { RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList, CheckCircle2, FolderKanban } from "lucide-react"
+import { ArrowLeft, RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList, CheckCircle2, FolderKanban } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { getCachedStats, setCachedStats, getCachedFullHistory, setCachedFullHistory } from "./stats-cache"
 
 interface StatsPageProps {
   language: "en" | "pt-BR"
+  isAdmin?: boolean
+  onBack?: () => void
 }
 
 type StatsData = {
@@ -154,6 +157,18 @@ async function fetchProjectsCount(): Promise<number> {
   return count ?? 0
 }
 
+async function fetchLastSyncedAt(): Promise<number | null> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from("stats_sync_state")
+    .select("updated_at")
+    .neq("source", "_lock")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+  const row = data?.[0]
+  return row ? new Date(row.updated_at).getTime() : null
+}
+
 function WeeklyBarChart({ data }: { data: { date: string; interactions: number }[] }) {
   const max = Math.max(1, ...data.map((d) => d.interactions))
   const maxBarHeight = 140
@@ -173,7 +188,7 @@ function WeeklyBarChart({ data }: { data: { date: string; interactions: number }
   )
 }
 
-export function StatsPage({ language }: StatsPageProps) {
+export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
   const [stats, setStats] = useState<PanelState>(INITIAL_PANEL)
   const [backfill, setBackfill] = useState<{ running: boolean; log: string[]; done: boolean | null }>({ running: false, log: [], done: null })
 
@@ -243,16 +258,23 @@ export function StatsPage({ language }: StatsPageProps) {
   }
 
   async function loadRecent(setter: React.Dispatch<React.SetStateAction<PanelState>>) {
+    const cached = getCachedStats<StatsData>()
+    if (cached) {
+      setter({ stats: cached, loading: false, isFullHistory: false, loadingFullHistory: false, progress: 0, error: null })
+      return
+    }
+
     setter(p => ({ ...p, loading: true, error: null }))
     try {
       const windowStart = new Date(Date.now() - DEFAULT_DAYS * 24 * 60 * 60 * 1000)
 
-      const [ripple, dailyRows, users, organizationsCreated, projectsCreated] = await Promise.all([
+      const [ripple, dailyRows, users, organizationsCreated, projectsCreated, lastSyncedAt] = await Promise.all([
         fetchChainStats([0], windowStart),
         fetchDailyStats(windowStart),
         fetchUsersCount(),
         fetchOrganizationsCount(),
         fetchProjectsCount(),
+        fetchLastSyncedAt(),
       ])
 
       const dailyMap: DailyMap = {}
@@ -275,6 +297,17 @@ export function StatsPage({ language }: StatsPageProps) {
       const interactions =
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
         ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
+
+      const newStats: StatsData = {
+        users,
+        interactions,
+        organizationsCreated,
+        tasksCreated,
+        tasksClaimed,
+        projectsCreated,
+        growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
+        lastUpdated: lastSyncedAt ?? Date.now(),
+      }
 
       setter({
         loading: false,
@@ -282,17 +315,9 @@ export function StatsPage({ language }: StatsPageProps) {
         loadingFullHistory: false,
         progress: 0,
         error: null,
-        stats: {
-          users,
-          interactions,
-          organizationsCreated,
-          tasksCreated,
-          tasksClaimed,
-          projectsCreated,
-          growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
-          lastUpdated: Date.now(),
-        },
+        stats: newStats,
       })
+      setCachedStats(newStats)
     } catch (err) {
       console.error("loadRecent error:", err)
       setter(p => ({ ...p, loading: false, error: strings.error }))
@@ -300,14 +325,21 @@ export function StatsPage({ language }: StatsPageProps) {
   }
 
   async function loadFullHistory(setter: React.Dispatch<React.SetStateAction<PanelState>>) {
+    const cached = getCachedFullHistory<StatsData>()
+    if (cached) {
+      setter({ stats: cached, loading: false, isFullHistory: true, loadingFullHistory: false, progress: 100, error: null })
+      return
+    }
+
     setter(p => ({ ...p, error: null }))
     try {
-      const [ripple, dailyRows, users, organizationsCreated, projectsCreated] = await Promise.all([
+      const [ripple, dailyRows, users, organizationsCreated, projectsCreated, lastSyncedAt] = await Promise.all([
         fetchChainStats([0], null),
         fetchDailyStats(null),
         fetchUsersCount(),
         fetchOrganizationsCount(),
         fetchProjectsCount(),
+        fetchLastSyncedAt(),
       ])
 
       const dailyMap: DailyMap = {}
@@ -331,23 +363,26 @@ export function StatsPage({ language }: StatsPageProps) {
         dailyRows.reduce((sum, row) => sum + row.interactions, 0) +
         ripple.created + ripple.claimed + ripple.submitted + ripple.approved + ripple.withdrawn
 
+      const newStats: StatsData = {
+        users,
+        interactions,
+        organizationsCreated,
+        tasksCreated,
+        tasksClaimed,
+        projectsCreated,
+        growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
+        lastUpdated: lastSyncedAt ?? Date.now(),
+      }
+
       setter({
         loading: false,
         isFullHistory: true,
         loadingFullHistory: false,
         progress: 100,
         error: null,
-        stats: {
-          users,
-          interactions,
-          organizationsCreated,
-          tasksCreated,
-          tasksClaimed,
-          projectsCreated,
-          growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
-          lastUpdated: Date.now(),
-        },
+        stats: newStats,
       })
+      setCachedFullHistory(newStats)
     } catch (err) {
       console.error("loadFullHistory error:", err)
       setter(p => ({ ...p, loadingFullHistory: false, error: strings.error }))
@@ -519,6 +554,16 @@ export function StatsPage({ language }: StatsPageProps) {
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
       <div className="max-w-4xl mx-auto">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary-container mb-6"
+          >
+            <ArrowLeft size={16} />
+            {language === "en" ? "Back" : "Voltar"}
+          </button>
+        )}
+
         <h1 className="text-3xl font-bold mb-8">{strings.title}</h1>
 
         <StatsPanel
@@ -529,29 +574,31 @@ export function StatsPage({ language }: StatsPageProps) {
           onLast60Days={() => loadRecent(setStats)}
         />
 
-        <div className="balaio-card mb-8">
-          <h2 className="text-xl font-bold mb-4">{strings.blockchainSync}</h2>
-          <button
-            onClick={runBackfill}
-            disabled={backfill.running}
-            className="balaio-chip green flex items-center gap-1 text-xs mb-4"
-          >
-            <RefreshCw size={12} className={backfill.running ? "animate-spin" : ""} />
-            {strings.syncHistory}
-          </button>
+        {isAdmin && (
+          <div className="balaio-card mb-8">
+            <h2 className="text-xl font-bold mb-4">{strings.blockchainSync}</h2>
+            <button
+              onClick={runBackfill}
+              disabled={backfill.running}
+              className="balaio-chip green flex items-center gap-1 text-xs mb-4"
+            >
+              <RefreshCw size={12} className={backfill.running ? "animate-spin" : ""} />
+              {strings.syncHistory}
+            </button>
 
-          {backfill.log.length > 0 && (
-            <div className="max-h-40 overflow-y-auto bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono space-y-1">
-              {backfill.log.map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
-            </div>
-          )}
+            {backfill.log.length > 0 && (
+              <div className="max-h-40 overflow-y-auto bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono space-y-1">
+                {backfill.log.map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </div>
+            )}
 
-          {backfill.done === true && (
-            <div className="text-sm text-green-600 mt-3">{strings.syncComplete}</div>
-          )}
-        </div>
+            {backfill.done === true && (
+              <div className="text-sm text-green-600 mt-3">{strings.syncComplete}</div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

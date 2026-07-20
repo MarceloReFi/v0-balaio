@@ -1,54 +1,51 @@
-import type { StatsData } from "./blockchain-stats"
-
-interface CachedStats {
-  data: StatsData
+interface CachedEntry {
+  data: unknown
   timestamp: number
 }
 
-let quickStatsCache: CachedStats | null = null
-let fullHistoryCache: CachedStats | null = null
+let quickStatsCache: CachedEntry | null = null
+let fullHistoryCache: CachedEntry | null = null
 
-const QUICK_CACHE_DURATION = 6 * 60 * 60 * 1000 // 6 hours
-const FULL_HISTORY_CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
+const STATS_CACHE_DURATION = 60 * 60 * 1000 // 1 hour — stats_daily only advances once a day via cron
 
-// Quick stats (90 days) cache
-export function getCachedStats(): StatsData | null {
+// Quick stats (60 days) cache
+export function getCachedStats<T>(): T | null {
   if (!quickStatsCache) return null
 
   const now = Date.now()
-  const isExpired = now - quickStatsCache.timestamp > QUICK_CACHE_DURATION
+  const isExpired = now - quickStatsCache.timestamp > STATS_CACHE_DURATION
 
   if (isExpired) {
     quickStatsCache = null
     return null
   }
 
-  return quickStatsCache.data
+  return quickStatsCache.data as T
 }
 
-export function setCachedStats(data: StatsData): void {
+export function setCachedStats<T>(data: T): void {
   quickStatsCache = {
     data,
     timestamp: Date.now(),
   }
 }
 
-// Full history cache (separate, longer duration)
-export function getCachedFullHistory(): StatsData | null {
+// Full history cache (separate store, same duration)
+export function getCachedFullHistory<T>(): T | null {
   if (!fullHistoryCache) return null
 
   const now = Date.now()
-  const isExpired = now - fullHistoryCache.timestamp > FULL_HISTORY_CACHE_DURATION
+  const isExpired = now - fullHistoryCache.timestamp > STATS_CACHE_DURATION
 
   if (isExpired) {
     fullHistoryCache = null
     return null
   }
 
-  return fullHistoryCache.data
+  return fullHistoryCache.data as T
 }
 
-export function setCachedFullHistory(data: StatsData): void {
+export function setCachedFullHistory<T>(data: T): void {
   fullHistoryCache = {
     data,
     timestamp: Date.now(),

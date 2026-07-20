@@ -1332,7 +1332,7 @@ export function TheOfficeApp() {
       </header>
 
       <main className="flex-1 overflow-y-auto pb-16">
-        {connectionMode === "none" && currentPage !== "agents" && (
+        {connectionMode === "none" && currentPage !== "agents" && currentPage !== "stats" && (
           <>
             <div className="flex items-center gap-2 justify-center mb-4">
               <button
@@ -1365,7 +1365,7 @@ export function TheOfficeApp() {
                 Ripple
               </button>
             </div>
-            <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
+            <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} onNavigateToStats={() => setCurrentPage("stats")} />
           </>
         )}
         {currentPage === "agents" && (
@@ -1412,7 +1412,7 @@ export function TheOfficeApp() {
           />
         )}
         {activeAccount && currentPage === "blog" && <BlogPage language={language} />}
-        {activeAccount && currentPage === "stats" && <StatsPage language={language} />}
+        {currentPage === "stats" && <StatsPage language={language} isAdmin={isAdmin} onBack={() => setCurrentPage("home")} />}
         {activeAccount && currentPage === "admin" && isAdmin && <AdminPage language={language} />}
         {account && currentPage === "organizations" && (
           <div className="max-w-3xl mx-auto px-[22px] py-5">
