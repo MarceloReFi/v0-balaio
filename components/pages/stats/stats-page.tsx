@@ -184,8 +184,8 @@ export function StatsPage({ language }: StatsPageProps) {
       lastUpdated: "Last updated",
       refresh: "Refresh",
       viewFullHistory: "View Full History",
+      viewLast60Days: "View Last 60 Days",
       loadingFullHistory: "Loading full history...",
-      fullHistoryNote: "~1-2 minutes",
       last60Days: "Last 60 Days",
       fullHistory: "Full History",
       users: "Users",
@@ -211,8 +211,8 @@ export function StatsPage({ language }: StatsPageProps) {
       lastUpdated: "Atualizado",
       refresh: "Atualizar",
       viewFullHistory: "Ver Histórico Completo",
+      viewLast60Days: "Ver Últimos 60 Dias",
       loadingFullHistory: "Carregando histórico...",
-      fullHistoryNote: "~1-2 minutos",
       last60Days: "Últimos 60 Dias",
       fullHistory: "Histórico Completo",
       users: "Usuários",
@@ -381,7 +381,7 @@ export function StatsPage({ language }: StatsPageProps) {
   }
 
   useEffect(() => {
-    loadRecent(setStats)
+    loadFullHistory(setStats)
   }, [])
 
   function StatsPanel({
@@ -389,11 +389,13 @@ export function StatsPage({ language }: StatsPageProps) {
     label,
     onRefresh,
     onFullHistory,
+    onLast60Days,
   }: {
     panel: PanelState
     label: string
     onRefresh: () => void
     onFullHistory: () => void
+    onLast60Days: () => void
   }) {
     if (panel.loading) {
       return (
@@ -472,12 +474,18 @@ export function StatsPage({ language }: StatsPageProps) {
         </div>
 
         {/* Full history button */}
-        {!panel.isFullHistory && !panel.loadingFullHistory && (
-          <button onClick={onFullHistory} className="balaio-chip blue flex items-center gap-1 text-xs mb-4">
-            <History size={12} />
-            {strings.viewFullHistory}
-            <span className="text-gray-500 ml-1">({strings.fullHistoryNote})</span>
-          </button>
+        {!panel.loadingFullHistory && (
+          panel.isFullHistory ? (
+            <button onClick={onLast60Days} className="balaio-chip yellow flex items-center gap-1 text-xs mb-4">
+              <Clock size={12} />
+              {strings.viewLast60Days}
+            </button>
+          ) : (
+            <button onClick={onFullHistory} className="balaio-chip blue flex items-center gap-1 text-xs mb-4">
+              <History size={12} />
+              {strings.viewFullHistory}
+            </button>
+          )
         )}
 
         {/* Growth table */}
@@ -518,6 +526,7 @@ export function StatsPage({ language }: StatsPageProps) {
           label={strings.panelLabel}
           onRefresh={() => loadRecent(setStats)}
           onFullHistory={() => loadFullHistory(setStats)}
+          onLast60Days={() => loadRecent(setStats)}
         />
 
         <div className="balaio-card mb-8">
