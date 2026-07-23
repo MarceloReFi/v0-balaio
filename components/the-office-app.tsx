@@ -222,19 +222,43 @@ export function TheOfficeApp() {
       const taskDataResults = await Promise.all(
         taskIds.map(async (id) => {
           const metadata = metadataMap[id]
-          // Use cached contract address from Supabase to skip unnecessary calls
-          if (metadata?.contract_address) {
-            const cachedRc = new ethers.Contract(metadata.contract_address, CONTRACT_ABI, provider)
-            try {
-              const result = await cachedRc.getTask(id)
-              if (result && result.taskId) return { data: result, usedContract: cachedRc }
-            } catch {}
-          }
-          for (const rc of readContracts) {
+
+          const tryContract = async (rc: ethers.Contract) => {
             try {
               const result = await rc.getTask(id)
-              if (result && result.taskId) return { data: result, usedContract: rc }
-            } catch {}
+              if (!result || !result.taskId) return null
+
+              let mySlot: Task["mySlot"] = null
+              if (account) {
+                try {
+                  const slot = await rc.getTaskSlot(id, account)
+                  if (slot && slot.claimed) {
+                    mySlot = {
+                      claimed: slot.claimed,
+                      submitted: slot.submitted,
+                      approved: slot.approved,
+                      withdrawn: slot.withdrawn,
+                    }
+                  }
+                } catch {
+                  // sem slot pra essa conta nessa tarefa — mySlot continua null
+                }
+              }
+
+              return { data: result, usedContract: rc, mySlot }
+            } catch {
+              return null
+            }
+          }
+
+          if (metadata?.contract_address) {
+            const cachedRc = new ethers.Contract(metadata.contract_address, CONTRACT_ABI, provider)
+            const cached = await tryContract(cachedRc)
+            if (cached) return cached
+          }
+          for (const rc of readContracts) {
+            const found = await tryContract(rc)
+            if (found) return found
           }
           return null
         })
@@ -277,7 +301,7 @@ export function TheOfficeApp() {
           createdAt: new Date(Number(taskData.createdAt) * 1000),
           token: tokenSymbol,
           tokenAddress: tokenAddress,
-          mySlot: null,
+          mySlot: taskResult?.mySlot ?? null,
           status: taskData.active ? (claimedSlots < totalSlots ? "open" : "claimed") : "completed",
           category: metadata?.category || undefined,
           complexity: metadata?.complexity || undefined,
@@ -296,32 +320,6 @@ export function TheOfficeApp() {
           organizationId: metadata?.organization_id ?? null,
           projectId: metadata?.project_id ?? null,
         })
-      }
-
-      if (account) {
-        const { data: myClaims } = await supabase
-          .from("task_claims")
-          .select("task_id, submitted_at, approved_at, withdrawn_at")
-          .eq("worker_address", account.toLowerCase())
-
-        if (myClaims) {
-          const claimMap = myClaims.reduce((acc: Record<string, any>, c: any) => {
-            acc[c.task_id] = c
-            return acc
-          }, {})
-
-          for (const task of loadedTasks) {
-            const claim = claimMap[task.id]
-            if (claim) {
-              task.mySlot = {
-                claimed: true,
-                submitted: !!claim.submitted_at,
-                approved: !!claim.approved_at,
-                withdrawn: !!claim.withdrawn_at,
-              }
-            }
-          }
-        }
       }
 
       setTasks(loadedTasks.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()))
