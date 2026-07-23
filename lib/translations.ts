@@ -397,7 +397,7 @@ export const translations = {
     claim: "Reivindicar",
     submit: "Enviar",
     approve: "Aprovar",
-    claimReward: "Reivindicar Recompensa",
+    claimReward: "Resgatar Recompensa",
     cancelTask: "Cancelar Tarefa",
     cancelTaskConfirm: "Cancelar esta tarefa e devolver o valor em garantia para sua carteira? Isso não pode ser desfeito.",
     authorizeWithdraw: "Autorizar Saque",

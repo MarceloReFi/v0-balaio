@@ -31,12 +31,15 @@ export function TasksPage({
   const [loading, setLoading] = useState(false)
 
   const getStatusBadge = (task: Task) => {
-    if (!task.mySlot) return { text: t.open, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
-    if (task.mySlot.withdrawn) return { text: t.completed, className: "bg-surface-container-high text-on-surface-variant" }
-    if (task.mySlot.approved) return { text: t.approved, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
-    if (task.mySlot.submitted) return { text: t.submitted, className: "bg-marigold/20 text-on-tertiary-fixed" }
-    if (task.mySlot.claimed) return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
-    return { text: t.open, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
+    if (task.mySlot) {
+      if (task.mySlot.withdrawn) return { text: t.completed, className: "bg-surface-container-high text-on-surface-variant" }
+      if (task.mySlot.approved) return { text: t.approved, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
+      if (task.mySlot.submitted) return { text: t.submitted, className: "bg-marigold/20 text-on-tertiary-fixed" }
+      if (task.mySlot.claimed) return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
+    }
+    const hasOpenSlots = task.active && Number(task.availableSlots) > 0
+    if (hasOpenSlots) return { text: t.open, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
+    return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
   }
 
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -60,9 +63,12 @@ export function TasksPage({
   })
 
   const getStatusGroup = (task: Task): "open" | "progress" | "completed" => {
-    if (!task.mySlot) return "open"
-    if (task.mySlot.approved || task.mySlot.withdrawn) return "completed"
-    return "progress"
+    if (task.mySlot) {
+      if (task.mySlot.approved || task.mySlot.withdrawn) return "completed"
+      return "progress"
+    }
+    const hasOpenSlots = task.active && Number(task.availableSlots) > 0
+    return hasOpenSlots ? "open" : "progress"
   }
 
   const statusGroups = [
