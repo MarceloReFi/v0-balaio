@@ -25,38 +25,6 @@ function Thread() {
   return <div className="w-full h-px bg-secondary/20 my-8" />
 }
 
-// ── Step card (no box border — tonal bg only) ────────────────────────
-const STEPS = [
-  { num: "01", title: "Definição & Orçamento",    body: "Parametrize tarefas, critérios de aprovação e aloque o orçamento do projeto." },
-  { num: "02", title: "Atribuição de Trabalho",   body: "Talentos ou agentes de IA assumem a execução com base em suas qualificações." },
-  { num: "03", title: "Aprovação de Entregas",    body: "Valide o trabalho concluído de acordo com os requisitos estabelecidos." },
-  { num: "04", title: "Pagamento Automático",     body: "Liberação imediata dos fundos atrelada à aprovação, eliminando burocracia." },
-]
-
-const AUDIENCES = [
-  {
-    icon: Building2,
-    label: "Empresas e Equipes",
-    body: "Converta orçamento em execução. Aloque capital diretamente em tarefas e pague apenas por resultados aprovados.",
-    cta: "Saiba mais",
-    dark: false,
-  },
-  {
-    icon: Users,
-    label: "Profissionais",
-    body: "Execute tarefas com escopo claro e garanta o recebimento automático após a aprovação do seu trabalho.",
-    cta: "Explorar",
-    dark: false,
-  },
-  {
-    icon: Bot,
-    label: "Equipes de IA",
-    body: "Integre agentes autônomos a fluxos de trabalho humanos, automatizando micro-tarefas com liquidação direta.",
-    cta: "Documentação",
-    dark: false,
-  },
-]
-
 const PARTNERS = [
   { name: "GoodDollar",           src: "/GoodDapp_Primary.webp" },
   { name: "Green Pill Brasil",    src: "/greenpill-logo.png" },
@@ -72,6 +40,40 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
   const [showProfissionaisModal, setShowProfissionaisModal] = useState(false)
   useEffect(() => { setInMiniPay(isMiniPay()) }, [])
 
+  const STEPS = [
+    { num: "01", title: t.landingStep1Title, body: t.landingStep1Body },
+    { num: "02", title: t.landingStep2Title, body: t.landingStep2Body },
+    { num: "03", title: t.landingStep3Title, body: t.landingStep3Body },
+    { num: "04", title: t.landingStep4Title, body: t.landingStep4Body },
+  ]
+
+  const AUDIENCES = [
+    {
+      id: "companies",
+      icon: Building2,
+      label: t.landingAudienceCompaniesLabel,
+      body: t.landingAudienceCompaniesBody,
+      cta: t.landingAudienceCompaniesCta,
+      dark: false,
+    },
+    {
+      id: "professionals",
+      icon: Users,
+      label: t.landingAudienceProfessionalsLabel,
+      body: t.landingAudienceProfessionalsBody,
+      cta: t.landingAudienceProfessionalsCta,
+      dark: false,
+    },
+    {
+      id: "ai",
+      icon: Bot,
+      label: t.landingAudienceAiLabel,
+      body: t.landingAudienceAiBody,
+      cta: t.landingAudienceAiCta,
+      dark: false,
+    },
+  ]
+
   return (
     <div className="bg-surface text-on-surface">
 
@@ -79,11 +81,11 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
       <section className="max-w-5xl mx-auto px-6 py-20 md:py-32 grid md:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col gap-8">
           <h1 className="text-4xl md:text-5xl font-bold text-primary-container leading-tight" style={{ fontFamily: "'Noto Serif', serif", letterSpacing: "-0.02em" }}>
-            Trabalho inteligente.<br />
-            <span className="text-secondary">Coordenação eficiente.</span>
+            {t.landingHeroTitle1}<br />
+            <span className="text-secondary">{t.landingHeroTitle2}</span>
           </h1>
           <p className="text-base text-on-surface-variant leading-relaxed max-w-md">
-            Conectando organizações, profissionais e agentes de IA em um ambiente simples e funcional.
+            {t.landingHeroSubtitle}
           </p>
           {!inMiniPay && (
             <div className="flex flex-wrap gap-3">
@@ -91,7 +93,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
                 onClick={onConnect}
                 className="bg-marigold text-on-tertiary-fixed px-7 py-3.5 rounded-xl font-bold text-sm hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-2"
               >
-                Explorar Tarefas <ArrowRight size={16} />
+                {t.cta2} <ArrowRight size={16} />
               </button>
             </div>
           )}
@@ -106,7 +108,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
             <span className="font-bold text-primary-container text-lg" style={{ fontFamily: "'Noto Serif', serif" }}>Balaio</span>
           </div>
           <div className="bg-surface-container rounded-2xl p-8 flex flex-col gap-5">
-            {["Pagamento por resultado aprovado", "Escrow onchain — sem intermediários", "Compatível com agentes de IA", "Verificação de identidade via GoodDollar"].map((item) => (
+            {[t.landingTrust1, t.landingTrust2, t.landingTrust3, t.landingTrust4].map((item) => (
               <div key={item} className="flex items-center gap-3">
                 <span className="w-5 h-5 rounded-full bg-marigold flex items-center justify-center flex-shrink-0">
                   <Check size={12} className="text-on-tertiary-fixed" />
@@ -122,18 +124,18 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
       <section className="bg-surface-container-low py-20">
         <div className="max-w-5xl mx-auto px-6">
           <div className="mb-12">
-            <SectionLabel>Como funciona</SectionLabel>
+            <SectionLabel>{t.landingStepsLabel}</SectionLabel>
             <h2 className="mt-3 text-3xl font-bold text-primary-container" style={{ fontFamily: "'Noto Serif', serif", letterSpacing: "-0.02em" }}>
-              Execução sem fricção
+              {t.landingStepsTitle}
             </h2>
             <p className="mt-2 text-on-surface-variant">
-              Substitua a burocracia por um fluxo de coordenação ágil e focado em resultados.
+              {t.landingStepsSubtitle}
             </p>
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
             {STEPS.map(({ num, title, body }) => (
               <div key={num} className="bg-surface rounded-xl p-6 flex flex-col gap-3" style={{ boxShadow: "0 8px 24px rgba(28,28,23,0.06)" }}>
-                <span className="text-secondary font-extrabold text-xs tracking-widest uppercase">Passo {num}</span>
+                <span className="text-secondary font-extrabold text-xs tracking-widest uppercase">{t.landingStepLabel} {num}</span>
                 <h3 className="font-bold text-primary-container text-base" style={{ fontFamily: "'Noto Serif', serif" }}>{title}</h3>
                 <p className="text-on-surface-variant text-sm leading-relaxed">{body}</p>
               </div>
@@ -145,12 +147,12 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
       {/* ── AUDIENCE CARDS ───────────────────────────────── */}
       <section className="py-24 max-w-5xl mx-auto px-6">
         <div className="mb-12">
-          <SectionLabel>Para quem é</SectionLabel>
+          <SectionLabel>{t.landingAudienceLabel}</SectionLabel>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {AUDIENCES.map(({ icon: Icon, label, body, cta, dark }) => (
+          {AUDIENCES.map(({ id, icon: Icon, label, body, cta, dark }) => (
             <div
-              key={label}
+              key={id}
               className={`rounded-2xl p-8 flex flex-col justify-between gap-8 ${
                 dark
                   ? "bg-primary-container text-surface"
@@ -164,9 +166,9 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
               </div>
               <button
                 onClick={
-                  label === "Empresas e Equipes" ? () => setShowEmpresasModal(true)
-                  : label === "Profissionais" ? () => setShowProfissionaisModal(true)
-                  : label === "Equipes de IA" ? onNavigateToAgents
+                  id === "companies" ? () => setShowEmpresasModal(true)
+                  : id === "professionals" ? () => setShowProfissionaisModal(true)
+                  : id === "ai" ? onNavigateToAgents
                   : undefined
                 }
                 className={`flex items-center gap-2 text-sm font-semibold ${dark ? "text-marigold" : "text-secondary"}`}
@@ -182,7 +184,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
       <section className="bg-surface-container-low py-16">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-10">
-            <SectionLabel>Parceiros & Ecossistema</SectionLabel>
+            <SectionLabel>{t.landingPartnersLabel}</SectionLabel>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-12">
             {PARTNERS.map(({ name, src }) => (
@@ -203,12 +205,12 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
           <Thread />
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex flex-col gap-3">
-              <SectionLabel>Comece agora</SectionLabel>
+              <SectionLabel>{t.landingCtaLabel}</SectionLabel>
               <h2 className="text-3xl font-bold text-primary-container" style={{ fontFamily: "'Noto Serif', serif", letterSpacing: "-0.02em" }}>
-                Pronto para otimizar sua operação?
+                {t.landingCtaTitle}
               </h2>
               <p className="text-on-surface-variant max-w-md">
-                Reduza o overhead administrativo e acelere a execução das suas iniciativas.
+                {t.landingCtaSubtitle}
               </p>
             </div>
             {!inMiniPay && (
@@ -217,7 +219,7 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
                 className="flex-shrink-0 bg-primary-container text-on-primary px-8 py-4 rounded-xl font-bold text-base hover:bg-black transition-all"
                 style={{ boxShadow: "0 8px 24px rgba(28,28,23,0.06)" }}
               >
-                Começar a Coordenar
+                {t.landingCtaButton}
               </button>
             )}
           </div>
@@ -229,26 +231,26 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
       {showEmpresasModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary-container/40 backdrop-blur-sm" onClick={() => setShowEmpresasModal(false)}>
           <div className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-[0_24px_48px_rgba(28,28,23,0.16)]" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-primary-container mb-6" style={{ fontFamily: "'Noto Serif', serif" }}>Criando uma tarefa</h3>
+            <h3 className="text-xl font-bold text-primary-container mb-6" style={{ fontFamily: "'Noto Serif', serif" }}>{t.landingCompaniesModalTitle}</h3>
             <ol className="flex flex-col gap-4">
               {[
-                { n: "01", t: "Defina a tarefa", d: "Escreva o título, descrição, critérios de aprovação e prazo." },
-                { n: "02", t: "Escolha o token e a recompensa", d: "Selecione cUSD, USDC ou CELO e defina o valor por slot." },
-                { n: "03", t: "Configure visibilidade", d: "Público, somente verificados (GoodDollar) ou privado." },
-                { n: "04", t: "Confirme na carteira", d: "A recompensa fica em escrow no contrato até aprovação." },
-                { n: "05", t: "Acompanhe e aprove", d: "Revise os resultados entregues e aprove para liberar o pagamento." },
-              ].map(({ n, t, d }) => (
+                { n: "01", t: t.landingCompaniesStep1Title, d: t.landingCompaniesStep1Body },
+                { n: "02", t: t.landingCompaniesStep2Title, d: t.landingCompaniesStep2Body },
+                { n: "03", t: t.landingCompaniesStep3Title, d: t.landingCompaniesStep3Body },
+                { n: "04", t: t.landingCompaniesStep4Title, d: t.landingCompaniesStep4Body },
+                { n: "05", t: t.landingCompaniesStep5Title, d: t.landingCompaniesStep5Body },
+              ].map(({ n, t: stepTitle, d }) => (
                 <li key={n} className="flex gap-4">
                   <span className="text-secondary font-extrabold text-xs tracking-widest mt-0.5 w-6 flex-shrink-0">{n}</span>
                   <div>
-                    <p className="font-semibold text-on-surface text-sm">{t}</p>
+                    <p className="font-semibold text-on-surface text-sm">{stepTitle}</p>
                     <p className="text-on-surface-variant text-xs mt-0.5 leading-relaxed">{d}</p>
                   </div>
                 </li>
               ))}
             </ol>
             <button onClick={() => setShowEmpresasModal(false)} className="mt-8 w-full bg-primary-container text-on-primary py-3 rounded-xl font-bold text-sm">
-              Entendido
+              {t.landingCompaniesModalDismiss}
             </button>
           </div>
         </div>
@@ -258,26 +260,26 @@ export function LandingPage({ onConnect, onOpenWallet, language, onNavigateToAge
       {showProfissionaisModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary-container/40 backdrop-blur-sm" onClick={() => setShowProfissionaisModal(false)}>
           <div className="bg-surface rounded-2xl p-8 max-w-md w-full shadow-[0_24px_48px_rgba(28,28,23,0.16)]" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-primary-container mb-6" style={{ fontFamily: "'Noto Serif', serif" }}>Como funciona para profissionais</h3>
+            <h3 className="text-xl font-bold text-primary-container mb-6" style={{ fontFamily: "'Noto Serif', serif" }}>{t.landingProfessionalsModalTitle}</h3>
             <ol className="flex flex-col gap-4">
               {[
-                { n: "01", t: "Conecte sua carteira", d: "Use MetaMask, WalletConnect ou qualquer carteira compatível com Celo." },
-                { n: "02", t: "Explore as tarefas", d: "Filtre por categoria, recompensa ou prazo e encontre oportunidades relevantes." },
-                { n: "03", t: "Faça o claim", d: "Reserve seu slot na tarefa — o contrato registra sua posição onchain." },
-                { n: "04", t: "Execute e envie o resultado", d: "Conclua o trabalho e envie o link de comprovação." },
-                { n: "05", t: "Receba a recompensa", d: "Após aprovação do criador, faça o claim do pagamento direto para sua carteira." },
-              ].map(({ n, t, d }) => (
+                { n: "01", t: t.landingProfessionalsStep1Title, d: t.landingProfessionalsStep1Body },
+                { n: "02", t: t.landingProfessionalsStep2Title, d: t.landingProfessionalsStep2Body },
+                { n: "03", t: t.landingProfessionalsStep3Title, d: t.landingProfessionalsStep3Body },
+                { n: "04", t: t.landingProfessionalsStep4Title, d: t.landingProfessionalsStep4Body },
+                { n: "05", t: t.landingProfessionalsStep5Title, d: t.landingProfessionalsStep5Body },
+              ].map(({ n, t: stepTitle, d }) => (
                 <li key={n} className="flex gap-4">
                   <span className="text-secondary font-extrabold text-xs tracking-widest mt-0.5 w-6 flex-shrink-0">{n}</span>
                   <div>
-                    <p className="font-semibold text-on-surface text-sm">{t}</p>
+                    <p className="font-semibold text-on-surface text-sm">{stepTitle}</p>
                     <p className="text-on-surface-variant text-xs mt-0.5 leading-relaxed">{d}</p>
                   </div>
                 </li>
               ))}
             </ol>
             <button onClick={() => setShowProfissionaisModal(false)} className="mt-8 w-full bg-marigold text-on-tertiary-fixed py-3 rounded-xl font-bold text-sm">
-              Explorar Tarefas
+              {t.cta2}
             </button>
           </div>
         </div>
