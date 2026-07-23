@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import dynamic from "next/dynamic"
 import { ethers } from "ethers"
 import { Home, Clipboard, User, LogOut, ArrowLeft, Languages, TrendingUp, BookOpen, Building2, Shield } from "lucide-react"
 import {
@@ -39,11 +40,14 @@ import { recordWalletConnection } from "@/lib/wallet-connections"
 import { taskStatusLabel } from "@/lib/task-status"
 import { isMiniPay } from "@/lib/minipay"
 import { isAdminWallet } from "@/lib/admin"
+import type { RippleWalletConnectorHandle } from "@/components/ripple-wallet-connector"
 import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
 import { celo, gnosis } from "@reown/appkit/networks"
 import { useEthersSigner } from '@/lib/ethers-adapter'
+
+const RippleWalletConnector = dynamic(() => import("@/components/ripple-wallet-connector"), { ssr: false })
 
 declare global {
   interface Window {
@@ -161,6 +165,7 @@ export function TheOfficeApp() {
   const [multiTaskStatuses, setMultiTaskStatuses] = useState<Record<string, "idle" | "pending" | "success" | "error">>({})
   const [myOrgs, setMyOrgs] = useState<Organization[]>([])
   const [xamanAccount, setXamanAccount] = useState<string | null>(null)
+  const rippleConnectorRef = useRef<RippleWalletConnectorHandle | null>(null)
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { disconnect: wagmiDisconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
@@ -464,16 +469,22 @@ export function TheOfficeApp() {
     open()
   }
 
-  const connectRipple = async () => {
-    try {
-      const { connectXaman } = await import("@/lib/xrpl/xaman")
-      const address = await connectXaman()
-      setXamanAccount(address)
-      recordWalletConnection(address)
-      setCurrentPage("home")
-    } catch (error) {
-      toast(error instanceof Error ? error.message : "Failed to connect Xaman")
-    }
+  const connectRipple = () => {
+    rippleConnectorRef.current?.open()
+  }
+
+  const handleRippleConnected = (address: string) => {
+    setXamanAccount(address)
+    recordWalletConnection(address)
+    setCurrentPage("home")
+  }
+
+  const handleRippleError = (error: unknown) => {
+    toast(error instanceof Error ? error.message : "Failed to connect wallet")
+  }
+
+  const disconnectRipple = () => {
+    import("@/lib/xrpl/wallet-manager").then(({ rippleWalletManager }) => rippleWalletManager.disconnect())
   }
 
   const parseContractError = (error: unknown): string => {
@@ -822,8 +833,8 @@ export function TheOfficeApp() {
       }
 
       const { escrowCreateTx } = await res.json()
-      const { signAndSubmit } = await import("@/lib/xrpl/xaman")
-      const { sequence } = await signAndSubmit(escrowCreateTx)
+      const { signRippleAndGetSequence } = await import("@/lib/xrpl/wallet-manager")
+      const { sequence } = await signRippleAndGetSequence(escrowCreateTx)
 
       const { saveXrplTask, updateEscrowSequence } = await import("@/lib/xrpl/tasks")
       await saveXrplTask({
@@ -960,8 +971,8 @@ export function TheOfficeApp() {
         }
         const { fulfillment, condition, sequence, fee } = await res.json()
 
-        const { signAndSubmit } = await import("@/lib/xrpl/xaman")
-        await signAndSubmit({
+        const { signRipple } = await import("@/lib/xrpl/wallet-manager")
+        await signRipple({
           TransactionType: "EscrowFinish",
           Account: xamanAccount,
           Owner: detail.escrow.ownerAccount,
@@ -1174,6 +1185,9 @@ export function TheOfficeApp() {
     if (wagmiConnected) {
       wagmiDisconnect()
     }
+    if (xamanAccount) {
+      disconnectRipple()
+    }
     setAccount("")
     setContract(null)
     setTokenContracts({})
@@ -1310,7 +1324,7 @@ export function TheOfficeApp() {
                   </>
                 )}
                 <button
-                  onClick={() => (connectionMode === "ripple" ? setXamanAccount(null) : connectRipple())}
+                  onClick={() => (connectionMode === "ripple" ? (disconnectRipple(), setXamanAccount(null)) : connectRipple())}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
                     connectionMode === "ripple"
                       ? "bg-primary-container text-on-primary"
@@ -1481,6 +1495,13 @@ export function TheOfficeApp() {
         language={language}
         onOpenOrganizationProfile={(orgId) => { setProfileOrgId(orgId); setCurrentPage("organizations"); setShowTaskModal(false) }}
         onOpenProject={(projectId) => { setDetailProjectId(projectId); setCurrentPage("organizations"); setShowTaskModal(false) }}
+      />
+
+      <RippleWalletConnector
+        onReady={(handle) => { rippleConnectorRef.current = handle }}
+        onConnected={handleRippleConnected}
+        onDisconnected={() => setXamanAccount(null)}
+        onError={handleRippleError}
       />
 
       <Toast message={toastMessage} />
