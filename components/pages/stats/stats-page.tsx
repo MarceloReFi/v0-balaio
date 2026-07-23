@@ -41,6 +41,8 @@ const INITIAL_PANEL: PanelState = {
 
 const DEFAULT_DAYS = 60
 
+const GAVIOES_ORG_ID = "395a0e3e-bf4e-4781-855a-ee410cd0894e"
+
 type DailyMap = Record<string, number>
 
 function bumpDay(map: DailyMap, isoDate: string) {
@@ -126,6 +128,56 @@ async function fetchChainStats(chainIds: number[], windowStart: Date | null): Pr
   }
 }
 
+async function fetchOrgStats(organizationId: string, windowStart: Date | null): Promise<StatsData> {
+  const supabase = createClient()
+
+  let taskQuery = supabase.from("tasks").select("id, created_at").eq("organization_id", organizationId)
+  if (windowStart) taskQuery = taskQuery.gte("created_at", windowStart.toISOString())
+  const { data: taskRows } = await taskQuery
+
+  const rows = taskRows ?? []
+  const taskIds = rows.map((row: any) => row.id)
+
+  let claimRows: any[] = []
+  if (taskIds.length > 0) {
+    const { data } = await supabase
+      .from("task_claims")
+      .select("worker_address, claimed_at, submitted_at, approved_at, withdrawn_at")
+      .in("task_id", taskIds)
+    claimRows = data ?? []
+  }
+
+  const claimedRows = claimRows.filter((row: any) => row.claimed_at)
+  const submittedRows = claimRows.filter((row: any) => row.submitted_at)
+  const approvedRows = claimRows.filter((row: any) => row.approved_at)
+  const withdrawnRows = claimRows.filter((row: any) => row.withdrawn_at)
+
+  const uniqueContributors = new Set(claimedRows.map((row: any) => row.worker_address)).size
+
+  const { count: projectsCreated } = await supabase
+    .from("projects")
+    .select("*", { count: "exact", head: true })
+    .eq("organization_id", organizationId)
+
+  const dailyMap: DailyMap = {}
+  rows.forEach((row: any) => bumpDay(dailyMap, isoDate(new Date(row.created_at))))
+  claimedRows.forEach((row: any) => bumpDay(dailyMap, isoDate(new Date(row.claimed_at))))
+  submittedRows.forEach((row: any) => bumpDay(dailyMap, isoDate(new Date(row.submitted_at))))
+  approvedRows.forEach((row: any) => bumpDay(dailyMap, isoDate(new Date(row.approved_at))))
+  withdrawnRows.forEach((row: any) => bumpDay(dailyMap, isoDate(new Date(row.withdrawn_at))))
+
+  return {
+    users: uniqueContributors,
+    interactions: rows.length + claimedRows.length + submittedRows.length + approvedRows.length + withdrawnRows.length,
+    organizationsCreated: 1,
+    tasksCreated: rows.length,
+    tasksClaimed: claimedRows.length,
+    projectsCreated: projectsCreated ?? 0,
+    growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
+    lastUpdated: Date.now(),
+  }
+}
+
 async function fetchDailyStats(
   windowStart: Date | null
 ): Promise<{ date: string; created: number; claimed: number; submitted: number; interactions: number }[]> {
@@ -190,6 +242,7 @@ function WeeklyBarChart({ data }: { data: { date: string; interactions: number }
 
 export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
   const [stats, setStats] = useState<PanelState>(INITIAL_PANEL)
+  const [orgStats, setOrgStats] = useState<PanelState>(INITIAL_PANEL)
   const [backfill, setBackfill] = useState<{ running: boolean; log: string[]; done: boolean | null }>({ running: false, log: [], done: null })
 
   const strings = {
@@ -389,6 +442,17 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
     }
   }
 
+  async function loadOrgStats() {
+    setOrgStats(p => ({ ...p, loading: true, error: null }))
+    try {
+      const newStats = await fetchOrgStats(GAVIOES_ORG_ID, null)
+      setOrgStats({ stats: newStats, loading: false, isFullHistory: true, loadingFullHistory: false, progress: 100, error: null })
+    } catch (err) {
+      console.error("loadOrgStats error:", err)
+      setOrgStats(p => ({ ...p, loading: false, error: strings.error }))
+    }
+  }
+
   async function runBackfill() {
     setBackfill({ running: true, log: [], done: null })
     let done = false
@@ -417,6 +481,7 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
 
   useEffect(() => {
     loadFullHistory(setStats)
+    loadOrgStats()
   }, [])
 
   function StatsPanel({
@@ -425,12 +490,14 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
     onRefresh,
     onFullHistory,
     onLast60Days,
+    hideOrgCard,
   }: {
     panel: PanelState
     label: string
     onRefresh: () => void
     onFullHistory: () => void
     onLast60Days: () => void
+    hideOrgCard?: boolean
   }) {
     if (panel.loading) {
       return (
@@ -495,8 +562,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
             { icon: ClipboardList, label: strings.tasksCreated, value: panel.stats.tasksCreated },
             { icon: CheckCircle2, label: strings.tasksClaimed, value: panel.stats.tasksClaimed },
             { icon: TrendingUp, label: strings.totalInteractions, value: panel.stats.interactions },
-            { icon: Building2, label: strings.organizationsCreated, value: panel.stats.organizationsCreated },
             { icon: FolderKanban, label: strings.projectsCreated, value: panel.stats.projectsCreated },
+            ...(hideOrgCard ? [] : [{ icon: Building2, label: strings.organizationsCreated, value: panel.stats.organizationsCreated }]),
           ].map(({ icon: Icon, label: l, value }) => (
             <div key={l} className="bg-gray-50 rounded border border-gray-200 p-3">
               <div className="flex items-center gap-1 mb-1">
@@ -551,6 +618,76 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
     )
   }
 
+  function GavioesPanel({ panel }: { panel: PanelState }) {
+    if (panel.loading) {
+      return (
+        <div className="balaio-card mb-8">
+          <h2 className="text-xl font-bold mb-4">Gaviões da Fiel</h2>
+          <div className="text-sm text-gray-500">{strings.loading}</div>
+        </div>
+      )
+    }
+
+    if (panel.error) {
+      return (
+        <div className="balaio-card mb-8">
+          <h2 className="text-xl font-bold mb-4">Gaviões da Fiel</h2>
+          <div className="text-sm text-red-500">{panel.error}</div>
+        </div>
+      )
+    }
+
+    if (!panel.stats) return null
+
+    return (
+      <div className="balaio-card mb-8">
+        <h2 className="text-xl font-bold mb-4">Gaviões da Fiel</h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+          {[
+            { icon: Users, label: strings.users, value: panel.stats.users },
+            { icon: ClipboardList, label: strings.tasksCreated, value: panel.stats.tasksCreated },
+            { icon: CheckCircle2, label: strings.tasksClaimed, value: panel.stats.tasksClaimed },
+            { icon: TrendingUp, label: strings.totalInteractions, value: panel.stats.interactions },
+            { icon: FolderKanban, label: strings.projectsCreated, value: panel.stats.projectsCreated },
+          ].map(({ icon: Icon, label: l, value }) => (
+            <div key={l} className="bg-gray-50 rounded border border-gray-200 p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Icon size={14} />
+                <span className="text-xs font-bold">{l}</span>
+              </div>
+              <div className="text-2xl font-bold">{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-6 items-start flex-wrap">
+          <div className="w-full sm:w-2/5 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-black">
+                  <th className="text-left py-2 px-3">{strings.date}</th>
+                  <th className="text-left py-2 px-3">{strings.interactions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {panel.stats.growth.length > 0 ? panel.stats.growth.map(row => (
+                  <tr key={row.date} className="border-b border-gray-100">
+                    <td className="py-1.5 px-3">{row.date}</td>
+                    <td className="py-1.5 px-3">{row.interactions}</td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={2} className="py-4 px-3 text-center text-gray-400">No data yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <WeeklyBarChart data={panel.stats.growth} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
       <div className="max-w-4xl mx-auto">
@@ -577,6 +714,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
           onFullHistory={() => loadFullHistory(setStats)}
           onLast60Days={() => loadRecent(setStats)}
         />
+
+        <GavioesPanel panel={orgStats} />
 
         {isAdmin && (
           <div className="balaio-card mb-8">
