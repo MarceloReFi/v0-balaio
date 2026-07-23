@@ -1500,6 +1500,7 @@ export function TheOfficeApp() {
       <RippleWalletConnector
         onReady={(handle) => { rippleConnectorRef.current = handle }}
         onConnected={handleRippleConnected}
+        onDisconnected={() => setXamanAccount(null)}
         onError={handleRippleError}
       />
 
