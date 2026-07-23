@@ -37,6 +37,7 @@ function rowToTask(row: any, claims: TaskClaim[]): Task {
     title: row.title,
     description: row.description ?? "",
     reward: row.reward,
+    token: "XRP",
     totalSlots: String(row.slots ?? 1),
     claimedSlots: String(row.claimed_slots ?? 0),
     availableSlots: String((row.slots ?? 1) - (row.claimed_slots ?? 0)),

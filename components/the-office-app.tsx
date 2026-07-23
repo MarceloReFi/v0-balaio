@@ -336,7 +336,7 @@ export function TheOfficeApp() {
       setTasks(loadedTasks)
     } catch (error) {
       console.error("Error loading Ripple tasks:", error)
-      toast("Error loading Ripple tasks")
+      toast("Error loading XRP tasks")
     } finally {
       setLoading(false)
     }
@@ -817,7 +817,7 @@ export function TheOfficeApp() {
         body: JSON.stringify({ taskId, ownerAddress: xamanAccount, amountDrops }),
       })
       if (!res.ok) {
-        toast("Failed to create Ripple escrow")
+        toast("Failed to create XRP escrow")
         return
       }
 
@@ -842,10 +842,10 @@ export function TheOfficeApp() {
       await updateEscrowSequence(taskId, sequence)
 
       setShowCreateModal(false)
-      toast("Ripple task created!")
+      toast("XRP task created!")
     } catch (error) {
       console.error("Create XRPL task error:", error)
-      toast(error instanceof Error ? error.message : "Failed to create Ripple task")
+      toast(error instanceof Error ? error.message : "Failed to create XRP task")
     } finally {
       setLoading(false)
     }
@@ -1051,7 +1051,7 @@ export function TheOfficeApp() {
 
   const cancelTask = async (id: string, task?: Task | null) => {
     if (connectionMode === "ripple") {
-      toast(language === "en" ? "Not available yet for Ripple" : "Ainda não disponível para Ripple")
+      toast(language === "en" ? "Not available yet for XRP" : "Ainda não disponível para XRP")
       return
     }
     const writeContract = getWriteContract(task)
@@ -1317,8 +1317,8 @@ export function TheOfficeApp() {
                       : "bg-surface-container-low text-on-surface-variant hover:opacity-80"
                   }`}
                 >
-                  <img src="/ripple-logo.png" alt="Ripple" className="h-5 w-auto object-contain" />
-                  Ripple
+                  <img src="/ripple-logo.png" alt="XRP" className="h-5 w-auto object-contain" />
+                  XRP
                 </button>
               </div>
             )}
@@ -1361,8 +1361,8 @@ export function TheOfficeApp() {
                 onClick={connectRipple}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors bg-surface-container-low text-on-surface-variant hover:opacity-80"
               >
-                <img src="/ripple-logo.png" alt="Ripple" className="h-4 w-auto object-contain" />
-                Ripple
+                <img src="/ripple-logo.png" alt="XRP" className="h-4 w-auto object-contain" />
+                XRP
               </button>
             </div>
             <LandingPage onConnect={connectWallet} onOpenWallet={open} language={language} onNavigateToAgents={() => setCurrentPage("agents")} />
