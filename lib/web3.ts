@@ -1,5 +1,21 @@
 import { GNOSIS_CONTRACT_ADDRESS, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/config"
 
+export async function waitForTransaction(
+  txPromise: Promise<{ wait: () => Promise<any> }>,
+  timeoutMs = 90_000,
+): Promise<any> {
+  const tx = await txPromise
+  return Promise.race([
+    tx.wait(),
+    new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Transaction timed out — check your wallet or try again")),
+        timeoutMs,
+      )
+    ),
+  ])
+}
+
 export function getContractAddress(chainId: number): string {
   if (chainId === 100) return GNOSIS_CONTRACT_ADDRESS
   return CELO_CONTRACT_ADDRESS_V2

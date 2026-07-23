@@ -12,6 +12,7 @@ import {
   SUPPORTED_TOKENS,
   GNOSIS_TOKENS,
   getTokensForChain,
+  waitForTransaction,
   type TokenSymbol,
 } from "@/lib/web3"
 import { CELO_RPC, GNOSIS_RPC, CELO_CONTRACT_ADDRESS_V1, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/config"
@@ -716,8 +717,7 @@ export function TheOfficeApp() {
 
       if (currentAllowance < totalDeposit) {
         toast(`Approving ${token}...`)
-        const approveTx = await tokenContract.approve(getContractAddress(chainId), totalDeposit)
-        await approveTx.wait()
+        await waitForTransaction(tokenContract.approve(getContractAddress(chainId), totalDeposit))
         toast(`${token} approved!`)
       } else {
         toast(`${token} already approved`)
@@ -743,8 +743,7 @@ export function TheOfficeApp() {
           }
 
           toast(`Creating task "${taskId}" on blockchain...`)
-          const tx = await contract.createTask(taskId, tokenConfig.address, rewardWei, totalSlots, account)
-          await tx.wait()
+          await waitForTransaction(contract.createTask(taskId, tokenConfig.address, rewardWei, totalSlots, account))
 
           const newTask: Task = {
             id: taskId,
@@ -884,8 +883,7 @@ export function TheOfficeApp() {
         const { claimXrplTask } = await import("@/lib/xrpl/tasks")
         await claimXrplTask(id, xamanAccount!)
       } else {
-        const tx = await writeContract!.claimTask(id)
-        await tx.wait()
+        await waitForTransaction(writeContract!.claimTask(id))
 
         await supabase.from("task_claims").upsert(
           { task_id: id, worker_address: account.toLowerCase(), claimed_at: new Date().toISOString() },
@@ -922,8 +920,7 @@ export function TheOfficeApp() {
         const { submitXrplTask } = await import("@/lib/xrpl/tasks")
         await submitXrplTask(id, xamanAccount!, proof)
       } else {
-        const tx = await writeContract!.submitTask(id, proof)
-        await tx.wait()
+        await waitForTransaction(writeContract!.submitTask(id, proof))
 
         await supabase.from("task_claims").upsert(
           { task_id: id, worker_address: account.toLowerCase(), submitted_at: new Date().toISOString(), submission_link: proof },
@@ -1005,8 +1002,7 @@ export function TheOfficeApp() {
           return
         }
       } else {
-        const tx = await writeContract!.approveTask(id, claimant)
-        await tx.wait()
+        await waitForTransaction(writeContract!.approveTask(id, claimant))
 
         await supabase.from("task_claims").upsert(
           { task_id: id, worker_address: claimant.toLowerCase(), approved_at: new Date().toISOString() },
@@ -1038,8 +1034,7 @@ export function TheOfficeApp() {
       setLoading(true)
       toast("Claiming reward...")
 
-      const tx = await writeContract.claimReward(id)
-      await tx.wait()
+      await waitForTransaction(writeContract.claimReward(id))
 
       await supabase.from("task_claims").upsert(
         { task_id: id, worker_address: account.toLowerCase(), withdrawn_at: new Date().toISOString() },
@@ -1073,8 +1068,7 @@ export function TheOfficeApp() {
     try {
       setLoading(true)
       toast("Cancelling task...")
-      const tx = await writeContract.cancelTask(id)
-      await tx.wait()
+      await waitForTransaction(writeContract.cancelTask(id))
       toast("Task cancelled — escrow refunded")
       await loadTasksFromBlockchain()
       if (account) await loadUserActivity(account, tasks)
@@ -1097,8 +1091,7 @@ export function TheOfficeApp() {
         const { rejectXrplTask } = await import("@/lib/xrpl/tasks")
         await rejectXrplTask(id, claimant)
       } else {
-        const tx = await writeContract!.rejectSubmission(id, claimant)
-        await tx.wait()
+        await waitForTransaction(writeContract!.rejectSubmission(id, claimant))
         await supabase.from("task_claims")
           .update({ submitted_at: null, submission_link: null })
           .match({ task_id: id, worker_address: claimant.toLowerCase() })
