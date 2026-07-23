@@ -1,10 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { useParams } from "next/navigation"
 import type { Task } from "@/lib/types"
 import { getXrplTask, claimXrplTask, submitXrplTask, approveXrplTask, type XrplTaskDetail } from "@/lib/xrpl/tasks"
-import { connectXaman, signAndSubmit } from "@/lib/xrpl/xaman"
+import type { RippleWalletConnectorHandle } from "@/components/ripple-wallet-connector"
+
+const RippleWalletConnector = dynamic(() => import("@/components/ripple-wallet-connector"), { ssr: false })
 
 const inputClass =
   "w-full px-4 py-2.5 bg-surface-container-low rounded-lg text-sm outline-none focus:ring-1 focus:ring-secondary"
@@ -33,6 +36,7 @@ export default function XrplTaskDetailPage() {
   const [txHash, setTxHash] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const rippleConnectorRef = useRef<RippleWalletConnectorHandle | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -47,14 +51,9 @@ export default function XrplTaskDetailPage() {
     load()
   }, [load])
 
-  const handleConnect = async () => {
+  const handleConnect = () => {
     setError(null)
-    try {
-      const connectedAddress = await connectXaman()
-      setAddress(connectedAddress)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect Xaman")
-    }
+    rippleConnectorRef.current?.open()
   }
 
   const handleClaim = async () => {
@@ -115,7 +114,8 @@ export default function XrplTaskDetailPage() {
         Fee: data.fee,
       }
 
-      const { hash } = await signAndSubmit(escrowFinishTx)
+      const { signRipple } = await import("@/lib/xrpl/wallet-manager")
+      const { hash } = await signRipple(escrowFinishTx)
       setTxHash(hash)
 
       await approveXrplTask(taskId, workerAddress)
@@ -177,7 +177,7 @@ export default function XrplTaskDetailPage() {
 
       {!address ? (
         <button type="button" onClick={handleConnect} className={`w-full ${primaryButtonClass}`}>
-          Connect Xaman
+          Connect Wallet
         </button>
       ) : isCreator ? (
         <div className="flex flex-col">
@@ -235,6 +235,12 @@ export default function XrplTaskDetailPage() {
       ) : (
         <p className="text-sm text-on-surface-variant">Waiting for approval.</p>
       )}
+
+      <RippleWalletConnector
+        onReady={(handle) => { rippleConnectorRef.current = handle }}
+        onConnected={setAddress}
+        onError={(err) => setError(err instanceof Error ? err.message : "Failed to connect wallet")}
+      />
     </main>
   )
 }

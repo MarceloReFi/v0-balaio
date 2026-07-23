@@ -92,6 +92,9 @@ importers:
       xrpl:
         specifier: ^5.0.0
         version: 5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      xrpl-connect:
+        specifier: ^0.8.2
+        version: 0.8.2
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -3126,6 +3129,9 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+
+  xrpl-connect@0.8.2:
+    resolution: {integrity: sha512-te3NDPSJGZhk+5yMppbv/UB6+6UCnrSzBFCHd24SIoNrDwbbcEEWoWoiNojPU44lRLdPB4YblNF91bFRS4O9iw==}
 
   xrpl@5.0.0:
     resolution: {integrity: sha512-YqaTFJUnhOu0mI4bsuHbKGj6w9ATcH8EIgw+gOLnh1rrlLTo5oImLQzhKJixCAPqqWOKnsY7J3jsN+l+zeEWgA==}
@@ -6663,6 +6669,8 @@ snapshots:
     optionalDependencies:
       bufferutil: 4.1.0
       utf-8-validate: 6.0.6
+
+  xrpl-connect@0.8.2: {}
 
   xrpl@5.0.0(bufferutil@4.1.0)(utf-8-validate@6.0.6):
     dependencies:
