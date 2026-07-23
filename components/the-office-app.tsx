@@ -161,7 +161,10 @@ export function TheOfficeApp() {
   const { isVerified } = useGoodID(account)
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const loadingActivityRef = useRef(false)
-  const [language, setLanguage] = useState<Language>("en")
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof navigator === "undefined") return "en"
+    return navigator.language.toLowerCase().startsWith("pt") ? "pt-BR" : "en"
+  })
   const [multiTaskStatuses, setMultiTaskStatuses] = useState<Record<string, "idle" | "pending" | "success" | "error">>({})
   const [myOrgs, setMyOrgs] = useState<Organization[]>([])
   const [xamanAccount, setXamanAccount] = useState<string | null>(null)
