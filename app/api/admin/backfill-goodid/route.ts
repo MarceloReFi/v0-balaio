@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}))
     const offset = body.offset ?? 0
-    const batchSize = body.batchSize ?? 25
+    const batchSize = body.batchSize ?? 8
 
     const supabase = await createClient()
     const { data: rows, error } = await supabase
