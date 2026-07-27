@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList, CheckCircle2, FolderKanban } from "lucide-react"
+import { ArrowLeft, RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList, CheckCircle2, FolderKanban, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { getCachedStats, setCachedStats, getCachedFullHistory, setCachedFullHistory } from "./stats-cache"
 
@@ -17,6 +17,7 @@ type StatsData = {
   tasksCreated: number
   tasksClaimed: number
   projectsCreated: number
+  verifiedWallets: number
   growth: { date: string; interactions: number }[]
   lastUpdated: number
 }
@@ -173,6 +174,7 @@ async function fetchOrgStats(organizationId: string, windowStart: Date | null): 
     tasksCreated: rows.length,
     tasksClaimed: claimedRows.length,
     projectsCreated: projectsCreated ?? 0,
+    verifiedWallets: 0,
     growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
     lastUpdated: Date.now(),
   }
@@ -207,6 +209,25 @@ async function fetchProjectsCount(): Promise<number> {
   const supabase = createClient()
   const { count } = await supabase.from("projects").select("*", { count: "exact", head: true })
   return count ?? 0
+}
+
+async function fetchVerifiedWalletsCount(): Promise<number> {
+  const supabase = createClient()
+  const { count } = await supabase
+    .from("wallet_connections")
+    .select("*", { count: "exact", head: true })
+    .eq("is_goodid_verified", true)
+  return count ?? 0
+}
+
+async function fetchVerifiedWalletsList(): Promise<{ wallet_address: string; goodid_verified_at: string }[]> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from("wallet_connections")
+    .select("wallet_address, goodid_verified_at")
+    .eq("is_goodid_verified", true)
+    .order("goodid_verified_at", { ascending: false })
+  return data ?? []
 }
 
 async function fetchLastSyncedAt(): Promise<number | null> {
@@ -244,6 +265,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
   const [stats, setStats] = useState<PanelState>(INITIAL_PANEL)
   const [orgStats, setOrgStats] = useState<PanelState>(INITIAL_PANEL)
   const [backfill, setBackfill] = useState<{ running: boolean; log: string[]; done: boolean | null }>({ running: false, log: [], done: null })
+  const [goodidBackfill, setGoodidBackfill] = useState<{ running: boolean; log: string[]; done: boolean | null }>({ running: false, log: [], done: null })
+  const [goodidReloadSignal, setGoodidReloadSignal] = useState(0)
 
   const strings = {
     en: {
@@ -272,6 +295,11 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
       blockchainSync: "Blockchain Sync",
       syncHistory: "Sync History",
       syncComplete: "Sync complete",
+      verifiedWallets: "GoodID Verified",
+      verifiedWalletsPanelTitle: "GoodID Verified Wallets",
+      backfillGoodID: "Backfill GoodID Verifications",
+      walletAddress: "Wallet",
+      verifiedAt: "Verified At",
     },
     "pt-BR": {
       title: "Estatísticas da Plataforma",
@@ -299,6 +327,11 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
       blockchainSync: "Sincronização Blockchain",
       syncHistory: "Sincronizar Histórico",
       syncComplete: "Sincronização completa",
+      verifiedWallets: "Verificados GoodID",
+      verifiedWalletsPanelTitle: "Carteiras Verificadas GoodID",
+      backfillGoodID: "Verificar Histórico GoodID",
+      walletAddress: "Carteira",
+      verifiedAt: "Verificado em",
     },
   }[language]
 
@@ -321,12 +354,13 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
     try {
       const windowStart = new Date(Date.now() - DEFAULT_DAYS * 24 * 60 * 60 * 1000)
 
-      const [ripple, dailyRows, users, organizationsCreated, projectsCreated, lastSyncedAt] = await Promise.all([
+      const [ripple, dailyRows, users, organizationsCreated, projectsCreated, verifiedWallets, lastSyncedAt] = await Promise.all([
         fetchChainStats([0], windowStart),
         fetchDailyStats(windowStart),
         fetchUsersCount(),
         fetchOrganizationsCount(),
         fetchProjectsCount(),
+        fetchVerifiedWalletsCount(),
         fetchLastSyncedAt(),
       ])
 
@@ -358,6 +392,7 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
         tasksCreated,
         tasksClaimed,
         projectsCreated,
+        verifiedWallets,
         growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
         lastUpdated: lastSyncedAt ?? Date.now(),
       }
@@ -386,12 +421,13 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
 
     setter(p => ({ ...p, error: null }))
     try {
-      const [ripple, dailyRows, users, organizationsCreated, projectsCreated, lastSyncedAt] = await Promise.all([
+      const [ripple, dailyRows, users, organizationsCreated, projectsCreated, verifiedWallets, lastSyncedAt] = await Promise.all([
         fetchChainStats([0], null),
         fetchDailyStats(null),
         fetchUsersCount(),
         fetchOrganizationsCount(),
         fetchProjectsCount(),
+        fetchVerifiedWalletsCount(),
         fetchLastSyncedAt(),
       ])
 
@@ -423,6 +459,7 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
         tasksCreated,
         tasksClaimed,
         projectsCreated,
+        verifiedWallets,
         growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
         lastUpdated: lastSyncedAt ?? Date.now(),
       }
@@ -472,6 +509,41 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
       setBackfill((p) => ({ ...p, running: false, done: true }))
     } catch (err) {
       setBackfill((p) => ({
+        ...p,
+        running: false,
+        log: [...p.log, `Erro: ${err instanceof Error ? err.message : String(err)}`],
+      }))
+    }
+  }
+
+  async function runBackfillGoodID() {
+    setGoodidBackfill({ running: true, log: [], done: null })
+    let done = false
+    let offset = 0
+    let iterations = 0
+    try {
+      while (!done && iterations < 3000) {
+        const res = await fetch("/api/admin/backfill-goodid", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ offset }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        done = data.done
+        offset = data.nextOffset
+        iterations++
+        setGoodidBackfill((p) => ({
+          ...p,
+          log: [...p.log.slice(-30), `Lote ${iterations} — checked: ${data.checked}, verified: ${data.verified}`],
+        }))
+      }
+      setGoodidBackfill((p) => ({ ...p, running: false, done: true }))
+      setGoodidReloadSignal((v) => v + 1)
+      const verifiedWallets = await fetchVerifiedWalletsCount()
+      setStats((p) => (p.stats ? { ...p, stats: { ...p.stats, verifiedWallets } } : p))
+    } catch (err) {
+      setGoodidBackfill((p) => ({
         ...p,
         running: false,
         log: [...p.log, `Erro: ${err instanceof Error ? err.message : String(err)}`],
@@ -563,6 +635,7 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
             { icon: CheckCircle2, label: strings.tasksClaimed, value: panel.stats.tasksClaimed },
             { icon: TrendingUp, label: strings.totalInteractions, value: panel.stats.interactions },
             { icon: FolderKanban, label: strings.projectsCreated, value: panel.stats.projectsCreated },
+            { icon: ShieldCheck, label: strings.verifiedWallets, value: panel.stats.verifiedWallets },
             ...(hideOrgCard ? [] : [{ icon: Building2, label: strings.organizationsCreated, value: panel.stats.organizationsCreated }]),
           ].map(({ icon: Icon, label: l, value }) => (
             <div key={l} className="bg-gray-50 rounded border border-gray-200 p-3">
@@ -688,6 +761,54 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
     )
   }
 
+  function VerifiedWalletsPanel() {
+    const [state, setState] = useState<{ loading: boolean; rows: { wallet_address: string; goodid_verified_at: string }[] }>({
+      loading: true,
+      rows: [],
+    })
+
+    useEffect(() => {
+      setState((p) => ({ ...p, loading: true }))
+      fetchVerifiedWalletsList()
+        .then((rows) => setState({ loading: false, rows }))
+        .catch((err) => {
+          console.error("fetchVerifiedWalletsList error:", err)
+          setState((p) => ({ ...p, loading: false }))
+        })
+    }, [goodidReloadSignal])
+
+    return (
+      <div className="balaio-card mb-8">
+        <h2 className="text-xl font-bold mb-4">{strings.verifiedWalletsPanelTitle}</h2>
+
+        {state.loading ? (
+          <div className="text-sm text-gray-500">{strings.loading}</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-2 border-black">
+                  <th className="text-left py-2 px-3">{strings.walletAddress}</th>
+                  <th className="text-left py-2 px-3">{strings.verifiedAt}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.rows.length > 0 ? state.rows.map((row) => (
+                  <tr key={row.wallet_address} className="border-b border-gray-100">
+                    <td className="py-1.5 px-3 font-mono text-xs">{row.wallet_address}</td>
+                    <td className="py-1.5 px-3">{new Date(row.goodid_verified_at).toLocaleString()}</td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={2} className="py-4 px-3 text-center text-gray-400">No data yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white p-6 pb-24">
       <div className="max-w-4xl mx-auto">
@@ -718,29 +839,57 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
         <GavioesPanel panel={orgStats} />
 
         {isAdmin && (
-          <div className="balaio-card mb-8">
-            <h2 className="text-xl font-bold mb-4">{strings.blockchainSync}</h2>
-            <button
-              onClick={runBackfill}
-              disabled={backfill.running}
-              className="balaio-chip green flex items-center gap-1 text-xs mb-4"
-            >
-              <RefreshCw size={12} className={backfill.running ? "animate-spin" : ""} />
-              {strings.syncHistory}
-            </button>
+          <>
+            <div className="balaio-card mb-8">
+              <h2 className="text-xl font-bold mb-4">{strings.blockchainSync}</h2>
+              <button
+                onClick={runBackfill}
+                disabled={backfill.running}
+                className="balaio-chip green flex items-center gap-1 text-xs mb-4"
+              >
+                <RefreshCw size={12} className={backfill.running ? "animate-spin" : ""} />
+                {strings.syncHistory}
+              </button>
 
-            {backfill.log.length > 0 && (
-              <div className="max-h-40 overflow-y-auto bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono space-y-1">
-                {backfill.log.map((line, i) => (
-                  <div key={i}>{line}</div>
-                ))}
-              </div>
-            )}
+              {backfill.log.length > 0 && (
+                <div className="max-h-40 overflow-y-auto bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono space-y-1">
+                  {backfill.log.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              )}
 
-            {backfill.done === true && (
-              <div className="text-sm text-green-600 mt-3">{strings.syncComplete}</div>
-            )}
-          </div>
+              {backfill.done === true && (
+                <div className="text-sm text-green-600 mt-3">{strings.syncComplete}</div>
+              )}
+            </div>
+
+            <div className="balaio-card mb-8">
+              <h2 className="text-xl font-bold mb-4">{strings.backfillGoodID}</h2>
+              <button
+                onClick={runBackfillGoodID}
+                disabled={goodidBackfill.running}
+                className="balaio-chip green flex items-center gap-1 text-xs mb-4"
+              >
+                <RefreshCw size={12} className={goodidBackfill.running ? "animate-spin" : ""} />
+                {strings.backfillGoodID}
+              </button>
+
+              {goodidBackfill.log.length > 0 && (
+                <div className="max-h-40 overflow-y-auto bg-gray-50 border border-gray-200 rounded p-3 text-xs font-mono space-y-1">
+                  {goodidBackfill.log.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              )}
+
+              {goodidBackfill.done === true && (
+                <div className="text-sm text-green-600 mt-3">{strings.syncComplete}</div>
+              )}
+            </div>
+
+            <VerifiedWalletsPanel />
+          </>
         )}
       </div>
     </div>
