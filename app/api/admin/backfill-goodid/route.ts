@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createPublicClient, http } from "viem"
+import { createPublicClient, http, zeroAddress, type Address } from "viem"
 import { celo } from "viem/chains"
-import { IdentitySDK } from "@goodsdks/citizen-sdk"
+import { chainConfigs, identityV2ABI, SupportedChains } from "@goodsdks/citizen-sdk"
 import { CELO_RPC } from "@/lib/config"
 import { createClient } from "@/lib/supabase/server"
+
+const IDENTITY_CONTRACT = chainConfigs[SupportedChains.CELO].contracts.production!.identityContract
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -31,12 +33,17 @@ export async function POST(request: NextRequest) {
     }
 
     const publicClient = createPublicClient({ chain: celo, transport: http(CELO_RPC) })
-    const identitySDK = new IdentitySDK(publicClient, null, "production")
 
     let verifiedCount = 0
     for (const row of rows) {
       try {
-        const { isWhitelisted } = await identitySDK.getWhitelistedRoot(row.wallet_address)
+        const root = await publicClient.readContract({
+          address: IDENTITY_CONTRACT,
+          abi: identityV2ABI,
+          functionName: "getWhitelistedRoot",
+          args: [row.wallet_address as Address],
+        })
+        const isWhitelisted = root !== zeroAddress
         if (isWhitelisted) {
           const now = new Date().toISOString()
           const { error: updateError } = await supabase

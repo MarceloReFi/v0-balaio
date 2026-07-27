@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { usePublicClient } from 'wagmi'
-import { IdentitySDK } from '@goodsdks/citizen-sdk'
+import { zeroAddress, type Address } from 'viem'
+import { chainConfigs, identityV2ABI, SupportedChains } from '@goodsdks/citizen-sdk'
+
+const IDENTITY_CONTRACT = chainConfigs[SupportedChains.CELO].contracts.production!.identityContract
+
 export function useGoodID(address: string | undefined) {
   const [isVerified, setIsVerified] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -13,13 +17,13 @@ export function useGoodID(address: string | undefined) {
     }
     const checkVerification = async () => {
       try {
-        if (!publicClient.account) {
-          setIsVerified(false)
-          return
-        }
-        const identitySDK = new IdentitySDK(publicClient, null, 'production')
-        const { isWhitelisted } = await identitySDK.getWhitelistedRoot(address)
-        setIsVerified(isWhitelisted)
+        const root = await publicClient.readContract({
+          address: IDENTITY_CONTRACT,
+          abi: identityV2ABI,
+          functionName: 'getWhitelistedRoot',
+          args: [address as Address],
+        })
+        setIsVerified(root !== zeroAddress)
       } catch (error) {
         console.error('GoodID verification check failed:', error)
         setIsVerified(false)
