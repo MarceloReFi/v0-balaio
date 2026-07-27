@@ -37,7 +37,7 @@ import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
 import { getOrganizationsByWallet } from "@/lib/organizations"
-import { recordWalletConnection } from "@/lib/wallet-connections"
+import { recordWalletConnection, recordGoodIDVerification } from "@/lib/wallet-connections"
 import { taskStatusLabel } from "@/lib/task-status"
 import { isMiniPay } from "@/lib/minipay"
 import { isAdminWallet } from "@/lib/admin"
@@ -1231,6 +1231,12 @@ export function TheOfficeApp() {
       .then(setMyOrgs)
       .catch((error) => console.error(error))
   }, [account])
+
+  useEffect(() => {
+    if (account && isVerified) {
+      recordGoodIDVerification(account)
+    }
+  }, [account, isVerified])
 
   useEffect(() => {
     if (wagmiConnected && wagmiAddress && !account) {
