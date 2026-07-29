@@ -279,8 +279,9 @@ export function TheOfficeApp() {
           supabase.from("tasks").update({ contract_address: usedContract.target as string }).eq("id", taskId).then(() => {})
         }
 
-        if (metadata?.visibility === "verified_humans" && !isVerified) continue
-        if (metadata?.visibility === "private" && metadata?.creator_address?.toLowerCase() !== account?.toLowerCase()) continue
+        const isOwnTask = metadata?.creator_address?.toLowerCase() === account?.toLowerCase()
+        if (metadata?.visibility === "verified_humans" && !isVerified && !isOwnTask) continue
+        if (metadata?.visibility === "private" && !isOwnTask) continue
 
         const tokenAddress = taskData.token.toLowerCase()
         const tokenSymbol = resolveTokenSymbol(tokenAddress)
