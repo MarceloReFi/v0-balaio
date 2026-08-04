@@ -1,12 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import dynamic from "next/dynamic"
 import { ChevronDown, Calendar, Plus, X } from "lucide-react"
 import { getTokensForChain, type TokenConfig, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
 import { BottomSheet } from "@/components/ui/bottom-sheet"
 import type { Task, Organization, Project } from "@/lib/types"
 import { listProjectsByOrganization } from "@/lib/organizations"
+
+const LocationPicker = dynamic(() => import("@/components/location-picker"), { ssr: false })
 
 interface CreateTaskModalProps {
   chainId: number
@@ -28,6 +31,8 @@ interface CreateTaskModalProps {
     organizationId: string | null,
     projectId: string | null,
     allowPhotoProof: boolean,
+    locationLat: number | null,
+    locationLng: number | null,
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
@@ -65,6 +70,9 @@ export function CreateTaskModal({
   const [tagsInput, setTagsInput] = useState("")
   const [visibility, setVisibility] = useState<NonNullable<Task["visibility"]>>("public")
   const [allowPhotoProof, setAllowPhotoProof] = useState(false)
+  const [requireLocation, setRequireLocation] = useState(false)
+  const [locationLat, setLocationLat] = useState<number | null>(null)
+  const [locationLng, setLocationLng] = useState<number | null>(null)
   const [selectedOrgId, setSelectedOrgId] = useState("")
   const [orgProjects, setOrgProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState("")
@@ -107,6 +115,8 @@ export function CreateTaskModal({
       selectedOrgId || null,
       selectedProjectId || null,
       allowPhotoProof,
+      requireLocation ? locationLat : null,
+      requireLocation ? locationLng : null,
     )
   }
 
@@ -285,6 +295,31 @@ export function CreateTaskModal({
               </button>
             </div>
             <p className="text-xs text-on-surface-variant mt-2">{t.allowPhotoProofHint}</p>
+          </div>
+
+          {/* Location (optional) */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant">{t.requireLocationLabel}</label>
+              <button
+                type="button"
+                onClick={() => setRequireLocation(!requireLocation)}
+                className={`w-11 h-6 rounded-full transition-colors relative ${requireLocation ? "bg-secondary" : "bg-surface-container-low"}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${requireLocation ? "translate-x-5" : ""}`} />
+              </button>
+            </div>
+            <p className="text-xs text-on-surface-variant mt-2">{t.requireLocationHint}</p>
+            {requireLocation && (
+              <div className="mt-3">
+                <LocationPicker lat={locationLat} lng={locationLng} onChange={(lat, lng) => { setLocationLat(lat); setLocationLng(lng) }} />
+                <p className="text-xs text-on-surface-variant mt-2">
+                  {locationLat != null && locationLng != null
+                    ? `${t.locationPinSet}: ${locationLat.toFixed(5)}, ${locationLng.toFixed(5)}`
+                    : t.locationPinNotSet}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Organization + Project (optional) */}
