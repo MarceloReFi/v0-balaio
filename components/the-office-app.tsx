@@ -39,6 +39,7 @@ import { createClient } from "@/lib/supabase/client"
 import { getOrganizationsByWallet } from "@/lib/organizations"
 import { recordWalletConnection, recordGoodIDVerification } from "@/lib/wallet-connections"
 import { taskStatusLabel } from "@/lib/task-status"
+import { checkLocationEligibility } from "@/lib/geo"
 import { isMiniPay } from "@/lib/minipay"
 import { isAdminWallet } from "@/lib/admin"
 import type { RippleWalletConnectorHandle } from "@/components/ripple-wallet-connector"
@@ -308,6 +309,8 @@ export function TheOfficeApp() {
           complexity: metadata?.complexity || undefined,
           validationMethod: metadata?.validation_method || undefined,
           allowPhotoProof: metadata?.allow_photo_proof || false,
+          locationLat: metadata?.location_lat ?? null,
+          locationLng: metadata?.location_lng ?? null,
           deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
           tags: metadata?.tags || [],
           visibility: (metadata?.visibility || "public") as Task["visibility"],
@@ -423,6 +426,8 @@ export function TheOfficeApp() {
             tags: task.tags || [],
             visibility: task.visibility || "public",
             allow_photo_proof: task.allowPhotoProof || false,
+            location_lat: task.locationLat ?? null,
+            location_lng: task.locationLng ?? null,
             chain_id: chainId,
             organization_id: task.organizationId || null,
             project_id: task.projectId || null,
@@ -588,6 +593,8 @@ export function TheOfficeApp() {
           complexity: metadata?.complexity || undefined,
           validationMethod: metadata?.validation_method || undefined,
           allowPhotoProof: metadata?.allow_photo_proof || false,
+          locationLat: metadata?.location_lat ?? null,
+          locationLng: metadata?.location_lng ?? null,
           deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
           tags: metadata?.tags || [],
           visibility: (metadata?.visibility || "public") as Task["visibility"],
@@ -686,6 +693,8 @@ export function TheOfficeApp() {
     organizationId: string | null,
     projectId: string | null,
     allowPhotoProof: boolean,
+    locationLat: number | null,
+    locationLng: number | null,
   ) => {
     if (!account || !contract) return
 
@@ -769,6 +778,8 @@ export function TheOfficeApp() {
             tags: tags,
             visibility: visibility,
             allowPhotoProof: allowPhotoProof,
+            locationLat,
+            locationLng,
             paymentMethod: "crypto",
             organizationId,
             projectId,
@@ -820,6 +831,8 @@ export function TheOfficeApp() {
     organizationId: string | null,
     _projectId: string | null,
     _allowPhotoProof: boolean,
+    _locationLat: number | null,
+    _locationLng: number | null,
   ) => {
     if (!xamanAccount) return
 
@@ -879,6 +892,27 @@ export function TheOfficeApp() {
   const claimTask = async (id: string, task?: Task | null) => {
     const writeContract = connectionMode === "ripple" ? null : getWriteContract(task)
     if (connectionMode !== "ripple" && !writeContract) return
+
+    if (task?.locationLat != null && task?.locationLng != null) {
+      setLoading(true)
+      toast(language === "en" ? "Checking your location..." : "Verificando sua localização...")
+      const eligibility = await checkLocationEligibility(task.locationLat, task.locationLng)
+      if (!eligibility.granted) {
+        toast(t.locationPermissionDenied)
+        setLoading(false)
+        return
+      }
+      if (!eligibility.inRange) {
+        const meters = Math.round(eligibility.distanceMeters ?? 0)
+        toast(
+          language === "en"
+            ? `You're ${meters}m away — ${t.locationOutOfRange}`
+            : `Você está a ${meters}m — ${t.locationOutOfRange}`
+        )
+        setLoading(false)
+        return
+      }
+    }
 
     try {
       setLoading(true)
