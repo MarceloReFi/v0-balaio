@@ -38,6 +38,7 @@ export interface Task {
   category?: "development" | "design" | "content" | "research" | "community" | "other"
   complexity?: "easy" | "medium" | "hard"
   validationMethod?: string
+  allowPhotoProof?: boolean
   deadline?: Date | null
   tags?: string[]
   visibility?: "public" | "private" | "verified_humans"

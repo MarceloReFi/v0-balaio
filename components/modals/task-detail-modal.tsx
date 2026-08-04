@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { User, Tag, Folder, X, Building2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { User, Tag, Folder, X, Building2, ImagePlus, Loader2 } from "lucide-react"
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 import { getOrganization, getProject } from "@/lib/organizations"
+import { createClient } from "@/lib/supabase/client"
 
 function truncateAddress(address: string): string {
   if (!address) return ""
@@ -54,6 +55,12 @@ export function TaskDetailModal({
 }: TaskDetailModalProps) {
   const t = useTranslations(language)
   const [proofUrl, setProofUrl] = useState("")
+  const [proofImage, setProofImage] = useState<File | null>(null)
+  const [proofImagePreview, setProofImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [compressing, setCompressing] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [approveAddress, setApproveAddress] = useState("")
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [newDeadline, setNewDeadline] = useState<string>(
@@ -84,6 +91,90 @@ export function TaskDetailModal({
     await onUpdateDeadline(task!.id, parsed)
     setSavingDeadline(false)
     setEditingDeadline(false)
+  }
+
+  const MAX_IMAGE_BYTES = 20 * 1024 * 1024
+
+  const compressImage = (file: File, maxDimension = 1600, quality = 0.8): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const objectUrl = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl)
+        let { width, height } = img
+        if (width > maxDimension || height > maxDimension) {
+          const scale = maxDimension / Math.max(width, height)
+          width = Math.round(width * scale)
+          height = Math.round(height * scale)
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) { resolve(file); return }
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (!blob) { resolve(file); return }
+          resolve(new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }))
+        }, "image/jpeg", quality)
+      }
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file) }
+      img.src = objectUrl
+    })
+  }
+
+  const handleSelectImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    if (!file.type.startsWith("image/")) {
+      setUploadError(t.photoInvalidType)
+      return
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setUploadError(t.photoTooLarge)
+      return
+    }
+    setCompressing(true)
+    const compressed = await compressImage(file)
+    setCompressing(false)
+    setProofImage(compressed)
+    setProofImagePreview(URL.createObjectURL(compressed))
+  }
+
+  const handleRemoveImage = () => {
+    setProofImage(null)
+    setProofImagePreview(null)
+    setUploadError(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const handleSubmitProof = async () => {
+    if (!task) return
+    let proof = proofUrl
+    if (proofImage) {
+      setUploadingImage(true)
+      setUploadError(null)
+      try {
+        const supabase = createClient()
+        const ext = proofImage.name.split(".").pop() || "jpg"
+        const path = `${task.id}/${account?.toLowerCase() || "unknown"}-${Date.now()}.${ext}`
+        const { error: uploadErr } = await supabase.storage.from("task-proofs").upload(path, proofImage)
+        if (uploadErr) throw uploadErr
+        const { data } = supabase.storage.from("task-proofs").getPublicUrl(path)
+        proof = data.publicUrl
+      } catch (err) {
+        console.error(err)
+        setUploadError(language === "en" ? "Upload failed, try again" : "Falha no envio, tente novamente")
+        setUploadingImage(false)
+        return
+      }
+      setUploadingImage(false)
+    }
+    if (!proof) return
+    onSubmitTask(task.id, proof)
+    setProofUrl("")
+    handleRemoveImage()
   }
 
   if (!open || !task) return null
@@ -256,18 +347,67 @@ export function TaskDetailModal({
                   {language === "en" ? "Task claimed — submit your proof below" : "Tarefa reivindicada — envie sua prova abaixo"}
                 </p>
               </div>
+
+              {task.allowPhotoProof && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSelectImage}
+                    className="hidden"
+                  />
+
+                  {proofImagePreview ? (
+                    <div className="relative">
+                      <img src={proofImagePreview} alt="" className="w-full h-40 object-cover rounded-lg" />
+                      <button
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={compressing}
+                      className="flex items-center justify-center gap-2 border-2 border-dashed border-outline-variant rounded-lg py-4 text-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors disabled:opacity-60"
+                    >
+                      {compressing ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          {t.compressingPhoto}
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus size={18} />
+                          {t.addPhotoProof}
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+                </>
+              )}
+
               <input
                 value={proofUrl}
                 onChange={(e) => setProofUrl(e.target.value)}
-                placeholder={language === "en" ? "Proof URL (IPFS, Google Drive, etc.)" : "URL da Prova (IPFS, Google Drive, etc.)"}
+                placeholder={task.allowPhotoProof ? t.proofUrlPlaceholder : (language === "en" ? "Proof URL (IPFS, Google Drive, etc.)" : "URL da Prova (IPFS, Google Drive, etc.)")}
                 className={inputClass}
               />
+
               <button
-                onClick={() => { onSubmitTask(task.id, proofUrl); setProofUrl("") }}
-                disabled={loading || !proofUrl}
-                className="bg-secondary text-on-secondary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
+                onClick={handleSubmitProof}
+                disabled={loading || uploadingImage || compressing || (!proofUrl && !proofImage)}
+                className="bg-secondary text-on-secondary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
-                {loading
+                {uploadingImage && <Loader2 size={16} className="animate-spin" />}
+                {uploadingImage
+                  ? t.uploadingPhoto
+                  : loading
                   ? language === "en" ? "Submitting..." : "Enviando..."
                   : language === "en" ? "Submit Work →" : "Enviar Trabalho →"}
               </button>

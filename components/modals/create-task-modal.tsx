@@ -27,6 +27,7 @@ interface CreateTaskModalProps {
     visibility: Task["visibility"],
     organizationId: string | null,
     projectId: string | null,
+    allowPhotoProof: boolean,
   ) => void
   loading: boolean
   tokenBalances: Record<TokenSymbol, string>
@@ -63,6 +64,7 @@ export function CreateTaskModal({
   const [deadline, setDeadline] = useState<string>("")
   const [tagsInput, setTagsInput] = useState("")
   const [visibility, setVisibility] = useState<NonNullable<Task["visibility"]>>("public")
+  const [allowPhotoProof, setAllowPhotoProof] = useState(false)
   const [selectedOrgId, setSelectedOrgId] = useState("")
   const [orgProjects, setOrgProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState("")
@@ -104,6 +106,7 @@ export function CreateTaskModal({
       visibility,
       selectedOrgId || null,
       selectedProjectId || null,
+      allowPhotoProof,
     )
   }
 
@@ -267,6 +270,21 @@ export function CreateTaskModal({
                 ? (language === "en" ? "Only GoodDollar verified humans can see and claim" : "Apenas humanos verificados pelo GoodDollar podem ver e reivindicar")
                 : (language === "en" ? "Only people with the task ID can access" : "Apenas pessoas com o ID da tarefa podem acessar")}
             </p>
+          </div>
+
+          {/* Photo proof (optional) */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant">{t.allowPhotoProofLabel}</label>
+              <button
+                type="button"
+                onClick={() => setAllowPhotoProof(!allowPhotoProof)}
+                className={`w-11 h-6 rounded-full transition-colors relative ${allowPhotoProof ? "bg-secondary" : "bg-surface-container-low"}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${allowPhotoProof ? "translate-x-5" : ""}`} />
+              </button>
+            </div>
+            <p className="text-xs text-on-surface-variant mt-2">{t.allowPhotoProofHint}</p>
           </div>
 
           {/* Organization + Project (optional) */}
