@@ -307,6 +307,7 @@ export function TheOfficeApp() {
           category: metadata?.category || undefined,
           complexity: metadata?.complexity || undefined,
           validationMethod: metadata?.validation_method || undefined,
+          allowPhotoProof: metadata?.allow_photo_proof || false,
           deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
           tags: metadata?.tags || [],
           visibility: (metadata?.visibility || "public") as Task["visibility"],
@@ -421,6 +422,7 @@ export function TheOfficeApp() {
             deadline: task.deadline ? task.deadline.toISOString() : null,
             tags: task.tags || [],
             visibility: task.visibility || "public",
+            allow_photo_proof: task.allowPhotoProof || false,
             chain_id: chainId,
             organization_id: task.organizationId || null,
             project_id: task.projectId || null,
@@ -585,6 +587,7 @@ export function TheOfficeApp() {
           category: metadata?.category || undefined,
           complexity: metadata?.complexity || undefined,
           validationMethod: metadata?.validation_method || undefined,
+          allowPhotoProof: metadata?.allow_photo_proof || false,
           deadline: metadata?.deadline ? new Date(metadata.deadline) : null,
           tags: metadata?.tags || [],
           visibility: (metadata?.visibility || "public") as Task["visibility"],
@@ -682,6 +685,7 @@ export function TheOfficeApp() {
     visibility: Task["visibility"],
     organizationId: string | null,
     projectId: string | null,
+    allowPhotoProof: boolean,
   ) => {
     if (!account || !contract) return
 
@@ -764,6 +768,7 @@ export function TheOfficeApp() {
             deadline: deadline,
             tags: tags,
             visibility: visibility,
+            allowPhotoProof: allowPhotoProof,
             paymentMethod: "crypto",
             organizationId,
             projectId,
@@ -814,6 +819,7 @@ export function TheOfficeApp() {
     visibility: Task["visibility"],
     organizationId: string | null,
     _projectId: string | null,
+    _allowPhotoProof: boolean,
   ) => {
     if (!xamanAccount) return
 
