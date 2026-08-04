@@ -39,6 +39,8 @@ export interface Task {
   complexity?: "easy" | "medium" | "hard"
   validationMethod?: string
   allowPhotoProof?: boolean
+  locationLat?: number | null
+  locationLng?: number | null
   deadline?: Date | null
   tags?: string[]
   visibility?: "public" | "private" | "verified_humans"
