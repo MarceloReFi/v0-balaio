@@ -215,7 +215,7 @@ export function HomePage({
                         <span>{shortenAddress(task.creator)}</span>
                         <span>·</span>
                         <span className="flex items-center gap-1">
-                          {task.reward} <TokenBadge symbol={task.token || "cUSD"} />
+                          {task.reward} <TokenBadge symbol={task.token} />
                         </span>
                         <span>·</span>
                         <span>{task.availableSlots || task.totalSlots || 1} {language === "en" ? "slots" : "vagas"}</span>

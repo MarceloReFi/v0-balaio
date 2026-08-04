@@ -136,7 +136,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                     </div>
                     <div className="text-xs text-on-surface-variant mb-2 flex items-center gap-1">
                       {task.claimedSlots}/{task.totalSlots} {language === "en" ? "slots claimed" : "vagas ocupadas"}
-                      {" · "}{task.reward} <TokenBadge symbol={task.token || "cUSD"} />
+                      {" · "}{task.reward} <TokenBadge symbol={task.token} />
                     </div>
 
                     {hasClaims ? (
@@ -224,7 +224,7 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                   <span className="text-sm text-on-surface truncate max-w-[50%]">{task.title}</span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-on-surface flex items-center gap-1">
-                      {task.reward} <TokenBadge symbol={task.token || "cUSD"} />
+                      {task.reward} <TokenBadge symbol={task.token} />
                     </span>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                       task.approvedAt

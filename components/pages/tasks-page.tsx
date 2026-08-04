@@ -207,7 +207,7 @@ export function TasksPage({
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-1.5">
                           <span className="text-base font-semibold text-on-surface">{task.reward}</span>
-                          <TokenBadge symbol={task.token || "cUSD"} />
+                          <TokenBadge symbol={task.token} />
                         </div>
                         <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                           <span>{shortenAddress(task.creator)}</span>

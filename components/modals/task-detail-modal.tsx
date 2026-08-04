@@ -268,7 +268,7 @@ export function TaskDetailModal({
             <div className="flex justify-between py-3 border-b border-outline-variant">
               <span className="text-xs text-on-surface-variant">{t.reward}</span>
               <span className="font-semibold text-sm text-on-surface flex items-center gap-1">
-                {task.reward} <TokenBadge symbol={task.token || "cUSD"} />
+                {task.reward} <TokenBadge symbol={task.token} />
               </span>
             </div>
             <div className="flex justify-between py-3 border-b border-outline-variant">
