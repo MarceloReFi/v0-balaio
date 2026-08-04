@@ -106,6 +106,9 @@
     @apply border-outline-variant/15 outline-outline-variant/30;
     box-sizing: border-box;
   }
+  html {
+    overflow-x: hidden;
+  }
   body {
     background-color: var(--surface);
     color: var(--on-surface);
@@ -113,6 +116,7 @@
     font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
   h1, h2, h3 {
     font-family: var(--font-headline);

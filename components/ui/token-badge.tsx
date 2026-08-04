@@ -5,7 +5,8 @@ const TOKEN_CONFIG: Record<string, { label: string; color: string; textColor: st
   'USDT': { label: 'USDT', color: '#26A17B', textColor: '#fff' },
 }
 
-export function TokenBadge({ symbol }: { symbol: string }) {
+export function TokenBadge({ symbol }: { symbol?: string }) {
+  if (!symbol) return null
   const cfg = TOKEN_CONFIG[symbol] ?? { label: symbol, color: '#F2F4F1', textColor: '#7A8784' }
   return (
     <span
