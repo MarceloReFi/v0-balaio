@@ -348,50 +348,54 @@ export function TaskDetailModal({
                 </p>
               </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleSelectImage}
-                className="hidden"
-              />
+              {task.allowPhotoProof && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSelectImage}
+                    className="hidden"
+                  />
 
-              {proofImagePreview ? (
-                <div className="relative">
-                  <img src={proofImagePreview} alt="" className="w-full h-40 object-cover rounded-lg" />
-                  <button
-                    onClick={handleRemoveImage}
-                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80 transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={compressing}
-                  className="flex items-center justify-center gap-2 border-2 border-dashed border-outline-variant rounded-lg py-4 text-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors disabled:opacity-60"
-                >
-                  {compressing ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      {t.compressingPhoto}
-                    </>
+                  {proofImagePreview ? (
+                    <div className="relative">
+                      <img src={proofImagePreview} alt="" className="w-full h-40 object-cover rounded-lg" />
+                      <button
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   ) : (
-                    <>
-                      <ImagePlus size={18} />
-                      {t.addPhotoProof}
-                    </>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={compressing}
+                      className="flex items-center justify-center gap-2 border-2 border-dashed border-outline-variant rounded-lg py-4 text-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors disabled:opacity-60"
+                    >
+                      {compressing ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          {t.compressingPhoto}
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus size={18} />
+                          {t.addPhotoProof}
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
-              )}
 
-              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+                  {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+                </>
+              )}
 
               <input
                 value={proofUrl}
                 onChange={(e) => setProofUrl(e.target.value)}
-                placeholder={t.proofUrlPlaceholder}
+                placeholder={task.allowPhotoProof ? t.proofUrlPlaceholder : (language === "en" ? "Proof URL (IPFS, Google Drive, etc.)" : "URL da Prova (IPFS, Google Drive, etc.)")}
                 className={inputClass}
               />
 
