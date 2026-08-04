@@ -7,6 +7,7 @@ import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 import { getOrganization, getProject } from "@/lib/organizations"
 import { createClient } from "@/lib/supabase/client"
+import { checkLocationEligibility, type LocationEligibility } from "@/lib/geo"
 
 function truncateAddress(address: string): string {
   if (!address) return ""
@@ -62,6 +63,8 @@ export function TaskDetailModal({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [approveAddress, setApproveAddress] = useState("")
+  const [locationCheck, setLocationCheck] = useState<LocationEligibility | null>(null)
+  const [checkingLocation, setCheckingLocation] = useState(false)
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [newDeadline, setNewDeadline] = useState<string>(
     task?.deadline ? new Date(task.deadline).toISOString().split("T")[0] : ""
@@ -176,6 +179,21 @@ export function TaskDetailModal({
     setProofUrl("")
     handleRemoveImage()
   }
+
+  const handleCheckLocation = async () => {
+    if (!task?.locationLat || !task?.locationLng) return
+    setCheckingLocation(true)
+    const result = await checkLocationEligibility(task.locationLat, task.locationLng)
+    setLocationCheck(result)
+    setCheckingLocation(false)
+  }
+
+  useEffect(() => {
+    if (open && task?.locationLat != null && task?.locationLng != null && !task.mySlot?.claimed) {
+      handleCheckLocation()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, task?.id])
 
   if (!open || !task) return null
 
@@ -325,9 +343,31 @@ export function TaskDetailModal({
         <div className="flex flex-col gap-3">
           {canClaim && (
             <div>
+              {task.locationLat != null && task.locationLng != null && (
+                <div className="bg-surface-container-low rounded-lg px-4 py-3 mb-3">
+                  <p className="text-xs font-semibold text-on-surface mb-1">{t.locationRequiredTitle}</p>
+                  {checkingLocation ? (
+                    <p className="text-xs text-on-surface-variant">{t.checkingLocation}</p>
+                  ) : locationCheck && !locationCheck.granted ? (
+                    <p className="text-xs text-red-500">{t.locationPermissionDenied}</p>
+                  ) : locationCheck && locationCheck.distanceMeters != null ? (
+                    <p className={`text-xs ${locationCheck.inRange ? "text-secondary" : "text-red-500"}`}>
+                      {t.youAreHere} {Math.round(locationCheck.distanceMeters)}m {t.away} — {locationCheck.inRange ? t.locationInRange : t.locationOutOfRange}
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handleCheckLocation}
+                    disabled={checkingLocation}
+                    className="text-xs font-semibold text-secondary hover:opacity-70 mt-2 disabled:opacity-40"
+                  >
+                    {t.checkLocationAgain}
+                  </button>
+                </div>
+              )}
               <button
                 onClick={() => onClaimTask(task.id)}
-                disabled={loading}
+                disabled={loading || (task.locationLat != null && !locationCheck?.inRange)}
                 className="bg-primary-container text-on-primary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
               >
                 {loading
