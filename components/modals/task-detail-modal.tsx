@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { User, Tag, Folder, X, Building2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { User, Tag, Folder, X, Building2, ImagePlus, Loader2 } from "lucide-react"
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 import { getOrganization, getProject } from "@/lib/organizations"
+import { createClient } from "@/lib/supabase/client"
 
 function truncateAddress(address: string): string {
   if (!address) return ""
@@ -54,6 +55,12 @@ export function TaskDetailModal({
 }: TaskDetailModalProps) {
   const t = useTranslations(language)
   const [proofUrl, setProofUrl] = useState("")
+  const [proofImage, setProofImage] = useState<File | null>(null)
+  const [proofImagePreview, setProofImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [compressing, setCompressing] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [approveAddress, setApproveAddress] = useState("")
   const [editingDeadline, setEditingDeadline] = useState(false)
   const [newDeadline, setNewDeadline] = useState<string>(
@@ -84,6 +91,90 @@ export function TaskDetailModal({
     await onUpdateDeadline(task!.id, parsed)
     setSavingDeadline(false)
     setEditingDeadline(false)
+  }
+
+  const MAX_IMAGE_BYTES = 20 * 1024 * 1024
+
+  const compressImage = (file: File, maxDimension = 1600, quality = 0.8): Promise<File> => {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const objectUrl = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl)
+        let { width, height } = img
+        if (width > maxDimension || height > maxDimension) {
+          const scale = maxDimension / Math.max(width, height)
+          width = Math.round(width * scale)
+          height = Math.round(height * scale)
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) { resolve(file); return }
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (!blob) { resolve(file); return }
+          resolve(new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" }))
+        }, "image/jpeg", quality)
+      }
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file) }
+      img.src = objectUrl
+    })
+  }
+
+  const handleSelectImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    if (!file.type.startsWith("image/")) {
+      setUploadError(t.photoInvalidType)
+      return
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setUploadError(t.photoTooLarge)
+      return
+    }
+    setCompressing(true)
+    const compressed = await compressImage(file)
+    setCompressing(false)
+    setProofImage(compressed)
+    setProofImagePreview(URL.createObjectURL(compressed))
+  }
+
+  const handleRemoveImage = () => {
+    setProofImage(null)
+    setProofImagePreview(null)
+    setUploadError(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const handleSubmitProof = async () => {
+    if (!task) return
+    let proof = proofUrl
+    if (proofImage) {
+      setUploadingImage(true)
+      setUploadError(null)
+      try {
+        const supabase = createClient()
+        const ext = proofImage.name.split(".").pop() || "jpg"
+        const path = `${task.id}/${account?.toLowerCase() || "unknown"}-${Date.now()}.${ext}`
+        const { error: uploadErr } = await supabase.storage.from("task-proofs").upload(path, proofImage)
+        if (uploadErr) throw uploadErr
+        const { data } = supabase.storage.from("task-proofs").getPublicUrl(path)
+        proof = data.publicUrl
+      } catch (err) {
+        console.error(err)
+        setUploadError(language === "en" ? "Upload failed, try again" : "Falha no envio, tente novamente")
+        setUploadingImage(false)
+        return
+      }
+      setUploadingImage(false)
+    }
+    if (!proof) return
+    onSubmitTask(task.id, proof)
+    setProofUrl("")
+    handleRemoveImage()
   }
 
   if (!open || !task) return null
