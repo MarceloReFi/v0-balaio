@@ -347,18 +347,63 @@ export function TaskDetailModal({
                   {language === "en" ? "Task claimed — submit your proof below" : "Tarefa reivindicada — envie sua prova abaixo"}
                 </p>
               </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleSelectImage}
+                className="hidden"
+              />
+
+              {proofImagePreview ? (
+                <div className="relative">
+                  <img src={proofImagePreview} alt="" className="w-full h-40 object-cover rounded-lg" />
+                  <button
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={compressing}
+                  className="flex items-center justify-center gap-2 border-2 border-dashed border-outline-variant rounded-lg py-4 text-sm text-on-surface-variant hover:border-secondary hover:text-secondary transition-colors disabled:opacity-60"
+                >
+                  {compressing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      {t.compressingPhoto}
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus size={18} />
+                      {t.addPhotoProof}
+                    </>
+                  )}
+                </button>
+              )}
+
+              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+
               <input
                 value={proofUrl}
                 onChange={(e) => setProofUrl(e.target.value)}
-                placeholder={language === "en" ? "Proof URL (IPFS, Google Drive, etc.)" : "URL da Prova (IPFS, Google Drive, etc.)"}
+                placeholder={t.proofUrlPlaceholder}
                 className={inputClass}
               />
+
               <button
-                onClick={() => { onSubmitTask(task.id, proofUrl); setProofUrl("") }}
-                disabled={loading || !proofUrl}
-                className="bg-secondary text-on-secondary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity"
+                onClick={handleSubmitProof}
+                disabled={loading || uploadingImage || compressing || (!proofUrl && !proofImage)}
+                className="bg-secondary text-on-secondary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
-                {loading
+                {uploadingImage && <Loader2 size={16} className="animate-spin" />}
+                {uploadingImage
+                  ? t.uploadingPhoto
+                  : loading
                   ? language === "en" ? "Submitting..." : "Enviando..."
                   : language === "en" ? "Submit Work →" : "Enviar Trabalho →"}
               </button>
