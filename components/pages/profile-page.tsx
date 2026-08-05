@@ -5,6 +5,7 @@ import { Settings, X, ChevronRight } from "lucide-react"
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task, TaskClaim } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
+import { saveTaskTemplate } from "@/lib/task-templates"
 
 const DB_NOTICE_KEY = "balaio_db_update_notice_dismissed"
 
@@ -46,6 +47,34 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
   const dismissNotice = () => {
     localStorage.setItem(DB_NOTICE_KEY, "true")
     setNoticeDismissed(true)
+  }
+
+  const [savingTemplateFor, setSavingTemplateFor] = useState<string | null>(null)
+  const [templateNameDraft, setTemplateNameDraft] = useState("")
+  const [templateSaved, setTemplateSaved] = useState<Record<string, boolean>>({})
+
+  const startSaveTemplate = (task: Task) => {
+    setSavingTemplateFor(task.id)
+    setTemplateNameDraft(task.title)
+  }
+
+  const confirmSaveTemplate = async (task: Task) => {
+    if (!templateNameDraft.trim()) return
+    const result = await saveTaskTemplate({
+      creatorAddress: account,
+      name: templateNameDraft.trim(),
+      description: task.description,
+      category: task.category,
+      complexity: task.complexity,
+      tags: task.tags,
+      allowPhotoProof: task.allowPhotoProof,
+      locationLat: task.locationLat,
+      locationLng: task.locationLng,
+    })
+    if (result.success) {
+      setTemplateSaved((prev) => ({ ...prev, [task.id]: true }))
+    }
+    setSavingTemplateFor(null)
   }
 
   return (
@@ -206,6 +235,40 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
                         </button>
                       </div>
                     )}
+
+                    <div className="mt-2 pt-2 border-t border-outline-variant">
+                      {templateSaved[task.id] ? (
+                        <span className="text-xs font-semibold text-secondary">{t.templateSavedConfirm}</span>
+                      ) : savingTemplateFor === task.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={templateNameDraft}
+                            onChange={(e) => setTemplateNameDraft(e.target.value)}
+                            placeholder={t.templateNamePlaceholder}
+                            className="flex-1 px-2.5 py-1.5 bg-surface-container-low rounded-md text-xs outline-none focus:ring-1 focus:ring-secondary"
+                          />
+                          <button
+                            onClick={() => confirmSaveTemplate(task)}
+                            className="text-xs font-semibold text-secondary hover:opacity-70"
+                          >
+                            {t.saveTemplate}
+                          </button>
+                          <button
+                            onClick={() => setSavingTemplateFor(null)}
+                            className="text-xs text-on-surface-variant hover:opacity-70"
+                          >
+                            {t.cancelSaveTemplate}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => startSaveTemplate(task)}
+                          className="text-xs font-semibold text-secondary hover:opacity-70"
+                        >
+                          {t.saveAsTemplate}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )
               })}
