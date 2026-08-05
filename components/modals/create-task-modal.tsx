@@ -6,13 +6,45 @@ import { ChevronDown, Calendar, Plus, X } from "lucide-react"
 import { getTokensForChain, type TokenConfig, type TokenSymbol } from "@/lib/web3"
 import { useTranslations, type Language } from "@/lib/translations"
 import { BottomSheet } from "@/components/ui/bottom-sheet"
-import type { Task, Organization, Project } from "@/lib/types"
+import type { Task, Organization, Project, TaskTemplate } from "@/lib/types"
 import { listProjectsByOrganization } from "@/lib/organizations"
+import { listMyTaskTemplates } from "@/lib/task-templates"
 
 const LocationPicker = dynamic(() => import("@/components/location-picker"), { ssr: false })
 
+const BUILTIN_TEMPLATES = [
+  {
+    key: "engagement",
+    labelKey: "templateEngagementLabel",
+    hintKey: "templateEngagementHint",
+    category: "community" as const,
+    complexity: "easy" as const,
+    descriptionEn: "Engage with [activity] by [action]. Conditions: [when/where].",
+    descriptionPt: "Engaje-se com [atividade] fazendo [ação]. Condições: [quando/onde].",
+  },
+  {
+    key: "deliver",
+    labelKey: "templateDeliverLabel",
+    hintKey: "templateDeliverHint",
+    category: "content" as const,
+    complexity: "medium" as const,
+    descriptionEn: "Deliver [thing] by [deadline]. Requirements: [spec].",
+    descriptionPt: "Entregue [coisa] até [prazo]. Requisitos: [especificação].",
+  },
+  {
+    key: "provide",
+    labelKey: "templateProvideLabel",
+    hintKey: "templateProvideHint",
+    category: "research" as const,
+    complexity: "easy" as const,
+    descriptionEn: "Provide information, validation, or a description of [X] under these conditions: [Y].",
+    descriptionPt: "Forneça informação, validação ou descrição de [X] sob estas condições: [Y].",
+  },
+] as const
+
 interface CreateTaskModalProps {
   chainId: number
+  account: string
   open: boolean
   onClose: () => void
   onCreateTask: (
@@ -43,6 +75,7 @@ interface CreateTaskModalProps {
 
 export function CreateTaskModal({
   chainId,
+  account,
   open,
   onClose,
   onCreateTask,
@@ -73,6 +106,7 @@ export function CreateTaskModal({
   const [requireLocation, setRequireLocation] = useState(false)
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
+  const [myTemplates, setMyTemplates] = useState<TaskTemplate[]>([])
   const [selectedOrgId, setSelectedOrgId] = useState("")
   const [orgProjects, setOrgProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState("")
@@ -87,6 +121,37 @@ export function CreateTaskModal({
       .then(setOrgProjects)
       .catch((error) => console.error(error))
   }, [selectedOrgId])
+
+  useEffect(() => {
+    if (!open || !account) {
+      setMyTemplates([])
+      return
+    }
+    listMyTaskTemplates(account)
+      .then(setMyTemplates)
+      .catch((error) => console.error(error))
+  }, [open, account])
+
+  const applyBuiltinTemplate = (tpl: (typeof BUILTIN_TEMPLATES)[number]) => {
+    setCategory(tpl.category)
+    setComplexity(tpl.complexity)
+    if (!taskDescription.trim()) {
+      setTaskDescription(language === "en" ? tpl.descriptionEn : tpl.descriptionPt)
+    }
+  }
+
+  const applyMyTemplate = (tpl: TaskTemplate) => {
+    if (tpl.category) setCategory(tpl.category)
+    if (tpl.complexity) setComplexity(tpl.complexity)
+    if (tpl.description) setTaskDescription(tpl.description)
+    if (tpl.tags.length > 0) setTagsInput(tpl.tags.join(", "))
+    setAllowPhotoProof(tpl.allowPhotoProof)
+    if (tpl.locationLat != null && tpl.locationLng != null) {
+      setRequireLocation(true)
+      setLocationLat(tpl.locationLat)
+      setLocationLng(tpl.locationLng)
+    }
+  }
 
   if (!open) return null
 
@@ -190,6 +255,41 @@ export function CreateTaskModal({
         </div>
 
         <div className="flex flex-col gap-4">
+          {/* Templates */}
+          <div>
+            <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.templatesLabel}</label>
+            <div className="grid grid-cols-3 gap-2">
+              {BUILTIN_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.key}
+                  type="button"
+                  onClick={() => applyBuiltinTemplate(tpl)}
+                  className="text-left px-3 py-2.5 bg-surface-container-low rounded-lg hover:bg-outline-variant transition-colors"
+                >
+                  <div className="text-sm font-semibold text-on-surface">{t[tpl.labelKey as keyof typeof t]}</div>
+                  <div className="text-[10px] text-on-surface-variant mt-0.5">{t[tpl.hintKey as keyof typeof t]}</div>
+                </button>
+              ))}
+            </div>
+            {myTemplates.length > 0 && (
+              <div className="mt-3">
+                <p className="text-[10px] text-on-surface-variant mb-1.5">{t.myTemplatesLabel}</p>
+                <div className="flex flex-wrap gap-2">
+                  {myTemplates.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => applyMyTemplate(tpl)}
+                      className="px-3 py-1.5 bg-secondary/10 text-secondary text-xs font-semibold rounded-full hover:opacity-80 transition-opacity"
+                    >
+                      {tpl.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Task IDs */}
           <div>
             <label className="block text-xs font-semibold tracking-[0.08em] uppercase text-on-surface-variant mb-2">{t.taskId}</label>

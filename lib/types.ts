@@ -61,6 +61,20 @@ export interface Task {
   projectId?: string | null
 }
 
+export interface TaskTemplate {
+  id: string
+  creatorAddress: string
+  name: string
+  description?: string | null
+  category?: Task["category"]
+  complexity?: Task["complexity"]
+  tags: string[]
+  allowPhotoProof: boolean
+  locationLat?: number | null
+  locationLng?: number | null
+  createdAt: Date
+}
+
 export type OrganizationRole = "owner" | "admin"
 
 export interface Organization {
