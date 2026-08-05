@@ -1512,6 +1512,7 @@ export function TheOfficeApp() {
 
       <CreateTaskModal
         chainId={connectionMode === "ripple" ? 0 : chainId}
+        account={activeAccount}
         open={showCreateModal}
         onClose={() => { setShowCreateModal(false); setMultiTaskStatuses({}) }}
         onCreateTask={connectionMode === "ripple" ? createXrplTask : createTask}
