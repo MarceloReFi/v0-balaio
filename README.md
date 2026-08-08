@@ -1,5 +1,7 @@
 # Balaio
 
+**Status: Active development, live pilot (Season 2 — Gaviões da Fiel ES).** Deployed at [usebalaio.com](https://www.usebalaio.com/).
+
 A decentralized task marketplace of micro digital work and freelancers on the blockchain. Organizations post tasks with crypto escrow; contributors claim, complete, and get paid on approval.
 
 ---
@@ -40,8 +42,8 @@ Work is tracked on-chain. Payments release via smart contract when a creator app
 ## Getting started
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open [usebalaio.com ](https://www.usebalaio.com/) in your browser.
