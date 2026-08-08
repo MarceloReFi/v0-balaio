@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useConnect, useConnectors } from "wagmi"
-import { isMiniPay } from "@/lib/minipay"
+import { isMiniPay } from "@/lib/wallet/minipay"
 
 export function useMiniPayAutoConnect() {
   const connectors = useConnectors()

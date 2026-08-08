@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import { Building2, Users, Bot, ArrowRight, Check } from "lucide-react"
-import { isMiniPay } from "@/lib/minipay"
+import { isMiniPay } from "@/lib/wallet/minipay"
 
 interface LandingPageProps {
   onConnect: () => void

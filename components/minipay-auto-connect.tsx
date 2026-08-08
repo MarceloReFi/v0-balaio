@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { isMiniPay } from "@/lib/minipay"
+import { isMiniPay } from "@/lib/wallet/minipay"
 import { useMiniPayAutoConnect } from "@/hooks/use-minipay-auto-connect"
 
 function MiniPayConnector() {
