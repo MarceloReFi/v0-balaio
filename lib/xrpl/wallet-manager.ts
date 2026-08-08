@@ -11,7 +11,7 @@ import {
   XyraAdapter,
   OtsuAdapter,
 } from "xrpl-connect"
-import { XRPL_RPC } from "@/lib/config"
+import { XRPL_RPC } from "@/lib/chain/config"
 
 export const rippleWalletManager = new WalletManager({
   adapters: [

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { ethers } from "ethers"
-import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
-import { getProvider, retryQuery } from "@/lib/blockchain-provider"
-import { BLOCKS_PER_DAY, CONTRACT_DEPLOYMENT_BLOCK } from "@/lib/config"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/chain/web3"
+import { getProvider, retryQuery } from "@/lib/chain/blockchain-provider"
+import { BLOCKS_PER_DAY, CONTRACT_DEPLOYMENT_BLOCK } from "@/lib/chain/config"
 import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"

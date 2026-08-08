@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { ChevronDown, Calendar, Plus, X } from "lucide-react"
-import { getTokensForChain, type TokenConfig, type TokenSymbol } from "@/lib/web3"
+import { getTokensForChain, type TokenConfig, type TokenSymbol } from "@/lib/chain/web3"
 import { useTranslations, type Language } from "@/lib/translations"
 import { BottomSheet } from "@/components/ui/bottom-sheet"
 import type { Task, Organization, Project, TaskTemplate } from "@/lib/types"

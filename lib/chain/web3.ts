@@ -1,4 +1,4 @@
-import { GNOSIS_CONTRACT_ADDRESS, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/config"
+import { GNOSIS_CONTRACT_ADDRESS, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/chain/config"
 
 export async function waitForTransaction(
   txPromise: Promise<{ wait: () => Promise<any> }>,

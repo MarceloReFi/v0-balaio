@@ -14,8 +14,8 @@ import {
   getTokensForChain,
   waitForTransaction,
   type TokenSymbol,
-} from "@/lib/web3"
-import { CELO_RPC, GNOSIS_RPC, CELO_CONTRACT_ADDRESS_V1, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/config"
+} from "@/lib/chain/web3"
+import { CELO_RPC, GNOSIS_RPC, CELO_CONTRACT_ADDRESS_V1, CELO_CONTRACT_ADDRESS_V2 } from "@/lib/chain/config"
 
 const CONTRACT_DEPLOYMENT_BLOCK = 51778358
 
@@ -47,7 +47,7 @@ import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useGoodID } from '@/lib/goodid/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
 import { celo, gnosis } from "@reown/appkit/networks"
-import { useEthersSigner } from '@/lib/ethers-adapter'
+import { useEthersSigner } from '@/lib/chain/ethers-adapter'
 
 const RippleWalletConnector = dynamic(() => import("@/components/ripple-wallet-connector"), { ssr: false })
 

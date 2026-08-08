@@ -3,7 +3,7 @@
 import { ArrowLeft, Check, ExternalLink } from "lucide-react"
 import type { Language } from "@/lib/translations"
 import { useChainId } from "wagmi"
-import { getContractAddress } from "@/lib/web3"
+import { getContractAddress } from "@/lib/chain/web3"
 
 interface AgentsPageProps {
   onBack: () => void

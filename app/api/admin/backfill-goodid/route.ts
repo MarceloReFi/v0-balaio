@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createPublicClient, http, zeroAddress, type Address } from "viem"
 import { celo } from "viem/chains"
 import { chainConfigs, identityV2ABI, SupportedChains } from "@goodsdks/citizen-sdk"
-import { CELO_RPC } from "@/lib/config"
+import { CELO_RPC } from "@/lib/chain/config"
 import { createClient } from "@/lib/supabase/server"
 
 const IDENTITY_CONTRACT = chainConfigs[SupportedChains.CELO].contracts.production!.identityContract

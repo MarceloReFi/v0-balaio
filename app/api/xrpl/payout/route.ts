@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import * as xrpl from "xrpl"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { XRPL_RPC } from "@/lib/config"
+import { XRPL_RPC } from "@/lib/chain/config"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"

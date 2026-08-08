@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { ethers } from "ethers"
-import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
-import { getProvider, retryQuery } from "@/lib/blockchain-provider"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/chain/web3"
+import { getProvider, retryQuery } from "@/lib/chain/blockchain-provider"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { BLOCKS_PER_DAY, CONTRACT_DEPLOYMENT_BLOCK } from "@/lib/config"
+import { BLOCKS_PER_DAY, CONTRACT_DEPLOYMENT_BLOCK } from "@/lib/chain/config"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"

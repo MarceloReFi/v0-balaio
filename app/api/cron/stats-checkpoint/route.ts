@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { ethers } from "ethers"
-import { CONTRACT_ABI } from "@/lib/web3"
-import { retryQuery } from "@/lib/blockchain-provider"
+import { CONTRACT_ABI } from "@/lib/chain/web3"
+import { retryQuery } from "@/lib/chain/blockchain-provider"
 import {
   CELO_CONTRACT_ADDRESS_V1,
   CELO_DEPLOYMENT_BLOCK_V1,
@@ -11,7 +11,7 @@ import {
   GNOSIS_CONTRACT_ADDRESS,
   GNOSIS_DEPLOYMENT_BLOCK,
   GNOSIS_RPC,
-} from "@/lib/config"
+} from "@/lib/chain/config"
 import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"

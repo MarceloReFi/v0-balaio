@@ -1,6 +1,6 @@
 import { ethers } from "ethers"
-import { getContractAddress, CONTRACT_ABI } from "@/lib/web3"
-import { CELO_RPC } from "@/lib/config"
+import { getContractAddress, CONTRACT_ABI } from "@/lib/chain/web3"
+import { CELO_RPC } from "@/lib/chain/config"
 
 export interface StatsData {
   wallets: number
