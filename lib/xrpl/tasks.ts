@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client"
 import type { Task, TaskClaim, TaskSlot } from "@/lib/types"
-import { taskStatusLabel, type TaskStatusLabel } from "@/lib/task-status"
+import { taskStatusLabel, type TaskStatusLabel } from "@/lib/tasks/task-status"
 
 const XRPL_CHAIN_ID = 0
 

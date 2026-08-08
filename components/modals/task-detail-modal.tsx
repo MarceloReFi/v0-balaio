@@ -7,7 +7,7 @@ import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 import { getOrganization, getProject } from "@/lib/organizations/organizations"
 import { createClient } from "@/lib/supabase/client"
-import { checkLocationEligibility, type LocationEligibility } from "@/lib/geo"
+import { checkLocationEligibility, type LocationEligibility } from "@/lib/tasks/geo"
 
 function truncateAddress(address: string): string {
   if (!address) return ""

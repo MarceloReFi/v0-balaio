@@ -8,7 +8,7 @@ import { useTranslations, type Language } from "@/lib/translations"
 import { BottomSheet } from "@/components/ui/bottom-sheet"
 import type { Task, Organization, Project, TaskTemplate } from "@/lib/types"
 import { listProjectsByOrganization } from "@/lib/organizations/organizations"
-import { listMyTaskTemplates } from "@/lib/task-templates"
+import { listMyTaskTemplates } from "@/lib/tasks/task-templates"
 
 const LocationPicker = dynamic(() => import("@/components/location-picker"), { ssr: false })
 

@@ -5,7 +5,7 @@ import { Settings, X, ChevronRight } from "lucide-react"
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task, TaskClaim } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
-import { saveTaskTemplate } from "@/lib/task-templates"
+import { saveTaskTemplate } from "@/lib/tasks/task-templates"
 
 const DB_NOTICE_KEY = "balaio_db_update_notice_dismissed"
 

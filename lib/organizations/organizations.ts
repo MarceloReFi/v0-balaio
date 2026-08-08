@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client"
 import type { Organization, OrganizationMember, OrganizationRole, Project } from "@/lib/types"
-import { taskStatusLabel, type TaskStatusLabel } from "@/lib/task-status"
+import { taskStatusLabel, type TaskStatusLabel } from "@/lib/tasks/task-status"
 
 function normalizeAddress(address: string): string {
   return address.trim().toLowerCase()
