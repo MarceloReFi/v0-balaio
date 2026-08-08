@@ -24,7 +24,7 @@ GoodID is GoodDollar's identity protocol that verifies unique human identities o
 
 ### Technical Implementation
 
-**Hook: `lib/use-goodid.ts`**
+**Hook: `lib/goodid/use-goodid.ts`**
 
 ```typescript
 import { useEffect, useState } from 'react'
@@ -445,7 +445,7 @@ const visibleTasks = tasks.filter(task => {
 **Import:**
 
 ```typescript
-import { useGoodID } from '@/lib/use-goodid'
+import { useGoodID } from '@/lib/goodid/use-goodid'
 ```
 
 **Usage:**

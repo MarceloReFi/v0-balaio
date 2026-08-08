@@ -44,7 +44,7 @@ import { isMiniPay } from "@/lib/minipay"
 import { isAdminWallet } from "@/lib/admin/admin"
 import type { RippleWalletConnectorHandle } from "@/components/ripple-wallet-connector"
 import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
-import { useGoodID } from '@/lib/use-goodid'
+import { useGoodID } from '@/lib/goodid/use-goodid'
 import { useAppKit } from '@reown/appkit/react'
 import { celo, gnosis } from "@reown/appkit/networks"
 import { useEthersSigner } from '@/lib/ethers-adapter'
