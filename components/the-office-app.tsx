@@ -41,7 +41,7 @@ import { recordWalletConnection, recordGoodIDVerification } from "@/lib/wallet-c
 import { taskStatusLabel } from "@/lib/task-status"
 import { checkLocationEligibility } from "@/lib/geo"
 import { isMiniPay } from "@/lib/minipay"
-import { isAdminWallet } from "@/lib/admin"
+import { isAdminWallet } from "@/lib/admin/admin"
 import type { RippleWalletConnectorHandle } from "@/components/ripple-wallet-connector"
 import { useAccount, useDisconnect, useChainId, useSwitchChain } from 'wagmi'
 import { useGoodID } from '@/lib/use-goodid'
