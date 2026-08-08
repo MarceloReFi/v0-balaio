@@ -7,7 +7,7 @@ import { getTokensForChain, type TokenConfig, type TokenSymbol } from "@/lib/web
 import { useTranslations, type Language } from "@/lib/translations"
 import { BottomSheet } from "@/components/ui/bottom-sheet"
 import type { Task, Organization, Project, TaskTemplate } from "@/lib/types"
-import { listProjectsByOrganization } from "@/lib/organizations"
+import { listProjectsByOrganization } from "@/lib/organizations/organizations"
 import { listMyTaskTemplates } from "@/lib/task-templates"
 
 const LocationPicker = dynamic(() => import("@/components/location-picker"), { ssr: false })

@@ -7,7 +7,7 @@ import { ProjectForm, type ProjectFormValues } from "./project-form"
 import { ProjectDetail } from "./project-detail"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ScreenHeader, SectionLabel, Card } from "./org-ui"
-import { listProjectsByOrganization, createProject, updateProject, deleteProject } from "@/lib/organizations"
+import { listProjectsByOrganization, createProject, updateProject, deleteProject } from "@/lib/organizations/organizations"
 
 interface ProjectsViewProps {
   organization: Organization

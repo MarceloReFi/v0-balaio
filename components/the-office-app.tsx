@@ -36,7 +36,7 @@ import { OrganizationsView } from "@/components/organizations/organizations-view
 import { OrgNavProvider } from "@/components/organizations/org-nav-context"
 import { useTranslations, type Language } from "@/lib/translations"
 import { createClient } from "@/lib/supabase/client"
-import { getOrganizationsByWallet } from "@/lib/organizations"
+import { getOrganizationsByWallet } from "@/lib/organizations/organizations"
 import { recordWalletConnection, recordGoodIDVerification } from "@/lib/wallet-connections"
 import { taskStatusLabel } from "@/lib/task-status"
 import { checkLocationEligibility } from "@/lib/geo"

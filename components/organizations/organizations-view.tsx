@@ -19,7 +19,7 @@ import {
   createOrganization,
   updateOrganization,
   deleteOrganization,
-} from "@/lib/organizations"
+} from "@/lib/organizations/organizations"
 
 interface OrganizationsViewProps {
   account: string

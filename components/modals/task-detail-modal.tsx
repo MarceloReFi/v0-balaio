@@ -5,7 +5,7 @@ import { User, Tag, Folder, X, Building2, ImagePlus, Loader2 } from "lucide-reac
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
-import { getOrganization, getProject } from "@/lib/organizations"
+import { getOrganization, getProject } from "@/lib/organizations/organizations"
 import { createClient } from "@/lib/supabase/client"
 import { checkLocationEligibility, type LocationEligibility } from "@/lib/geo"
 

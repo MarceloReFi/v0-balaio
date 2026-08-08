@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Project } from "@/lib/types"
-import { listTasksByProject, type ProjectTaskSummary } from "@/lib/organizations"
+import { listTasksByProject, type ProjectTaskSummary } from "@/lib/organizations/organizations"
 import { ScreenHeader, SectionLabel, Card, StatusChip } from "./org-ui"
 import { useOrgNav } from "./org-nav-context"
 

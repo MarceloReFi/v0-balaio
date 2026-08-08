@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useTranslations, type Language } from "@/lib/translations"
 import type { Organization, OrganizationMember } from "@/lib/types"
-import { listOrganizationMembers, addOrganizationMember, removeOrganizationMember } from "@/lib/organizations"
+import { listOrganizationMembers, addOrganizationMember, removeOrganizationMember } from "@/lib/organizations/organizations"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { SectionLabel, Card } from "./org-ui"
 

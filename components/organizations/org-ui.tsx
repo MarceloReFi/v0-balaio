@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { ArrowLeft } from "lucide-react"
 import { useTranslations, type Language } from "@/lib/translations"
-import type { ProjectTaskSummary } from "@/lib/organizations"
+import type { ProjectTaskSummary } from "@/lib/organizations/organizations"
 
 export function SectionLabel({ children }: { children: ReactNode }) {
   return <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-secondary mb-2">{children}</p>
