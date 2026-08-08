@@ -18,7 +18,8 @@ const { createClient } = require("@supabase/supabase-js")
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const RPC_URL = "https://forno.celo.org"
-const CONTRACT_ADDRESS = "0xf7317849bd10a41fbebd9edcd56f05e1d0b7ab2e"
+const CONTRACT_ADDRESS = "0xe60aa33E8Dee3Bb1B2218bF025AcB624312D519E" // V2
+const CREATION_FEE_BPS = 100n // 1%, matches V2 contract fee
 
 const CONTRACT_ABI = [
   "function createTask(string _taskId, address _token, uint256 _rewardPerSlot, uint256 _totalSlots, address _approver) external",
@@ -85,9 +86,10 @@ async function main() {
     const tokenContract = new ethers.Contract(token.address, ERC20_ABI, wallet)
 
     // Compute total deposit needed for this token
-    const total = tasks
+    const rewardTotal = tasks
       .filter((t) => t.token === symbol)
       .reduce((sum, t) => sum + ethers.parseUnits(t.reward, token.decimals) * BigInt(t.slots || 1), 0n)
+    const total = rewardTotal + (rewardTotal * CREATION_FEE_BPS) / 10000n
 
     const balance = await tokenContract.balanceOf(wallet.address)
     if (balance < total) {
