@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import * as xrpl from "xrpl"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
-import { XRPL_RPC } from "@/lib/chain/config"
+import { XRPL_RPC, XRPL_SOURCE_TAG } from "@/lib/chain/config"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         Account: oracleWallet.classicAddress,
         Destination: workerAddress,
         Amount: amountDrops,
+        SourceTag: XRPL_SOURCE_TAG,
       },
       { wallet: oracleWallet, autofill: true }
     )

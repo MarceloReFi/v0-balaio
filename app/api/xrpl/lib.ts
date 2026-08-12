@@ -1,5 +1,6 @@
 import * as xrpl from "xrpl"
 import * as crypto from "crypto"
+import { XRPL_SOURCE_TAG } from "@/lib/chain/config"
 
 const RIPPLE_EPOCH_OFFSET_SECONDS = 946684800 // seconds between 1970-01-01 and 2000-01-01
 
@@ -30,6 +31,7 @@ export function buildEscrowCreate(params: {
     Amount: params.amountDrops,
     Condition: params.condition,
     CancelAfter: params.cancelAfterRippleEpoch,
+    SourceTag: XRPL_SOURCE_TAG,
   }
 }
 
@@ -47,6 +49,7 @@ export function buildEscrowFinish(params: {
     OfferSequence: params.escrowSequence,
     Condition: params.condition,
     Fulfillment: params.fulfillment,
+    SourceTag: XRPL_SOURCE_TAG,
   }
 }
 
