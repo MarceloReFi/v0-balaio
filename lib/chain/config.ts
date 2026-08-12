@@ -15,3 +15,4 @@ export const CELO_CONTRACT_ADDRESS_V2 = "0xe60aa33E8Dee3Bb1B2218bF025AcB624312D5
 export const CELO_DEPLOYMENT_BLOCK_V2 = 67475023
 
 export const XRPL_RPC = "wss://xrplcluster.com"
+export const XRPL_SOURCE_TAG = 2607190001
