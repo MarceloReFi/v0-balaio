@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList, CheckCircle2, FolderKanban, ShieldCheck } from "lucide-react"
+import { ArrowLeft, RefreshCw, TrendingUp, Users, Building2, Clock, History, ClipboardList, CheckCircle2, FolderKanban, ShieldCheck, Coins, Percent } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { getCachedStats, setCachedStats, getCachedFullHistory, setCachedFullHistory } from "./stats-cache"
 
@@ -20,6 +20,8 @@ type StatsData = {
   verifiedWallets: number
   growth: { date: string; interactions: number }[]
   lastUpdated: number
+  tokensReceived: Record<string, number>
+  engagementRate: number // 0-100
 }
 
 type PanelState = {
@@ -132,7 +134,7 @@ async function fetchChainStats(chainIds: number[], windowStart: Date | null): Pr
 async function fetchOrgStats(organizationId: string, windowStart: Date | null): Promise<StatsData> {
   const supabase = createClient()
 
-  let taskQuery = supabase.from("tasks").select("id, created_at").eq("organization_id", organizationId)
+  let taskQuery = supabase.from("tasks").select("id, created_at, reward, token").eq("organization_id", organizationId)
   if (windowStart) taskQuery = taskQuery.gte("created_at", windowStart.toISOString())
   const { data: taskRows } = await taskQuery
 
@@ -143,7 +145,7 @@ async function fetchOrgStats(organizationId: string, windowStart: Date | null): 
   if (taskIds.length > 0) {
     const { data } = await supabase
       .from("task_claims")
-      .select("worker_address, claimed_at, submitted_at, approved_at, withdrawn_at")
+      .select("task_id, worker_address, claimed_at, submitted_at, approved_at, withdrawn_at")
       .in("task_id", taskIds)
     claimRows = data ?? []
   }
@@ -154,6 +156,16 @@ async function fetchOrgStats(organizationId: string, windowStart: Date | null): 
   const withdrawnRows = claimRows.filter((row: any) => row.withdrawn_at)
 
   const uniqueContributors = new Set(claimedRows.map((row: any) => row.worker_address)).size
+
+  const rewardByTaskId = new Map(rows.map((r: any) => [r.id, { reward: parseFloat(r.reward) || 0, token: r.token }]))
+  const tokensReceived: Record<string, number> = {}
+  withdrawnRows.forEach((claim: any) => {
+    const info = rewardByTaskId.get(claim.task_id)
+    if (!info) return
+    tokensReceived[info.token] = (tokensReceived[info.token] ?? 0) + info.reward
+  })
+
+  const engagementRate = claimedRows.length > 0 ? Math.round((withdrawnRows.length / claimedRows.length) * 100) : 0
 
   const { count: projectsCreated } = await supabase
     .from("projects")
@@ -177,6 +189,8 @@ async function fetchOrgStats(organizationId: string, windowStart: Date | null): 
     verifiedWallets: 0,
     growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
     lastUpdated: Date.now(),
+    tokensReceived,
+    engagementRate,
   }
 }
 
@@ -300,6 +314,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
       backfillGoodID: "Backfill GoodID Verifications",
       walletAddress: "Wallet",
       verifiedAt: "Verified At",
+      tokensReceived: "Tokens Received",
+      completionRate: "Completion rate",
     },
     "pt-BR": {
       title: "Estatísticas da Plataforma",
@@ -332,6 +348,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
       backfillGoodID: "Verificar Histórico GoodID",
       walletAddress: "Carteira",
       verifiedAt: "Verificado em",
+      tokensReceived: "Tokens Recebidos",
+      completionRate: "Taxa de conclusão",
     },
   }[language]
 
@@ -395,6 +413,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
         verifiedWallets,
         growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
         lastUpdated: lastSyncedAt ?? Date.now(),
+        tokensReceived: {},
+        engagementRate: 0,
       }
 
       setter({
@@ -462,6 +482,8 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
         verifiedWallets,
         growth: buildWeekRows(dailyMap, getWeekStart(new Date())),
         lastUpdated: lastSyncedAt ?? Date.now(),
+        tokensReceived: {},
+        engagementRate: 0,
       }
 
       setter({
@@ -732,6 +754,36 @@ export function StatsPage({ language, isAdmin, onBack }: StatsPageProps) {
               <div className="text-2xl font-bold">{value}</div>
             </div>
           ))}
+        </div>
+
+        {Object.keys(panel.stats.tokensReceived).length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            {Object.entries(panel.stats.tokensReceived).map(([token, amount]) => (
+              <div key={token} className="bg-gray-50 rounded border border-gray-200 p-3">
+                <div className="flex items-center gap-1 mb-1">
+                  <Coins size={14} />
+                  <span className="text-xs font-bold">{strings.tokensReceived}</span>
+                </div>
+                <div className="text-2xl font-bold">
+                  {amount.toLocaleString(language === "pt-BR" ? "pt-BR" : "en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  {token}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+          <div className="bg-gray-50 rounded border border-gray-200 p-3">
+            <div className="flex items-center gap-1 mb-1">
+              <Percent size={14} />
+              <span className="text-xs font-bold">{strings.completionRate}</span>
+            </div>
+            <div className="text-2xl font-bold">{panel.stats.engagementRate}%</div>
+          </div>
         </div>
 
         <div className="flex gap-6 items-start flex-wrap">

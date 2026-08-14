@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client"
 import type { Organization, OrganizationMember, OrganizationRole, Project } from "@/lib/types"
-import { taskStatusLabel, type TaskStatusLabel } from "@/lib/tasks/task-status"
+import type { TaskStatusLabel } from "@/lib/tasks/task-status"
 
 function normalizeAddress(address: string): string {
   return address.trim().toLowerCase()
@@ -295,11 +295,31 @@ export interface ProjectTaskSummary {
 
 export async function listTasksByProject(projectId: string): Promise<ProjectTaskSummary[]> {
   const supabase = createClient()
-  const { data, error } = await supabase.from("tasks").select("id, title, status").eq("project_id", projectId)
+  const { data: taskRows, error } = await supabase
+    .from("tasks")
+    .select("id, title")
+    .eq("project_id", projectId)
   if (error) throw error
-  return (data || []).map((row: any) => ({
-    id: row.id,
-    title: row.title || row.id,
-    status: taskStatusLabel(row.status),
-  }))
+
+  const rows = taskRows || []
+  const taskIds = rows.map((r: any) => r.id)
+
+  let claimRows: any[] = []
+  if (taskIds.length > 0) {
+    const { data } = await supabase
+      .from("task_claims")
+      .select("task_id, claimed_at, submitted_at, approved_at")
+      .in("task_id", taskIds)
+    claimRows = data ?? []
+  }
+
+  return rows.map((row: any) => {
+    const claims = claimRows.filter((c) => c.task_id === row.id)
+    const status: TaskStatusLabel =
+      claims.some((c) => c.approved_at) ? "completed" :
+      claims.some((c) => c.submitted_at) ? "submitted" :
+      claims.some((c) => c.claimed_at) ? "claimed" :
+      "open"
+    return { id: row.id, title: row.title || row.id, status }
+  })
 }
