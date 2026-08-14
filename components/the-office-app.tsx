@@ -497,11 +497,21 @@ export function TheOfficeApp() {
     import("@/lib/xrpl/wallet-manager").then(({ rippleWalletManager }) => rippleWalletManager.disconnect())
   }
 
-  const parseContractError = (error: unknown): string => {
+  function extractRevertData(error: WalletError): string | undefined {
+    const paths = [
+      error.data,
+      (error as any).info?.error?.data,
+      (error as any).error?.data,
+    ]
+    return paths.find((d) => typeof d === "string" && CUSTOM_ERRORS[d])
+  }
+
+  const parseContractError = (error: unknown, actionLabel?: string): string => {
     if (!isWalletError(error)) return String(error).slice(0, 100)
 
-    if (error.data && CUSTOM_ERRORS[error.data]) {
-      return CUSTOM_ERRORS[error.data]
+    const revertData = extractRevertData(error)
+    if (revertData) {
+      return CUSTOM_ERRORS[revertData]
     }
 
     if (error.reason) {
@@ -524,7 +534,9 @@ export function TheOfficeApp() {
       if (dataMatch && CUSTOM_ERRORS[dataMatch[1]]) {
         return CUSTOM_ERRORS[dataMatch[1]]
       }
-      return "Contract execution failed - task ID may already exist or check your token balance"
+      return actionLabel
+        ? `Action failed (${actionLabel}) — the transaction was rejected by the contract. Try again in a moment.`
+        : "Contract execution failed - task ID may already exist or check your token balance"
     }
 
     return message.slice(0, 100)
@@ -965,7 +977,7 @@ export function TheOfficeApp() {
       if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
-      toast("Error: " + parseContractError(error))
+      toast("Error: " + parseContractError(error, "claim"))
     } finally {
       setLoading(false)
     }
@@ -1010,7 +1022,7 @@ export function TheOfficeApp() {
       if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
-      toast("Error: " + parseContractError(error))
+      toast("Error: " + parseContractError(error, "submit"))
     } finally {
       setLoading(false)
     }
@@ -1100,7 +1112,7 @@ export function TheOfficeApp() {
       if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
-      toast("Error: " + parseContractError(error))
+      toast("Error: " + parseContractError(error, "approve"))
     } finally {
       setLoading(false)
     }
@@ -1154,7 +1166,7 @@ export function TheOfficeApp() {
       if (account) await loadUserActivity(account, tasks)
     } catch (error) {
       console.error(error)
-      toast("Error: " + parseContractError(error))
+      toast("Error: " + parseContractError(error, "cancel"))
     } finally {
       setLoading(false)
     }
@@ -1181,7 +1193,7 @@ export function TheOfficeApp() {
       if (activeAccount) await loadUserActivity(activeAccount, tasks)
     } catch (error) {
       console.error(error)
-      toast("Error: " + parseContractError(error))
+      toast("Error: " + parseContractError(error, "reject"))
     } finally {
       setLoading(false)
     }

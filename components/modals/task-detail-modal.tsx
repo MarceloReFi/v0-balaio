@@ -383,7 +383,14 @@ export function TaskDetailModal({
                   : `${language === "en" ? "Claim this task" : "Reivindicar tarefa"} →`}
               </button>
               <p className="text-xs text-on-surface-variant mt-2 text-center">
-                {language === "en" ? "You will have exclusive access to complete and submit work." : "Você terá acesso exclusivo para completar e enviar o trabalho."}
+                {language === "en"
+                  ? "You will have exclusive access to complete and submit work. You'll need to sign this in your wallet."
+                  : "Você terá acesso exclusivo para completar e enviar o trabalho. Você vai precisar assinar isso na sua carteira."}
+              </p>
+              <p className="text-xs text-on-surface-variant mt-1 text-center">
+                {language === "en"
+                  ? "Once claimed, this task can't be un-claimed — make sure you can complete it before confirming."
+                  : "Depois de reivindicada, não é possível desistir dessa tarefa — confirme que você consegue completá-la antes de confirmar."}
               </p>
             </div>
           )}
@@ -392,7 +399,9 @@ export function TaskDetailModal({
             <div className="flex flex-col gap-3">
               <div className="bg-secondary/10 rounded-lg px-4 py-3">
                 <p className="text-xs font-semibold text-secondary">
-                  {language === "en" ? "Task claimed — submit your proof below" : "Tarefa reivindicada — envie sua prova abaixo"}
+                  {language === "en"
+                    ? "Task claimed — submit your proof below. Submitting will ask you to sign in your wallet."
+                    : "Tarefa reivindicada — envie sua prova abaixo. Enviar vai pedir que você assine na sua carteira."}
                 </p>
               </div>
 
@@ -514,6 +523,11 @@ export function TaskDetailModal({
               >
                 {language === "en" ? "Approve Submission →" : "Aprovar Envio →"}
               </button>
+              <p className="text-xs text-on-surface-variant mt-2">
+                {language === "en"
+                  ? "Approving will ask you to confirm in your wallet — it costs a small amount of gas."
+                  : "Aprovar vai pedir que você confirme na sua carteira — tem um pequeno custo de gas."}
+              </p>
 
               <div className="mt-3 border-t-2 border-[#111111] pt-3">
                 <div className="font-bold mb-2 text-xs">{t.editDeadline}</div>
