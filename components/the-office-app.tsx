@@ -924,10 +924,18 @@ export function TheOfficeApp() {
       } else {
         await waitForTransaction(writeContract!.claimTask(id))
 
-        await supabase.from("task_claims").upsert(
+        const { error: claimsError } = await supabase.from("task_claims").upsert(
           { task_id: id, worker_address: account.toLowerCase(), claimed_at: new Date().toISOString() },
           { onConflict: "task_id,worker_address" }
         )
+        if (claimsError) {
+          console.error("[task_claims sync]", claimsError)
+          toast(
+            language === "en"
+              ? "Blockchain transaction succeeded, but syncing failed — refresh to retry"
+              : "Transação na blockchain concluída, mas a sincronização falhou — atualize a página para tentar de novo"
+          )
+        }
       }
 
       toast("Task claimed!")
@@ -961,10 +969,18 @@ export function TheOfficeApp() {
       } else {
         await waitForTransaction(writeContract!.submitTask(id, proof))
 
-        await supabase.from("task_claims").upsert(
+        const { error: claimsError } = await supabase.from("task_claims").upsert(
           { task_id: id, worker_address: account.toLowerCase(), submitted_at: new Date().toISOString(), submission_link: proof },
           { onConflict: "task_id,worker_address" }
         )
+        if (claimsError) {
+          console.error("[task_claims sync]", claimsError)
+          toast(
+            language === "en"
+              ? "Blockchain transaction succeeded, but syncing failed — refresh to retry"
+              : "Transação na blockchain concluída, mas a sincronização falhou — atualize a página para tentar de novo"
+          )
+        }
       }
 
       toast("Work submitted!")
@@ -1043,10 +1059,18 @@ export function TheOfficeApp() {
       } else {
         await waitForTransaction(writeContract!.approveTask(id, claimant))
 
-        await supabase.from("task_claims").upsert(
+        const { error: claimsError } = await supabase.from("task_claims").upsert(
           { task_id: id, worker_address: claimant.toLowerCase(), approved_at: new Date().toISOString() },
           { onConflict: "task_id,worker_address" }
         )
+        if (claimsError) {
+          console.error("[task_claims sync]", claimsError)
+          toast(
+            language === "en"
+              ? "Blockchain transaction succeeded, but syncing failed — refresh to retry"
+              : "Transação na blockchain concluída, mas a sincronização falhou — atualize a página para tentar de novo"
+          )
+        }
       }
 
       toast("Submission approved!")
