@@ -96,7 +96,7 @@ export function TaskDetailModal({
     setEditingDeadline(false)
   }
 
-  const MAX_IMAGE_BYTES = 20 * 1024 * 1024
+  const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
   const compressImage = (file: File, maxDimension = 1600, quality = 0.8): Promise<File> => {
     return new Promise((resolve) => {
@@ -141,6 +141,10 @@ export function TaskDetailModal({
     setCompressing(true)
     const compressed = await compressImage(file)
     setCompressing(false)
+    if (compressed.size > MAX_IMAGE_BYTES) {
+      setUploadError(t.photoCompressionFailed)
+      return
+    }
     setProofImage(compressed)
     setProofImagePreview(URL.createObjectURL(compressed))
   }
