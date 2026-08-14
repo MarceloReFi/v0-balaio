@@ -6,6 +6,7 @@ import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task, TaskClaim } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
 import { saveTaskTemplate } from "@/lib/tasks/task-templates"
+import { getMySlotStatus } from "@/lib/tasks/task-status"
 
 const DB_NOTICE_KEY = "balaio_db_update_notice_dismissed"
 
@@ -282,33 +283,36 @@ export function ProfilePage({ account, balance, tasks, userActivity, onNavigateT
               {t.tasksYouWorkedOn}
             </p>
             <div className="space-y-0">
-              {userActivity.worked.map((task) => (
-                <div key={`worked-${task.id}`} className="flex items-center justify-between py-3 border-b border-outline-variant">
-                  <span className="text-sm text-on-surface truncate max-w-[50%]">{task.title}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-on-surface flex items-center gap-1">
-                      {task.reward} <TokenBadge symbol={task.token} />
-                    </span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                      task.approvedAt
-                        ? "bg-secondary/10 text-secondary"
-                        : task.submittedAt
-                          ? "bg-marigold/20 text-on-tertiary-fixed"
-                          : task.claimedAt
-                            ? "bg-surface-dim text-on-surface-variant"
+              {userActivity.worked.map((task) => {
+                const slotStatus = getMySlotStatus(task.mySlot)
+                return (
+                  <div key={`worked-${task.id}`} className="flex items-center justify-between py-3 border-b border-outline-variant">
+                    <span className="text-sm text-on-surface truncate max-w-[50%]">{task.title}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-on-surface flex items-center gap-1">
+                        {task.reward} <TokenBadge symbol={task.token} />
+                      </span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        slotStatus === "approved"
+                          ? "bg-secondary/10 text-secondary"
+                          : slotStatus === "submitted"
+                            ? "bg-marigold/20 text-on-tertiary-fixed"
                             : "bg-surface-dim text-on-surface-variant"
-                    }`}>
-                      {task.approvedAt
-                        ? t.approved
-                        : task.submittedAt
-                          ? t.submitted
-                          : task.claimedAt
-                            ? t.claimed
-                            : t.open}
-                    </span>
+                      }`}>
+                        {slotStatus === "approved"
+                          ? t.approved
+                          : slotStatus === "submitted"
+                            ? t.submitted
+                            : slotStatus === "claimed"
+                              ? t.claimed
+                              : language === "en"
+                                ? "In Progress"
+                                : "Em Progresso"}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
