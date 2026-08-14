@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { usePublicClient } from 'wagmi'
+import { useChainId, usePublicClient } from 'wagmi'
 import { zeroAddress, type Address } from 'viem'
 import { chainConfigs, identityV2ABI, SupportedChains } from '@goodsdks/citizen-sdk'
+import { celo } from '@reown/appkit/networks'
 
 const IDENTITY_CONTRACT = chainConfigs[SupportedChains.CELO].contracts.production!.identityContract
 
@@ -9,8 +10,10 @@ export function useGoodID(address: string | undefined) {
   const [isVerified, setIsVerified] = useState(false)
   const [loading, setLoading] = useState(true)
   const publicClient = usePublicClient()
+  const chainId = useChainId()
+  const supported = chainId === celo.id
   useEffect(() => {
-    if (!address || !publicClient) {
+    if (!address || !publicClient || !supported) {
       setIsVerified(false)
       setLoading(false)
       return
@@ -32,6 +35,6 @@ export function useGoodID(address: string | undefined) {
       }
     }
     checkVerification()
-  }, [address, publicClient])
-  return { isVerified, loading }
+  }, [address, publicClient, supported])
+  return { isVerified, loading, supported }
 }

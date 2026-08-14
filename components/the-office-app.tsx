@@ -160,7 +160,7 @@ export function TheOfficeApp() {
   const [detailProjectId, setDetailProjectId] = useState<string | null>(null)
   const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({})
   const [tasks, setTasks] = useState<Task[]>([])
-  const { isVerified } = useGoodID(account)
+  const { isVerified, supported } = useGoodID(account)
   const [userActivity, setUserActivity] = useState<{ created: Task[]; worked: Task[] }>({ created: [], worked: [] })
   const loadingActivityRef = useRef(false)
   const [language, setLanguage] = useState<Language>(() => {
@@ -565,6 +565,10 @@ export function TheOfficeApp() {
           supabase.from("tasks").select("*").eq("id", id).single(),
         ])
 
+        const isOwnTask = metadata?.creator_address?.toLowerCase() === account?.toLowerCase()
+        if (metadata?.visibility === "verified_humans" && !isVerified && !isOwnTask) return null
+        if (metadata?.visibility === "private" && !isOwnTask) return null
+
         const tokenSymbol = resolveTokenSymbol(task.token)
         const tokenConfig = getTokenConfig(tokenSymbol) ?? { decimals: 18 }
 
@@ -614,7 +618,7 @@ export function TheOfficeApp() {
         return null
       }
     },
-    [contract, account, supabase, chainId, connectionMode, xamanAccount],
+    [contract, account, supabase, chainId, connectionMode, xamanAccount, isVerified],
   )
 
   const openTaskModal = useCallback(async (task: Task) => {
@@ -892,6 +896,19 @@ export function TheOfficeApp() {
   const claimTask = async (id: string, task?: Task | null) => {
     const writeContract = connectionMode === "ripple" ? null : getWriteContract(task)
     if (connectionMode !== "ripple" && !writeContract) return
+
+    if (task?.visibility === "verified_humans" && !isVerified) {
+      toast(
+        supported
+          ? (language === "en"
+              ? "This task requires GoodID verification"
+              : "Esta tarefa exige verificação GoodID")
+          : (language === "en"
+              ? "GoodID verification isn't available on this network — switch to Celo"
+              : "Verificação GoodID não está disponível nesta rede — mude para a Celo")
+      )
+      return
+    }
 
     if (task?.locationLat != null && task?.locationLng != null) {
       setLoading(true)
