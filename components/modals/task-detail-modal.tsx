@@ -154,6 +154,10 @@ export function TaskDetailModal({
 
   const handleSubmitProof = async () => {
     if (!task) return
+    if (task.allowPhotoProof && !proofImage) {
+      setUploadError(t.photoRequired)
+      return
+    }
     let proof = proofUrl
     if (proofImage) {
       setUploadingImage(true)
@@ -441,7 +445,7 @@ export function TaskDetailModal({
 
               <button
                 onClick={handleSubmitProof}
-                disabled={loading || uploadingImage || compressing || (!proofUrl && !proofImage)}
+                disabled={loading || uploadingImage || compressing || (task.allowPhotoProof ? !proofImage : (!proofUrl && !proofImage))}
                 className="bg-secondary text-on-secondary px-6 py-3.5 font-semibold rounded-lg w-full disabled:opacity-40 hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
                 {uploadingImage && <Loader2 size={16} className="animate-spin" />}
