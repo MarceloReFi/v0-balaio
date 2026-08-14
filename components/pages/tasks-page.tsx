@@ -5,6 +5,7 @@ import { Search, Loader2 } from "lucide-react"
 import { TokenBadge } from "@/components/ui/token-badge"
 import type { Task } from "@/lib/types"
 import { useTranslations, type Language } from "@/lib/translations"
+import { getTaskListStatus } from "@/lib/tasks/task-status"
 
 interface TasksPageProps {
   tasks: Task[]
@@ -31,15 +32,21 @@ export function TasksPage({
   const [loading, setLoading] = useState(false)
 
   const getStatusBadge = (task: Task) => {
-    if (task.mySlot) {
-      if (task.mySlot.withdrawn) return { text: t.completed, className: "bg-surface-container-high text-on-surface-variant" }
-      if (task.mySlot.approved) return { text: t.approved, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
-      if (task.mySlot.submitted) return { text: t.submitted, className: "bg-marigold/20 text-on-tertiary-fixed" }
-      if (task.mySlot.claimed) return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
+    const status = getTaskListStatus(task)
+    switch (status) {
+      case "withdrawn":
+        return { text: t.completed, className: "bg-surface-container-high text-on-surface-variant" }
+      case "approved":
+        return { text: t.approved, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
+      case "submitted":
+        return { text: t.submitted, className: "bg-marigold/20 text-on-tertiary-fixed" }
+      case "claimed":
+        return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
+      case "open":
+        return { text: t.open, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
+      case "closed":
+        return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
     }
-    const hasOpenSlots = task.active && Number(task.availableSlots) > 0
-    if (hasOpenSlots) return { text: t.open, className: "bg-secondary-fixed text-on-secondary-fixed-dim" }
-    return { text: t.claimed, className: "bg-surface-container-high text-on-surface-variant" }
   }
 
   const shortenAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -63,12 +70,10 @@ export function TasksPage({
   })
 
   const getStatusGroup = (task: Task): "open" | "progress" | "completed" => {
-    if (task.mySlot) {
-      if (task.mySlot.approved || task.mySlot.withdrawn) return "completed"
-      return "progress"
-    }
-    const hasOpenSlots = task.active && Number(task.availableSlots) > 0
-    return hasOpenSlots ? "open" : "progress"
+    const status = getTaskListStatus(task)
+    if (status === "approved" || status === "withdrawn") return "completed"
+    if (status === "open") return "open"
+    return "progress"
   }
 
   const statusGroups = [
