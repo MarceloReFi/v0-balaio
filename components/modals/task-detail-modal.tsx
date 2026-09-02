@@ -176,7 +176,11 @@ export function TaskDetailModal({
         proof = data.publicUrl
       } catch (err) {
         console.error(err)
-        setUploadError(language === "en" ? "Upload failed, try again" : "Falha no envio, tente novamente")
+        console.error("[proof-upload] file:", proofImage.name, proofImage.type, proofImage.size)
+        const anyErr = err as { message?: string; statusCode?: string | number; error?: string }
+        const detail = anyErr?.message || anyErr?.error || anyErr?.statusCode
+        const baseMessage = language === "en" ? "Upload failed, try again" : "Falha no envio, tente novamente"
+        setUploadError(detail ? `${baseMessage} (detalhe: ${detail})` : baseMessage)
         setUploadingImage(false)
         return
       }
